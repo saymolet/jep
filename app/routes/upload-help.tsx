@@ -151,6 +151,36 @@ export default function Help() {
           The older <Code>imageSrc</Code> field (a single picture URL) still
           works and is shown like an image in <Code>media</Code>.
         </p>
+        <h2 className="mb-4 text-xl font-semibold">
+          Multiple choice questions
+        </h2>
+        <p className="mb-4">
+          Add a <Code>choices</Code> list to turn a question into multiple
+          choice. Everyone sees the options (A, B, C...) while the question is
+          read, and buzzing works as usual. The player who wins the buzz taps an
+          option instead of revealing the answer, and Jep! checks it
+          automatically: a right pick wins the value, a wrong pick loses it and
+          the others may buzz in.
+        </p>
+        <ul className="mb-4 list-inside list-disc">
+          <li>2 to 6 options, all different.</li>
+          <li>
+            The <Code>answer</Code> must be exactly one of the options (letter
+            case doesn't matter).
+          </li>
+          <li>
+            Works with wagerable questions and with media, but not with
+            long-form questions.
+          </li>
+        </ul>
+        <CodeBlock
+          text={`{
+  "clue": "The capital of Australia",
+  "answer": "Canberra",
+  "value": 200,
+  "choices": ["Sydney", "Canberra", "Melbourne", "Perth"]
+}`}
+        />
         <h1 className="mb-4 text-2xl font-semibold">Type definition</h1>
         <CodeBlock
           text={`interface Game {
@@ -181,6 +211,7 @@ interface Clue {
   imageSrc?: string; // a single picture; prefer media
   media?: MediaBlock[]; // shown with the clue
   answerMedia?: MediaBlock[]; // shown when the answer is revealed
+  choices?: string[]; // 2-6 options for a multiple choice question
 }
 
 interface MediaBlock {
