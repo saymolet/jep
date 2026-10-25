@@ -46,6 +46,8 @@
     "@varlock/vite-integration": "^1.5.0",
     "@vercel/analytics": "^2.0.1",
     "clsx": "^2.1.1",
+    "fast-xml-parser": "^5.11.2",
+    "fflate": "^0.8.3",
     "immer": "^11.1.4",
     "isbot": "^4",
     "react": "^19.2.8",

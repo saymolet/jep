@@ -85,8 +85,10 @@ export default function handleRequest(
       "style-src 'self' 'unsafe-inline'",
       `connect-src 'self' ${ENV.SUPABASE_URL} ws://${new URL(ENV.SUPABASE_URL).host} wss://${new URL(ENV.SUPABASE_URL).host}`,
       // Clue media (pictures, audio, video) may be hosted on any https site.
-      "img-src 'self' data: https:",
-      "media-src 'self' https:",
+      // Imported SIGame media lives in our Supabase Storage, which is plain
+      // http on the local development stack.
+      `img-src 'self' data: https: ${new URL(ENV.SUPABASE_URL).origin}`,
+      `media-src 'self' https: ${new URL(ENV.SUPABASE_URL).origin}`,
       // YouTube clips are embedded via the privacy-enhanced domain only.
       "frame-src https://www.youtube-nocookie.com",
     ].join("; "),

@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package name="Test pack v4" version="4" id="test-v4" date="2013" difficulty="5" xmlns="http://vladimirkhil.com/ygpackage3.0.xsd">
+  <info>
+    <authors>
+      <author>Old tester</author>
+    </authors>
+  </info>
+  <rounds>
+    <round name="Round 1">
+      <themes>
+        <theme name="Pictures">
+          <questions>
+            <question price="100">
+              <scenario>
+                <atom>What color is this dot?</atom>
+                <atom type="image">@red dot.png</atom>
+              </scenario>
+              <right>
+                <answer>Red</answer>
+              </right>
+            </question>
+            <question price="200">
+              <scenario>
+                <atom type="image">@кот.png</atom>
+                <atom type="marker" />
+                <atom type="image">@blue.png</atom>
+                <atom>Text after the marker is not shown</atom>
+              </scenario>
+              <right>
+                <answer>Cat</answer>
+                <answer>Kitten</answer>
+              </right>
+            </question>
+            <question price="300">
+              <scenario>
+                <atom type="say">Listen</atom>
+                <atom type="voice">@beep.wav</atom>
+              </scenario>
+              <right>
+                <answer>Beep</answer>
+              </right>
+            </question>
+            <question price="400">
+              <scenario>
+                <atom type="video">@clip.mp4</atom>
+                <atom type="text">Name this clip</atom>
+              </scenario>
+              <right>
+                <answer>Clip</answer>
+              </right>
+            </question>
+            <question price="500">
+              <scenario>
+                <atom type="image">@missing.png</atom>
+              </scenario>
+              <right>
+                <answer>Dropped</answer>
+              </right>
+            </question>
+          </questions>
+        </theme>
+        <theme name="Types">
+          <questions>
+            <question price="100">
+              <type name="cat">
+                <param name="theme">Famous cats</param>
+                <param name="cost">500</param>
+              </type>
+              <scenario>
+                <atom>The cat in the boots</atom>
+              </scenario>
+              <right>
+                <answer>Puss in Boots</answer>
+              </right>
+            </question>
+            <question price="200">
+              <type name="bagcat">
+                <param name="theme">Bags</param>
+                <param name="cost">[100;500]/100</param>
+                <param name="self">false</param>
+                <param name="knows">after</param>
+              </type>
+              <scenario>
+                <atom>A bag cat question</atom>
+              </scenario>
+              <right>
+                <answer>Bag</answer>
+              </right>
+            </question>
+            <question price="300">
+              <type name="auction" />
+              <scenario>
+                <atom>An auction question</atom>
+              </scenario>
+              <right>
+                <answer>Auction</answer>
+              </right>
+            </question>
+            <question price="400">
+              <type name="sponsored" />
+              <scenario>
+                <atom>A sponsored question</atom>
+              </scenario>
+              <right>
+                <answer>Sponsored</answer>
+              </right>
+            </question>
+          </questions>
+        </theme>
+      </themes>
+    </round>
+    <round name="Final" type="final">
+      <themes>
+        <theme name="Final A">
+          <questions>
+            <question price="0">
+              <scenario>
+                <atom>The first final question</atom>
+              </scenario>
+              <right>
+                <answer>First</answer>
+              </right>
+            </question>
+          </questions>
+        </theme>
+        <theme name="Final B">
+          <questions>
+            <question price="0">
+              <scenario>
+                <atom>The second final question</atom>
+              </scenario>
+              <right>
+                <answer>Second</answer>
+              </right>
+            </question>
+          </questions>
+        </theme>
+      </themes>
+    </round>
+  </rounds>
+</package>

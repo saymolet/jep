@@ -1,3 +1,4 @@
+import { ENV } from "varlock/env";
 import { z } from "zod";
 
 import { choicesError } from "~/utils/choices";
@@ -18,6 +19,27 @@ function isValidImageSrc(src: string): boolean {
   }
 }
 
+/** GAME_MEDIA_PUBLIC_PATH is where files in the "game-media" storage bucket
+ * (media of imported SIGame packs) are served. */
+export const GAME_MEDIA_PUBLIC_PATH = "/storage/v1/object/public/game-media/";
+
+/** isGameMediaUrl reports whether `src` is a file in our own "game-media"
+ * bucket. Those are accepted over http: too, because the local Supabase stack
+ * (development and tests) serves plain http; production is https anyway. */
+export function isGameMediaUrl(src: string): boolean {
+  try {
+    const supabaseUrl = ENV.SUPABASE_URL;
+    if (!supabaseUrl) return false;
+    const url = new URL(src);
+    return (
+      url.origin === new URL(supabaseUrl).origin &&
+      url.pathname.startsWith(GAME_MEDIA_PUBLIC_PATH)
+    );
+  } catch {
+    return false;
+  }
+}
+
 export const MediaBlockSchema = z
   .object({
     type: z.enum(MEDIA_TYPES),
@@ -26,7 +48,8 @@ export const MediaBlockSchema = z
   })
   .superRefine((block, ctx) => {
     const error = mediaBlockError(block);
-    if (error) ctx.addIssue({ code: "custom", message: error, path: ["src"] });
+    if (error && !isGameMediaUrl(block.src))
+      ctx.addIssue({ code: "custom", message: error, path: ["src"] });
   });
 
 const MediaListSchema = z
