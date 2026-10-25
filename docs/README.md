@@ -82,9 +82,15 @@ Difficulty estimates from the original planning discussion.
       straight into a new room or solo — see
       [features/10-random-board.md](./features/10-random-board.md) — ⭐⭐ medium
 
+- [x] Spectator mode + TV (presenter) mode — **Just watch** in the join dialog (read-only room
+      view, Watching badge, join later; spectators counted with Realtime presence) and
+      `/room/:roomName/present` for a TV: big board/question/media/answer, players and scores,
+      what is happening, QR code to join, fullscreen + screen wake lock — see
+      [features/11-spectator-presenter.md](./features/11-spectator-presenter.md) — ⭐⭐ medium
+
 Question search ·
-team mode · spectator mode · admin panel · Discord login · keyboard shortcuts ·
-fullscreen presenter mode · OBS/browser-source mode · mobile-first buzzer ·
+team mode · admin panel · Discord login · keyboard shortcuts ·
+OBS/browser-source mode · mobile-first buzzer ·
 auto-reconnect · host controls from phone · game save/resume · live scoreboard ·
 per-question timer · soundboard · themes (Classic / Своя Игра / Dark).
 
@@ -139,3 +145,7 @@ per-question timer · soundboard · themes (Classic / Своя Игра / Dark).
   button on the home page) — categories of PUBLIC games only, sampled in SQL; new unlisted game
   opens in a new room or solo. Migration `20261025194229_random_board_candidates.sql` (two new
   read-only SQL functions). No new dependencies.
+- **2026-10-25** — Feature 11 on `feat/spectate-present`: spectators ("Just watch", read-only
+  room, Watching badge, watcher count via Realtime presence) and the TV / presenter page
+  `/room/:roomName/present` (QR code to join, fullscreen, wake lock, every game state). No
+  migration; new dependency `uqr`.

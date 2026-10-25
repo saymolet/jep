@@ -19,6 +19,7 @@ import { siq } from "./uk/siq";
 import { summary } from "./uk/summary";
 import { upload } from "./uk/upload";
 import { uploadHelp } from "./uk/uploadHelp";
+import { watch } from "./uk/watch";
 
 /** Ukrainian UI messages. Must have exactly the keys of `en` (each area file
  * is typed against its English counterpart, so a missing or extra key is a
@@ -43,4 +44,5 @@ export const uk: Dictionary<typeof en> = {
   ...siq,
   ...settings,
   ...random,
+  ...watch,
 };

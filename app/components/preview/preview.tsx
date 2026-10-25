@@ -25,28 +25,34 @@ import { getPlayerColor } from "~/utils";
 import { useJoinAvatar } from "~/utils/avatar-storage";
 import useSoloAction from "~/utils/use-solo-action";
 
-function JoinGameDialog({
+export function JoinGameDialog({
   Form,
   gameTitle,
   name,
+  onWatch,
   playerColor,
   players,
   roomId,
   type,
   userId,
+  watching = false,
 }: {
   Form: typeof fetcherForm;
   gameTitle: string;
   name: string;
+  /** When set, a "Just watch" button closes the dialog without joining. */
+  onWatch?: () => void;
   playerColor?: PlayerColor;
   players: Map<string, Player>;
   type: GameState;
+  /** The visitor chose to watch: the dialog stays closed. */
+  watching?: boolean;
 } & RoomProps) {
   const { t } = useTranslation();
   const [avatar, setAvatar] = useJoinAvatar();
   return (
     <Dialog
-      isOpen={type !== GameState.GameOver}
+      isOpen={type !== GameState.GameOver && !watching}
       title={t("room.joinGameTitle", { title: gameTitle })}
       description={t("room.playersSoFar", { count: players.size })}
     >
@@ -75,6 +81,12 @@ function JoinGameDialog({
         <AvatarPicker value={avatar} onChange={setAvatar} />
       </div>
       <Dialog.Footer>
+        {onWatch ? (
+          // Watching sends nothing: the visitor only reads the room.
+          <Button type="button" onClick={onWatch}>
+            {t("watch.justWatch")}
+          </Button>
+        ) : null}
         <Form method="POST" action={`/room/${roomId}/player`}>
           <input type="hidden" name="userId" value={userId} />
           <input type="hidden" name="name" value={name} />
@@ -223,18 +235,24 @@ export function Preview({
   name,
   numRounds,
   onDismiss,
+  onWatch,
   playerColor,
   url,
   roomId,
   userId,
+  watching = false,
 }: {
   disabled?: boolean;
   gameTitle: string;
   name: string;
   numRounds: number;
   onDismiss: () => void;
+  /** Offer "Just watch" in the join dialog (rooms, not solo play). */
+  onWatch?: () => void;
   playerColor?: PlayerColor;
   url: string;
+  /** The visitor chose to watch instead of joining. */
+  watching?: boolean;
 } & RoomProps) {
   const { type, board, boardControl, players, round, soloDispatch } =
     useEngineContext();
@@ -270,10 +288,12 @@ export function Preview({
       Form={fetcher.Form}
       gameTitle={gameTitle}
       name={name}
+      onWatch={onWatch}
       playerColor={playerColor}
       players={players}
       roomId={roomId}
       userId={userId}
+      watching={watching}
     />
   );
 }

@@ -15,3 +15,5 @@ See the backlog in [../README.md](../README.md#feature-backlog).
 - [06 — More than 5 categories, uneven categories](./06-dynamic-board.md)
 - [08 — Import SIGame packs (.siq) and import/export JSON](./08-import-export.md)
 - [09 — Ukrainian translation (i18n)](./09-ukrainian.md)
+- [10 — Random board generator](./10-random-board.md)
+- [11 — Spectator mode + TV (presenter) mode](./11-spectator-presenter.md)

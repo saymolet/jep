@@ -284,9 +284,13 @@ export function PlayerScores({ roomId, userId }: RoomProps) {
   const onBoard =
     type === GameState.ShowBoard || type === GameState.PreviewRound;
 
-  // Kick others: only before game starts
+  // Kick others: only players, only before game starts
   const canKick =
-    onBoard && numAnswered === 0 && round === 0 && players.size > 1;
+    yourPlayer !== undefined &&
+    onBoard &&
+    numAnswered === 0 &&
+    round === 0 &&
+    players.size > 1;
 
   // Leave self: any time the board or round preview is showing
   const canLeave = onBoard && players.size > 1;

@@ -64,7 +64,7 @@ function kbd(chunks: React.ReactNode) {
 /** CategoryFor renders "<category> for $<value>" (and the wager, if any).
  * Game content (the category) is passed as a node, never interpolated into
  * the message. */
-function CategoryFor({
+export function CategoryFor({
   category,
   value,
   wager,
@@ -94,7 +94,7 @@ function CategoryFor({
 
 /** useClueMedia returns `getClueMedia` with a translated alt text for legacy
  * `imageSrc` pictures. */
-function useClueMedia() {
+export function useClueMedia() {
   const { t } = useTranslation();
   return React.useCallback(
     (clue: Clue) =>
@@ -107,7 +107,7 @@ function useClueMedia() {
 
 /** revealMedia picks the media to show for a clue: once the answer is shown,
  * answer media (if any) replaces the clue media. */
-function revealMedia(
+export function revealMedia(
   clue: Clue,
   showAnswerMedia: boolean,
   clueMedia: (clue: Clue) => MediaBlock[],
@@ -118,7 +118,7 @@ function revealMedia(
   return clueMedia(clue);
 }
 
-function hasAnswerMedia(clue: Clue): boolean {
+export function hasAnswerMedia(clue: Clue): boolean {
   return (clue.answerMedia?.length ?? 0) > 0;
 }
 
@@ -131,6 +131,7 @@ export function ClueText({
   showAnswer,
   media = [],
   autoPlayMedia = false,
+  variant = "screen",
 }: {
   answer: string;
   canBuzz: boolean;
@@ -142,6 +143,9 @@ export function ClueText({
   media?: MediaBlock[];
   /** Try to start audio/video when it first appears. */
   autoPlayMedia?: boolean;
+  /** "screen" fills the full-screen prompt; "tv" fills its container (the
+   * presenter screen) and lets the text grow on big screens. */
+  variant?: "screen" | "tv";
 }) {
   const { fontSize, ref } = useFitText<HTMLParagraphElement>({
     maxFontSize: 200,
@@ -150,7 +154,12 @@ export function ClueText({
   const hasMedia = media.length > 0;
 
   return (
-    <div className="flex min-h-0 w-screen grow flex-col items-center justify-center gap-2 pb-2">
+    <div
+      className={clsx(
+        "flex min-h-0 grow flex-col items-center justify-center gap-2 pb-2",
+        variant === "tv" ? "w-full" : "w-screen",
+      )}
+    >
       <button
         type="button"
         disabled={!canBuzz}
@@ -163,9 +172,16 @@ export function ClueText({
       >
         <p
           className={clsx(
-            "mx-auto w-full max-w-screen-lg font-korinna leading-normal font-bold text-white uppercase transition-opacity duration-150 text-shadow-lg word-spacing-1",
+            "mx-auto w-full font-korinna leading-normal font-bold text-white uppercase transition-opacity duration-150 text-shadow-lg word-spacing-1",
+            variant === "tv" ? "max-w-none" : "max-w-screen-lg",
             // Leave room for the media below the text.
-            hasMedia ? "max-h-[20dvh]" : "max-h-96",
+            hasMedia
+              ? variant === "tv"
+                ? "max-h-[25dvh]"
+                : "max-h-[20dvh]"
+              : variant === "tv"
+                ? "max-h-[55dvh]"
+                : "max-h-96",
           )}
           ref={ref}
           style={{ fontSize, opacity: fontSize ? 1 : 0 }}
@@ -955,6 +971,41 @@ function RevealAnswerToAllPrompt({ roomId, userId }: RoomProps) {
   );
 }
 
+/** PROMPT_STATES are the game states in which a question (or wager, or
+ * cat-in-the-bag hand-over) covers the board. */
+export const PROMPT_STATES: ReadonlySet<GameState> = new Set([
+  GameState.WagerClue,
+  GameState.PassClue,
+  GameState.ReadClue,
+  GameState.ReadWagerableClue,
+  GameState.ReadLongFormClue,
+  GameState.RevealAnswerToBuzzer,
+  GameState.RevealAnswerLongForm,
+  GameState.RevealAnswerToAll,
+]);
+
+/** PromptFrame is the full-screen frame the prompt slides into. */
+export function PromptFrame({
+  show,
+  children,
+}: {
+  show: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <Fade show={show}>
+      <div
+        className={`relative flex w-screen flex-col justify-between overflow-x-hidden overflow-y-scroll bg-blue-bright`}
+        style={{
+          height: "100dvh",
+        }}
+      >
+        {children}
+      </div>
+    </Fade>
+  );
+}
+
 export function ConnectedPrompt(props: RoomProps) {
   const { type } = useEngineContext();
 
@@ -996,16 +1047,9 @@ export function ConnectedPrompt(props: RoomProps) {
   const isOpen = promptContent !== null;
 
   return (
-    <Fade show={isOpen}>
-      <div
-        className={`relative flex w-screen flex-col justify-between overflow-x-hidden overflow-y-scroll bg-blue-bright`}
-        style={{
-          height: "100dvh",
-        }}
-      >
-        <Lockout active={lockout} />
-        {promptContent}
-      </div>
-    </Fade>
+    <PromptFrame show={isOpen}>
+      <Lockout active={lockout} />
+      {promptContent}
+    </PromptFrame>
   );
 }

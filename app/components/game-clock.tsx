@@ -42,7 +42,13 @@ export function ClockDisplay({
 }
 
 /** GameClock is the interactive clock connected to the engine context. */
-export default function GameClock({ roomId }: Pick<RoomProps, "roomId">) {
+export default function GameClock({
+  roomId,
+  readOnly = false,
+}: Pick<RoomProps, "roomId"> & {
+  /** Show the time without the pause/resume toggle (spectators, TV). */
+  readOnly?: boolean;
+}) {
   const { clockRunning, clockAccumulatedMs, clockLastResumedAt, soloDispatch } =
     useEngineContext();
   const fetcher = useFetcher<Action>();
@@ -84,7 +90,8 @@ export default function GameClock({ roomId }: Pick<RoomProps, "roomId">) {
     <ClockDisplay
       displayMs={displayMs}
       running={clockRunning}
-      onToggle={handleToggle}
+      disabled={readOnly}
+      onToggle={readOnly ? undefined : handleToggle}
     />
   );
 }

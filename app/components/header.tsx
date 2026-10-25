@@ -19,6 +19,7 @@ import { useGameDefaults } from "~/utils/user-settings";
 import {
   ArrowTopRightOnSquare,
   ExclamationTriangle,
+  Eye,
   InformationCircle,
 } from "./icons";
 
@@ -71,7 +72,18 @@ function SiteLinks({ className }: { className?: string }) {
   );
 }
 
-function GameSettings({ game, url }: { game: Game; url: string }) {
+/** ROOM_PATH matches a room page, "/room/<id>-<word>" (not its summary). */
+const ROOM_PATH = /^\/room\/[^/]+$/;
+
+function GameSettings({
+  game,
+  url,
+  pathname,
+}: {
+  game: Game;
+  url: string;
+  pathname: string;
+}) {
   const { t } = useTranslation();
   return (
     <DropdownMenu.Root>
@@ -117,6 +129,20 @@ function GameSettings({ game, url }: { game: Game; url: string }) {
               <p className="pl-7">{t("header.gameDetails")}</p>
             </RouterLink>
           </DropdownMenu.Item>
+          {ROOM_PATH.test(pathname) ? (
+            <DropdownMenu.Item asChild>
+              {/* The TV view opens in a new tab: on a laptop connected to a
+                  TV, or copy its address to the TV's browser. */}
+              <RouterLink
+                to={`${pathname}/present`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Eye className="absolute left-0 m-1 h-5 w-5" />
+                <p className="pl-7">{t("watch.showOnTv")}</p>
+              </RouterLink>
+            </DropdownMenu.Item>
+          ) : null}
           <DropdownMenu.Item
             // Prevent the dropdown menu from closing
             onSelect={(e: Event) => e.preventDefault()}
@@ -194,7 +220,13 @@ export default function Header({
           ) : (
             <LoginButton pathname={pathname} />
           )}
-          {game && <GameSettings game={game} url={BASE_URL + pathname} />}
+          {game && (
+            <GameSettings
+              game={game}
+              url={BASE_URL + pathname}
+              pathname={pathname}
+            />
+          )}
         </div>
       </div>
       {!game && (

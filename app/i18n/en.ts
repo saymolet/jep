@@ -18,6 +18,7 @@ import {
   summary,
   upload,
   uploadHelp,
+  watch,
 } from "./en/areas";
 import type { Messages } from "./types";
 
@@ -44,4 +45,5 @@ export const en = {
   ...siq,
   ...settings,
   ...random,
+  ...watch,
 } as const satisfies Messages;
