@@ -48,11 +48,20 @@ export async function startMockGame(page: Page, route = "/mock") {
   await goto(page, route);
   await page.getByRole("button", { name: /join game/i }).click();
   const startRound = page.getByRole("button", { name: /start round/i });
-  await startRound.click();
-  // Until the round starts, the preview dialog still covers the board.
-  // Starting the round is a server round trip (solo routes return the action);
-  // under the full parallel suite on a small machine it can exceed 5s.
-  await expect(startRound).toBeHidden({ timeout: 15_000 });
+  // The button appears once the Join event gives this player board control,
+  // and the dialog can re-render (replacing the button) right as it's
+  // clicked, losing the click under load. Click again until the dialog
+  // closes, like a person would; a repeated StartRound is ignored by the
+  // engine. Starting is a server round trip (solo routes return the action),
+  // so allow time for it. Wait for the button first — otherwise "hidden"
+  // would pass before the Join has even produced it.
+  await expect(startRound).toBeVisible({ timeout: 15_000 });
+  await expect(async () => {
+    if (await startRound.isVisible()) {
+      await startRound.click({ timeout: 2_000 });
+    }
+    await expect(startRound).toBeHidden({ timeout: 5_000 });
+  }).toPass({ timeout: 30_000 });
   // The dialog only unmounts after its close animation, and on unmount Radix
   // restores focus to the element focused before it opened. Wait for that so
   // it can't steal focus from whatever the test focuses next.
