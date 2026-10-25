@@ -3,13 +3,20 @@ import { data, useFetcher } from "react-router";
 import { ENV } from "varlock/env";
 
 import Button from "~/components/button";
+import Dialog from "~/components/dialog";
 import { ErrorMessage, SuccessMessage } from "~/components/error";
-import { Cog6Tooth, PaperAirplane, PencilSquare } from "~/components/icons";
+import {
+  Cog6Tooth,
+  FaceSmile,
+  PaperAirplane,
+  PencilSquare,
+} from "~/components/icons";
 import Input from "~/components/input";
 import Link from "~/components/link";
 import Main from "~/components/main";
 import OfflineIndicator from "~/components/offline-indicator";
 import { PlayerIcon } from "~/components/player";
+import { AvatarPicker } from "~/components/player/avatar-picker";
 import SoundControl from "~/components/sound";
 import Upload from "~/components/upload";
 import WagerHintsControl from "~/components/wager-hints-control";
@@ -163,9 +170,16 @@ function PlayerDefaultsControl({
   email: string;
   userId: string;
 }) {
-  const { playerName, playerColor, setPlayerName, setPlayerColor } =
-    useGameDefaults();
+  const {
+    playerName,
+    playerColor,
+    playerAvatar,
+    setPlayerName,
+    setPlayerColor,
+    setPlayerAvatar,
+  } = useGameDefaults();
   const [editing, setEditing] = React.useState(false);
+  const [avatarOpen, setAvatarOpen] = React.useState(false);
   const [nameDraft, setNameDraft] = React.useState(playerName ?? "");
   const inputRef = React.useRef<HTMLInputElement | null>(null);
 
@@ -210,6 +224,7 @@ function PlayerDefaultsControl({
               name: playerName ?? "🔀",
               userId,
               color: effectiveColor,
+              avatar: playerAvatar,
             }}
           />
         </label>
@@ -227,6 +242,13 @@ function PlayerDefaultsControl({
             onBlur={handleBlur}
             aria-label="Player name"
           />
+          <button
+            type="button"
+            onClick={() => setAvatarOpen(true)}
+            className="rounded-xl bg-white/10 px-3 py-2"
+          >
+            <FaceSmile className="h-5 w-5 opacity-50" title="Change avatar" />
+          </button>
           {editing ? (
             <button
               type="button"
@@ -262,6 +284,15 @@ function PlayerDefaultsControl({
           }
         }}
       />
+
+      <Dialog
+        isOpen={avatarOpen}
+        onClose={() => setAvatarOpen(false)}
+        title="Default avatar"
+        description="Used when you join a game. Pick an emoji or use a photo."
+      >
+        <AvatarPicker value={playerAvatar} onChange={setPlayerAvatar} />
+      </Dialog>
 
       <div className="grid grid-cols-2 gap-3">
         <Button

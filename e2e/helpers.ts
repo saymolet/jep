@@ -169,3 +169,15 @@ export async function openClue(page: Page, clueButton: Locator) {
     await expect(page.getByText(/buzz in/i)).toBeVisible({ timeout: 1_000 });
   }).toPass({ timeout: 10_000 });
 }
+
+/** Pick a preset emoji avatar, retrying until React has hydrated and the
+ * button reflects the choice. */
+export async function pickEmoji(page: Page, emoji: string) {
+  const button = page.getByRole("button", { name: `Avatar ${emoji}` });
+  await expect(async () => {
+    await button.click();
+    await expect(button).toHaveAttribute("aria-pressed", "true", {
+      timeout: 1_000,
+    });
+  }).toPass({ timeout: 10_000 });
+}

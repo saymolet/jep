@@ -36,7 +36,9 @@ Difficulty estimates from the original planning discussion.
       must hand it to another player, who answers it alone (right → +value and board control,
       wrong → −value) — see [features/05-secret-question.md](./features/05-secret-question.md)
       — ⭐ easy
-- [ ] Upload avatar — ⭐ easy
+- [x] Upload avatar — emoji from a preset grid or your own photo (cropped and resized to 96×96
+      in the browser, sent inline as a data URL — no file hosting), remembered per device and as
+      an account default — see [features/07-avatars.md](./features/07-avatars.md) — ⭐ easy
 - [x] Audio/video questions — pictures, audio, video and YouTube clips with the question
       (`media`) and with the answer (`answerMedia`); additive, no full `blocks[]` redesign —
       see [features/03-media-questions.md](./features/03-media-questions.md) — ⭐ easy
@@ -91,3 +93,7 @@ per-question timer · soundboard · themes (Classic / Своя Игра / Dark).
   categories (engine grid sized by the longest category — fixes the crash), wide-board layout for
   phones and TVs, stable category/clue order from the DB, sample games `/mock?game=8x5` and
   `/mock?game=ragged`. No migration.
+- **2026-10-25** — Feature 07 on `feat/avatars`: player avatars (emoji or photo resized in the
+  browser to a ≤24 KB data URL in the Join/ChangeName payload), validated in the route and
+  ignored on replay when invalid; remembered in localStorage and `gameDefaults.playerAvatar`.
+  No migration.

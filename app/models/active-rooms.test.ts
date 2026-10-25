@@ -47,6 +47,32 @@ describe("summarizeActiveRoom", () => {
     });
   });
 
+  it("includes emoji avatars but not photos (to keep the list small)", () => {
+    const summary = summarizeActiveRoom(
+      MOCK_GAME,
+      ROOM,
+      [
+        event(ActionType.Join, {
+          userId: "a",
+          name: "Ann",
+          color: "#ef4444",
+          avatar: "emoji:🦊",
+        }),
+        event(ActionType.Join, {
+          userId: "b",
+          name: "Bob",
+          color: "#ef4444",
+          avatar: "data:image/png;base64,AAAA",
+        }),
+      ],
+      NOW,
+    );
+    expect(summary?.players).toStrictEqual([
+      { name: "Ann", color: "#ef4444", emoji: "🦊" },
+      { name: "Bob", color: "#ef4444" },
+    ]);
+  });
+
   it("skips rooms nobody is in", () => {
     expect(summarizeActiveRoom(MOCK_GAME, ROOM, [], NOW)).toBeNull();
     expect(

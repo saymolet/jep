@@ -1,3 +1,4 @@
+import type { Avatar } from "~/models/avatar";
 import type { Board, Clue, Game } from "~/models/convert.server";
 import type { PlayerColor } from "~/models/player-color";
 import { hasChoices } from "~/utils/choices";
@@ -54,6 +55,8 @@ export interface Player {
   score: number;
   /** CSS hex color chosen by the player (e.g. #7a8ae0). */
   color?: PlayerColor;
+  /** Emoji or small photo chosen by the player (see models/avatar.ts). */
+  avatar?: Avatar;
 }
 
 export function clueIsPlayable(clue: Clue) {

@@ -6,7 +6,7 @@ import type { Action, Player } from "~/engine";
 import { useEngineContext } from "~/engine";
 import useSoloAction from "~/utils/use-solo-action";
 
-import { PlayerIcon } from "./player";
+import { PlayerIcon } from "./player-icon";
 
 export function KickablePlayerIcon({
   player,

@@ -1,5 +1,5 @@
 import { ActionType } from "~/engine";
-import { PlayerPayload } from "~/engine/actions";
+import { PlayerFormPayload } from "~/engine/actions";
 import { getValidAuthSession } from "~/models/auth";
 import { createRoomEvent } from "~/models/room-event.server";
 import { getRoom } from "~/models/room.server";
@@ -28,7 +28,10 @@ export async function action({ request, params }: Route.ActionArgs) {
     throw new Response("method not allowed", { status: 405 });
   }
   const formData = await request.formData();
-  const { name, userId, color } = parseFormData(formData, PlayerPayload);
+  const { name, userId, color, avatar } = parseFormData(
+    formData,
+    PlayerFormPayload,
+  );
 
   const roomId = params.roomId ? parseInt(params.roomId) : undefined;
   if (!roomId) {
@@ -42,7 +45,7 @@ export async function action({ request, params }: Route.ActionArgs) {
         : request.method === "PATCH"
           ? ActionType.ChangeName
           : ActionType.Kick;
-    return { type, payload: { userId, name, color }, ts: Date.now() };
+    return { type, payload: { userId, name, color, avatar }, ts: Date.now() };
   }
 
   const authSession = await getValidAuthSession(request);
@@ -87,6 +90,10 @@ export async function action({ request, params }: Route.ActionArgs) {
       userId,
       name,
       color,
+      // Only Join and ChangeName carry an avatar.
+      ...(avatar !== undefined && request.method !== "DELETE"
+        ? { avatar }
+        : {}),
     },
     authSession?.accessToken,
   );

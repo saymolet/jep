@@ -10,6 +10,7 @@ import {
 } from "~/components/board/layout";
 import CluePopoverContent from "~/components/clue-popover-content";
 import { Dollars } from "~/components/dollars";
+import { PlayerIcon } from "~/components/player";
 import Popover from "~/components/popover";
 import { clueIsPlayable } from "~/engine";
 import type { Player } from "~/engine/state";
@@ -397,8 +398,6 @@ export function ReplayScoreBar({
           currentState.players.get(p.userId) ??
           currentState.leftPlayers.get(p.userId);
         if (!current) return null;
-        const matches = current.name.match(COMPOUND_EMOJI_REGEX);
-        const firstChar = matches ? matches[0] : current.name[0];
         return (
           <div
             key={p.userId}
@@ -407,12 +406,7 @@ export function ReplayScoreBar({
             style={{ order: orderMap.get(p.userId) ?? 0 }}
             title={current.name}
           >
-            <div
-              className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full font-mono text-xs font-bold text-white"
-              style={{ backgroundColor: getPlayerColor(p) }}
-            >
-              {firstChar}
-            </div>
+            <PlayerIcon player={current} size="sm" />
             <Dollars amount={current.score} />
           </div>
         );

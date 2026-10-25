@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { normalizeAvatar } from "~/models/avatar";
 import {
   coercePlayerColor,
   PLAYER_COLOR_HEX_REGEX,
@@ -37,6 +38,9 @@ const gameDefaultsSchema = z.object({
       z.string().regex(PLAYER_COLOR_HEX_REGEX),
     )
     .optional(),
+  /** Default avatar (see models/avatar.ts). An invalid stored value is
+   * dropped instead of invalidating all settings. */
+  playerAvatar: z.preprocess(normalizeAvatar, z.string().optional()),
 });
 
 export const userSettingsSchema = z.object({

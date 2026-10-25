@@ -8,11 +8,17 @@ function PlayerList({ players }: { players: ActiveRoom["players"] }) {
     <ul className="flex flex-wrap gap-x-3 gap-y-1">
       {players.map((player, i) => (
         <li key={i} className="flex min-w-0 items-center gap-1.5">
-          <span
-            aria-hidden="true"
-            className="h-2.5 w-2.5 shrink-0 rounded-full"
-            style={{ backgroundColor: player.color }}
-          />
+          {player.emoji ? (
+            <span aria-hidden="true" className="shrink-0 leading-none">
+              {player.emoji}
+            </span>
+          ) : (
+            <span
+              aria-hidden="true"
+              className="h-2.5 w-2.5 shrink-0 rounded-full"
+              style={{ backgroundColor: player.color }}
+            />
+          )}
           <span className="truncate">{player.name}</span>
         </li>
       ))}

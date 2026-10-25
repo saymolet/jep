@@ -1,6 +1,7 @@
 import { produce } from "immer";
 
 import { MOCK_GAME } from "~/models/mock.server";
+import type { DbRoomEvent } from "~/models/room-event.server";
 
 import type { Action } from "./engine";
 import {
@@ -12,6 +13,7 @@ import {
   getWinningBuzzer,
   parseUtcMs,
 } from "./engine";
+import { applyRoomEventsToState } from "./room-event";
 import type { Player } from "./state";
 import {
   GAME_OVER_CORRECTION_GRACE_MS,
@@ -41,6 +43,10 @@ const PLAYER3: Player = {
   userId: "3",
   score: 0,
 };
+
+/** A 1×1 PNG photo avatar. */
+const PHOTO_AVATAR =
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
 
 const PLAYER1_JOIN_ACTION: TestAction = {
   type: ActionType.Join,
@@ -167,6 +173,173 @@ describe("gameEngine", () => {
           ...PLAYER1,
           name: "Player New Name",
         });
+      }),
+    },
+    {
+      name: "Player joins with an emoji avatar",
+      state: initialState,
+      actions: [
+        {
+          type: ActionType.Join,
+          payload: {
+            name: PLAYER1.name,
+            userId: PLAYER1.userId,
+            avatar: "emoji:🦊",
+          },
+        },
+      ],
+      expectedState: produce(initialState, (draft) => {
+        draft.boardControl = PLAYER1.userId;
+        draft.players.set(PLAYER1.userId, { ...PLAYER1, avatar: "emoji:🦊" });
+      }),
+    },
+    {
+      name: "Player joins with a photo avatar",
+      state: initialState,
+      actions: [
+        {
+          type: ActionType.Join,
+          payload: {
+            name: PLAYER1.name,
+            userId: PLAYER1.userId,
+            avatar: PHOTO_AVATAR,
+          },
+        },
+      ],
+      expectedState: produce(initialState, (draft) => {
+        draft.boardControl = PLAYER1.userId;
+        draft.players.set(PLAYER1.userId, {
+          ...PLAYER1,
+          avatar: PHOTO_AVATAR,
+        });
+      }),
+    },
+    {
+      name: "Player joins with an invalid avatar: the avatar is ignored",
+      state: initialState,
+      actions: [
+        {
+          type: ActionType.Join,
+          payload: {
+            name: PLAYER1.name,
+            userId: PLAYER1.userId,
+            avatar: "data:image/svg+xml;base64,PHN2Zz4=",
+          },
+        },
+      ],
+      expectedState: produce(initialState, (draft) => {
+        draft.boardControl = PLAYER1.userId;
+        draft.players.set(PLAYER1.userId, PLAYER1);
+      }),
+    },
+    {
+      name: "Player joins with an empty avatar: no avatar",
+      state: initialState,
+      actions: [
+        {
+          type: ActionType.Join,
+          payload: { name: PLAYER1.name, userId: PLAYER1.userId, avatar: "" },
+        },
+      ],
+      expectedState: produce(initialState, (draft) => {
+        draft.boardControl = PLAYER1.userId;
+        draft.players.set(PLAYER1.userId, PLAYER1);
+      }),
+    },
+    {
+      name: "ChangeName sets the avatar",
+      state: initialState,
+      actions: [
+        PLAYER1_JOIN_ACTION,
+        {
+          type: ActionType.ChangeName,
+          payload: {
+            name: PLAYER1.name,
+            userId: PLAYER1.userId,
+            avatar: PHOTO_AVATAR,
+          },
+        },
+      ],
+      expectedState: produce(initialState, (draft) => {
+        draft.boardControl = PLAYER1.userId;
+        draft.players.set(PLAYER1.userId, {
+          ...PLAYER1,
+          avatar: PHOTO_AVATAR,
+        });
+      }),
+    },
+    {
+      name: "ChangeName without an avatar keeps the avatar",
+      state: initialState,
+      actions: [
+        {
+          type: ActionType.Join,
+          payload: {
+            name: PLAYER1.name,
+            userId: PLAYER1.userId,
+            avatar: "emoji:🦊",
+          },
+        },
+        {
+          type: ActionType.ChangeName,
+          payload: { name: "Renamed", userId: PLAYER1.userId },
+        },
+      ],
+      expectedState: produce(initialState, (draft) => {
+        draft.boardControl = PLAYER1.userId;
+        draft.players.set(PLAYER1.userId, {
+          ...PLAYER1,
+          name: "Renamed",
+          avatar: "emoji:🦊",
+        });
+      }),
+    },
+    {
+      name: "ChangeName with an empty avatar removes the avatar",
+      state: initialState,
+      actions: [
+        {
+          type: ActionType.Join,
+          payload: {
+            name: PLAYER1.name,
+            userId: PLAYER1.userId,
+            avatar: "emoji:🦊",
+          },
+        },
+        {
+          type: ActionType.ChangeName,
+          payload: { name: PLAYER1.name, userId: PLAYER1.userId, avatar: "" },
+        },
+      ],
+      expectedState: produce(initialState, (draft) => {
+        draft.boardControl = PLAYER1.userId;
+        draft.players.set(PLAYER1.userId, PLAYER1);
+      }),
+    },
+    {
+      name: "ChangeName with an invalid avatar keeps the avatar",
+      state: initialState,
+      actions: [
+        {
+          type: ActionType.Join,
+          payload: {
+            name: PLAYER1.name,
+            userId: PLAYER1.userId,
+            avatar: "emoji:🦊",
+          },
+        },
+        {
+          type: ActionType.ChangeName,
+          payload: {
+            name: PLAYER1.name,
+            userId: PLAYER1.userId,
+            avatar: "emoji:hello",
+          },
+        },
+      ],
+      expectedState: produce(initialState, (draft) => {
+        draft.boardControl = PLAYER1.userId;
+        draft.players.set(PLAYER1.userId, { ...PLAYER1, avatar: "emoji:🦊" });
       }),
     },
     {
@@ -3924,5 +4097,62 @@ describe("checking a tied buzz on a question without text", () => {
     });
     expect(state.type).toBe(GameState.RevealAnswerToAll);
     expect(state.players.get(winner!.userId)?.score).toBe(clue.value);
+  });
+});
+
+describe("avatars on replay", () => {
+  function toEvents(actions: TestAction[]): DbRoomEvent[] {
+    return actions.map((a, id) => ({
+      id,
+      room_id: 1,
+      ts: new Date(Date.UTC(2026, 9, 25, 10, 0, id)).toISOString(),
+      type: a.type,
+      payload: JSON.parse(JSON.stringify(a.payload ?? null)),
+    }));
+  }
+
+  it("keeps valid avatars and ignores invalid ones inserted directly", () => {
+    const state = applyRoomEventsToState(
+      stateFromGame(MOCK_GAME),
+      toEvents([
+        // An old event without an avatar.
+        PLAYER1_JOIN_ACTION,
+        {
+          type: ActionType.Join,
+          payload: {
+            name: PLAYER2.name,
+            userId: PLAYER2.userId,
+            avatar: PHOTO_AVATAR,
+          },
+        },
+        {
+          type: ActionType.Join,
+          payload: {
+            name: PLAYER3.name,
+            userId: PLAYER3.userId,
+            avatar: "javascript:alert(1)",
+          },
+        },
+        {
+          type: ActionType.ChangeName,
+          payload: {
+            name: PLAYER1.name,
+            userId: PLAYER1.userId,
+            avatar: "emoji:🐙",
+          },
+        },
+        {
+          type: ActionType.ChangeName,
+          payload: {
+            name: PLAYER2.name,
+            userId: PLAYER2.userId,
+            avatar: { evil: true },
+          },
+        },
+      ]),
+    );
+    expect(state.players.get(PLAYER1.userId)?.avatar).toBe("emoji:🐙");
+    expect(state.players.get(PLAYER2.userId)?.avatar).toBe(PHOTO_AVATAR);
+    expect(state.players.get(PLAYER3.userId)).toStrictEqual(PLAYER3);
   });
 });
