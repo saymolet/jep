@@ -37,7 +37,9 @@ Difficulty estimates from the original planning discussion.
 - [x] Audio/video questions — pictures, audio, video and YouTube clips with the question
       (`media`) and with the answer (`answerMedia`); additive, no full `blocks[]` redesign —
       see [features/03-media-questions.md](./features/03-media-questions.md) — ⭐ easy
-- [ ] Multiple choice questions (typed question renderer) — ⭐ easy
+- [x] Multiple choice questions — optional `choices` (2–6 options) on a question; everyone
+      sees them while it's read, the buzz winner taps one and it's checked automatically on the
+      server — see [features/04-multiple-choice.md](./features/04-multiple-choice.md) — ⭐ easy
 - [x] Pause game (`isPaused` state) — ⭐ very easy — see [features/01-pause-game.md](./features/01-pause-game.md)
 - [ ] More than 5 categories (dynamic grid) — ⭐⭐ medium
 
@@ -72,3 +74,7 @@ per-question timer · soundboard · themes (Classic / Своя Игра / Dark).
 - **2026-10-25** — Feature 03 on `feat/media-questions`: questions with pictures, audio, video
   and YouTube (`media` / `answerMedia`), any https host, sample game `/mock?game=media`.
   Migration `20261025124624_clues_media.sql` (additive jsonb columns on `clues`).
+- **2026-10-25** — Feature 04 on `feat/multiple-choice`: multiple choice questions (`choices`),
+  auto-checked picks decided server-side and re-derived by the engine, sample game
+  `/mock?game=choice`. Migration `20261025131747_clues_choices.sql` (additive jsonb column on
+  `clues`).
