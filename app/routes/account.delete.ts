@@ -1,6 +1,8 @@
 import { data } from "react-router";
 import { z } from "zod";
 
+import { createT } from "~/i18n";
+import { getRequestLocale } from "~/i18n/resolve";
 import {
   deleteAuthAccount,
   destroyAuthSession,
@@ -23,17 +25,21 @@ export async function action({ request }: Route.ActionArgs) {
     throw new Response("Unauthorized", { status: 401 });
   }
 
+  const t = createT(getRequestLocale(request));
   const formData = await request.formData();
   const result = formSchema.safeParse(Object.fromEntries(formData));
   if (!result.success) {
     return data(
-      { error: "Please type your email to confirm", ok: false },
+      { error: t("auth.account.typeEmailToConfirm"), ok: false },
       { status: 400 },
     );
   }
 
   if (result.data.confirmation !== authSession.email) {
-    return data({ error: "Email does not match", ok: false }, { status: 400 });
+    return data(
+      { error: t("auth.account.emailMismatch"), ok: false },
+      { status: 400 },
+    );
   }
 
   try {
@@ -41,7 +47,7 @@ export async function action({ request }: Route.ActionArgs) {
     return destroyAuthSession(request);
   } catch (error) {
     const message =
-      error instanceof Error ? error.message : "Failed to delete account";
+      error instanceof Error ? error.message : t("auth.account.deleteFailed");
     return data({ error: message, ok: false }, { status: 500 });
   }
 }

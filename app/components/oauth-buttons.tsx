@@ -2,6 +2,7 @@ import type { Provider } from "@supabase/supabase-js";
 
 import Button from "~/components/button";
 import { Discord, Google } from "~/components/icons";
+import { useTranslation } from "~/i18n";
 import { getSupabase } from "~/supabase";
 
 interface OAuthButtonsProps {
@@ -13,6 +14,7 @@ export default function OAuthButtons({
   redirectTo = "/",
   disabled,
 }: OAuthButtonsProps) {
+  const { t } = useTranslation();
   const handleOAuthLogin = async (provider: Provider) => {
     const supabase = getSupabase();
     const callbackUrl = new URL("/auth/callback", window.location.origin);
@@ -45,7 +47,7 @@ export default function OAuthButtons({
         disabled={disabled}
       >
         <Google className="h-5 w-5" />
-        Continue with Google
+        {t("auth.continueWithGoogle")}
       </Button>
       <Button
         type="button"
@@ -53,7 +55,7 @@ export default function OAuthButtons({
         disabled={disabled}
       >
         <Discord className="h-5 w-5" />
-        Continue with Discord
+        {t("auth.continueWithDiscord")}
       </Button>
     </div>
   );

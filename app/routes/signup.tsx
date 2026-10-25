@@ -15,6 +15,10 @@ import Link from "~/components/link";
 import Main from "~/components/main";
 import OAuthButtons from "~/components/oauth-buttons";
 import ShowPasswordButton from "~/components/show-password-button";
+import { createT } from "~/i18n";
+import { useTranslation } from "~/i18n";
+import { metaT } from "~/i18n/meta";
+import { getRequestLocale } from "~/i18n/resolve";
 import { getValidAuthSession } from "~/models/auth";
 import {
   createUserAccount,
@@ -26,7 +30,9 @@ import type { Route } from "./+types/signup";
 
 const formSchema = z.object({ email: z.string(), password: z.string() });
 
-export const meta: Route.MetaFunction = () => [{ title: "Sign up" }];
+export const meta: Route.MetaFunction = ({ matches }) => [
+  { title: metaT(matches)("auth.signup.metaTitle") },
+];
 
 export async function loader({ request }: Route.LoaderArgs) {
   const authSession = await getValidAuthSession(request);
@@ -37,11 +43,12 @@ export async function loader({ request }: Route.LoaderArgs) {
 }
 
 export async function action({ request }: Route.ActionArgs) {
+  const t = createT(getRequestLocale(request));
   const formData = await request.formData();
   const { email, password } = parseFormData(formData, formSchema);
   if (password.length < 6) {
     return data(
-      { success: false, message: "Password must be at least 6 characters" },
+      { success: false, message: t("auth.passwordTooShort") },
       { status: 400 },
     );
   }
@@ -51,7 +58,7 @@ export async function action({ request }: Route.ActionArgs) {
     return data(
       {
         success: false,
-        message: "User already exists with this email, sign in instead",
+        message: t("auth.signup.userExists"),
       },
       { status: 400 },
     );
@@ -61,8 +68,7 @@ export async function action({ request }: Route.ActionArgs) {
     await createUserAccount(email, password);
     return data({
       success: true,
-      message:
-        "Created user account! Check your email for a verification link.",
+      message: t("auth.signup.created"),
     });
   } catch (error: unknown) {
     console.error(error);
@@ -74,6 +80,7 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export default function Signup({ actionData }: Route.ComponentProps) {
+  const { t } = useTranslation();
   const navigation = useNavigation();
   const loading = navigation.state !== "idle";
 
@@ -84,18 +91,17 @@ export default function Signup({ actionData }: Route.ComponentProps) {
   return (
     <div className="max-w-full grow">
       <Main>
-        <h1 className="mb-4 text-2xl font-semibold">Sign up</h1>
-        <p className="mb-4">
-          Sign up to upload unlisted or private games, edit games, delete games,
-          and save your settings across all games.
-        </p>
+        <h1 className="mb-4 text-2xl font-semibold">
+          {t("auth.signup.title")}
+        </h1>
+        <p className="mb-4">{t("auth.signup.intro")}</p>
         <OAuthButtons redirectTo={redirectTo} disabled={loading} />
         <div className="relative my-4">
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-gray-300" />
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="bg-white px-2 text-gray-500">or</span>
+            <span className="bg-white px-2 text-gray-500">{t("auth.or")}</span>
           </div>
         </div>
         <Form method="POST" className="flex flex-col gap-4">
@@ -104,18 +110,18 @@ export default function Signup({ actionData }: Route.ComponentProps) {
               htmlFor="email"
               className="block text-sm font-medium text-gray-700"
             >
-              Email address
+              {t("auth.emailAddress")}
             </label>
             <div>
               <Input
                 type="email"
                 name="email"
                 id="email"
-                aria-label="Email address"
+                aria-label={t("auth.emailAddress")}
                 autoComplete="email"
                 autoFocus
                 disabled={loading}
-                placeholder="Email"
+                placeholder={t("auth.emailPlaceholder")}
                 required
               />
             </div>
@@ -125,7 +131,7 @@ export default function Signup({ actionData }: Route.ComponentProps) {
               htmlFor="password"
               className="block text-sm font-medium text-gray-700"
             >
-              Password
+              {t("auth.password")}
             </label>
             <div className="relative">
               <Input
@@ -134,7 +140,7 @@ export default function Signup({ actionData }: Route.ComponentProps) {
                 id="password"
                 autoComplete="current-password"
                 disabled={loading}
-                placeholder="Password"
+                placeholder={t("auth.passwordPlaceholder")}
                 required
               />
               <ShowPasswordButton
@@ -149,7 +155,7 @@ export default function Signup({ actionData }: Route.ComponentProps) {
             disabled={loading}
             loading={loading}
           >
-            Sign up
+            {t("auth.signup.submit")}
           </Button>
           {actionData ? (
             actionData?.success ? (
@@ -159,11 +165,11 @@ export default function Signup({ actionData }: Route.ComponentProps) {
             )
           ) : null}
           <p>
-            Have an account?{" "}
+            {t("auth.signup.haveAccount")}{" "}
             <Link
               to={`/login${redirectTo ? `?redirectTo=${encodeURIComponent(redirectTo)}` : ""}`}
             >
-              Log in
+              {t("auth.signup.logInLink")}
             </Link>
           </p>
         </Form>

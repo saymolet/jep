@@ -1,6 +1,8 @@
 import { data } from "react-router";
 import { z } from "zod";
 
+import { createT, type TFunction } from "~/i18n";
+import { getRequestLocale } from "~/i18n/resolve";
 import {
   getAuthAccountByAccessToken,
   requireAuthSession,
@@ -11,16 +13,18 @@ import { assertIsPost } from "~/utils/http.server";
 
 import type { Route } from "./+types/account.change-password";
 
-const formSchema = z
-  .object({
-    currentPassword: z.string().optional(),
-    newPassword: z.string().min(6, "Password must be at least 6 characters"),
-    confirmPassword: z.string(),
-  })
-  .refine((d) => d.newPassword === d.confirmPassword, {
-    message: "Passwords do not match",
-    path: ["confirmPassword"],
-  });
+function formSchema(t: TFunction) {
+  return z
+    .object({
+      currentPassword: z.string().optional(),
+      newPassword: z.string().min(6, t("auth.passwordTooShort")),
+      confirmPassword: z.string(),
+    })
+    .refine((d) => d.newPassword === d.confirmPassword, {
+      message: t("auth.passwordsDontMatch"),
+      path: ["confirmPassword"],
+    });
+}
 
 export async function action({ request }: Route.ActionArgs) {
   assertIsPost(request);
@@ -29,8 +33,9 @@ export async function action({ request }: Route.ActionArgs) {
     throw new Response("Unauthorized", { status: 401 });
   }
 
+  const t = createT(getRequestLocale(request));
   const formData = await request.formData();
-  const result = formSchema.safeParse(Object.fromEntries(formData));
+  const result = formSchema(t).safeParse(Object.fromEntries(formData));
   if (!result.success) {
     return data(
       { error: result.error.issues[0].message, ok: false },
@@ -47,7 +52,7 @@ export async function action({ request }: Route.ActionArgs) {
     if (hasPassword) {
       if (!currentPassword) {
         return data(
-          { error: "Current password is required", ok: false },
+          { error: t("auth.account.currentPasswordRequired"), ok: false },
           { status: 400 },
         );
       }
@@ -57,7 +62,7 @@ export async function action({ request }: Route.ActionArgs) {
       );
       if (!verified) {
         return data(
-          { error: "Current password is incorrect", ok: false },
+          { error: t("auth.account.currentPasswordIncorrect"), ok: false },
           { status: 400 },
         );
       }
@@ -71,7 +76,9 @@ export async function action({ request }: Route.ActionArgs) {
     return data({ error: null, ok: true });
   } catch (error) {
     const message =
-      error instanceof Error ? error.message : "Failed to update password";
+      error instanceof Error
+        ? error.message
+        : t("auth.account.updatePasswordFailed");
     return data({ error: message, ok: false }, { status: 500 });
   }
 }
