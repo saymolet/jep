@@ -1,6 +1,7 @@
 import type { Avatar } from "~/models/avatar";
 import type { Board, Clue, Game } from "~/models/convert.server";
 import type { PlayerColor } from "~/models/player-color";
+import type { TeamId } from "~/models/team";
 import { hasChoices } from "~/utils/choices";
 
 /** UNREVEALED_PLACEHOLDER is used when a field was not revealed in the game
@@ -57,6 +58,8 @@ export interface Player {
   color?: PlayerColor;
   /** Emoji or small photo chosen by the player (see models/avatar.ts). */
   avatar?: Avatar;
+  /** The player's team (team mode, see models/team.ts). No team plays solo. */
+  team?: TeamId;
 }
 
 export function clueIsPlayable(clue: Clue) {
@@ -84,6 +87,9 @@ export interface State {
   readonly wagers: Map<RoundIJKey, Map<string, number>>;
   readonly isAnswered: ClueAnswer[][][];
   readonly checkCorrection: CheckCorrection | null;
+  /** Custom team names set by a member (teams without one use their default,
+   * translated name). Older saved solo states have none. */
+  readonly teamNames: Map<TeamId, string>;
 
   // per round state
   readonly activeClue: [number, number] | null;
@@ -121,6 +127,7 @@ export function stateFromGame(game: Game) {
     round: 0,
     isAnswered: [],
     checkCorrection: null,
+    teamNames: new Map(),
     numAnswered: 0,
     numCluesInBoard: getNumCluesInBoard(game, 0),
     numExpectedWagers: 0,

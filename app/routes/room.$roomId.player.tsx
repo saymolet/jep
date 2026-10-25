@@ -30,7 +30,7 @@ export async function action({ request, params }: Route.ActionArgs) {
     throw new Response(t("room.error.methodNotAllowed"), { status: 405 });
   }
   const formData = await request.formData();
-  const { name, userId, color, avatar } = parseFormData(
+  const { name, userId, color, avatar, team } = parseFormData(
     formData,
     PlayerFormPayload,
   );
@@ -47,7 +47,11 @@ export async function action({ request, params }: Route.ActionArgs) {
         : request.method === "PATCH"
           ? ActionType.ChangeName
           : ActionType.Kick;
-    return { type, payload: { userId, name, color, avatar }, ts: Date.now() };
+    return {
+      type,
+      payload: { userId, name, color, avatar, ...(team ? { team } : {}) },
+      ts: Date.now(),
+    };
   }
 
   const authSession = await getValidAuthSession(request);
@@ -96,6 +100,8 @@ export async function action({ request, params }: Route.ActionArgs) {
       ...(avatar !== undefined && request.method !== "DELETE"
         ? { avatar }
         : {}),
+      // Only Join carries a team (changes go through /team).
+      ...(team && request.method === "POST" ? { team } : {}),
     },
     authSession?.accessToken,
   );

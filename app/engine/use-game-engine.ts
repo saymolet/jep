@@ -135,6 +135,10 @@ export function stateToGameEngine(
     isAnswered,
     lastMessageAt,
     players: state.players,
+    /** Players who left mid-game (they still count for their team). */
+    leftPlayers: state.leftPlayers,
+    /** Custom team names (team mode). */
+    teamNames: state.teamNames,
     reconnect,
     round: state.round,
     boardControl: state.boardControl,

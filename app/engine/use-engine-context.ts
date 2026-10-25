@@ -25,6 +25,8 @@ export const GameEngineContext = React.createContext<
   isAnswered: () => false,
   lastMessageAt: undefined,
   players: new Map(),
+  leftPlayers: new Map(),
+  teamNames: new Map(),
   reconnect: () => {},
   round: 0,
   wagers: new Map(),

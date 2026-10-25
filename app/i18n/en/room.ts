@@ -73,6 +73,12 @@ export const room = {
   "room.error.notBeingPassed": "this question is not being passed",
   "room.error.onlyChooserCanPass": "only the player who chose it can pass it",
   "room.error.passToAnother": "pass it to another player in the game",
+  "room.error.notInGame": "join the game first",
+  "room.error.teamsBetweenQuestions":
+    "teams can only be changed between questions",
+  "room.error.notOnTeam": "you can only rename your own team",
+  "room.error.teamNameTooLong": "the team name is too long",
+  "room.error.gameIsOver": "the game is over",
   "room.error.methodNotAllowed": "method not allowed",
   "room.error.noGameInUrl": "game ID not found",
   "room.error.notOffline":

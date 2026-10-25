@@ -86,6 +86,12 @@ export const room: Dictionary<typeof en> = {
   "room.error.onlyChooserCanPass":
     "передати питання може лише той, хто його обрав",
   "room.error.passToAnother": "передай його іншому гравцю в цій грі",
+  "room.error.notInGame": "спершу приєднайся до гри",
+  "room.error.teamsBetweenQuestions":
+    "команду можна змінити лише між питаннями",
+  "room.error.notOnTeam": "перейменувати можна лише свою команду",
+  "room.error.teamNameTooLong": "назва команди задовга",
+  "room.error.gameIsOver": "гру вже закінчено",
   "room.error.methodNotAllowed": "метод не підтримується",
   "room.error.noGameInUrl": "у посиланні немає гри",
   "room.error.notOffline":
