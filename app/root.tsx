@@ -197,6 +197,15 @@ export default function App({ loaderData }: Route.ComponentProps) {
       "visibility" in match.loaderData.game &&
       match.loaderData.game.visibility === "PUBLIC",
   );
+  // Full-screen pages (the TV / presenter view) hide the site header and
+  // footer.
+  const chromeless = matches.some(
+    (match) =>
+      typeof match.handle === "object" &&
+      match.handle !== null &&
+      "chromeless" in match.handle &&
+      match.handle.chromeless === true,
+  );
   const searchMetadata = getSearchMetadata(
     location.pathname,
     loaderData.BASE_URL,
@@ -250,9 +259,11 @@ export default function App({ loaderData }: Route.ComponentProps) {
               initialSettings={loaderData.userSettings}
               loggedIn={!!loaderData.user}
             >
-              <Header user={loaderData.user} BASE_URL={loaderData.BASE_URL} />
+              {chromeless ? null : (
+                <Header user={loaderData.user} BASE_URL={loaderData.BASE_URL} />
+              )}
               <Outlet />
-              <Footer />
+              {chromeless ? null : <Footer />}
               <ScrollRestoration />
               <Scripts />
             </UserSettingsProvider>
