@@ -1,10 +1,13 @@
 import * as React from "react";
 
+import { useTranslation } from "~/i18n";
+
 /** Grace period before showing the offline banner, so it doesn't flash during
  * normal page loads where connectivity is briefly indeterminate. */
 const OFFLINE_DELAY_MS = 2000;
 
 export default function OfflineIndicator() {
+  const { t } = useTranslation();
   const [showBanner, setShowBanner] = React.useState(false);
 
   React.useEffect(() => {
@@ -37,7 +40,7 @@ export default function OfflineIndicator() {
 
   return (
     <div className="mb-4 rounded-md bg-yellow-600 px-3 py-1.5 text-center text-sm text-white">
-      You are offline. Playing from cached data.
+      {t("common.offline")}
     </div>
   );
 }

@@ -27,3 +27,22 @@ describe("parseUserSettings gameDefaults.playerAvatar", () => {
     ).toEqual({ gameDefaults: { playerColor: "#7a8ae0" } });
   });
 });
+
+describe("parseUserSettings language", () => {
+  it("keeps a supported language", () => {
+    expect(parseUserSettings({ language: "uk" })).toEqual({ language: "uk" });
+  });
+
+  it("drops an unknown language without losing the other settings", () => {
+    expect(parseUserSettings({ language: "fr", wagerHints: "never" })).toEqual({
+      language: undefined,
+      wagerHints: "never",
+    });
+  });
+
+  it("still parses settings saved before the language setting existed", () => {
+    expect(parseUserSettings({ wagerHints: "show" })).toEqual({
+      wagerHints: "show",
+    });
+  });
+});

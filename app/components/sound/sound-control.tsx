@@ -1,5 +1,6 @@
 import * as React from "react";
 
+import { useTranslation } from "~/i18n";
 import { useSoundSettings } from "~/utils/user-settings";
 
 import { MuteToggle } from "./mute-toggle";
@@ -12,6 +13,7 @@ export function SoundControl({
   showLabel?: boolean;
   showSlider?: boolean;
 }) {
+  const { t } = useTranslation();
   const sound = useSoundSettings();
 
   // Local state for responsive slider — writes through to context
@@ -30,7 +32,9 @@ export function SoundControl({
 
   return (
     <div className="flex flex-col gap-1">
-      {showLabel && <span className="text-sm opacity-70">Game sounds</span>}
+      {showLabel && (
+        <span className="text-sm opacity-70">{t("common.gameSounds")}</span>
+      )}
       <form className="group flex grow items-center gap-2">
         <MuteToggle
           pressed={mute}

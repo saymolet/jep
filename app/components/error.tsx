@@ -1,15 +1,19 @@
 import { useRouteError } from "react-router";
 
+import { useTranslation } from "~/i18n";
+
 export function DefaultErrorBoundary() {
   const error = useRouteError();
+  const { t } = useTranslation();
 
-  const message = error instanceof Error ? error.message : "Unknown error";
+  const message =
+    error instanceof Error ? error.message : t("common.unknownError");
   const stack =
     error instanceof Error && error.stack ? error.stack.split("\n") : [];
 
   return (
     <div className="p-12">
-      <h1 className="mb-4 text-xl font-bold">Error :(</h1>
+      <h1 className="mb-4 text-xl font-bold">{t("common.errorSad")}</h1>
       <div className="rounded-md bg-red-100 p-3">
         <p className="mb-2 font-mono text-sm text-red-500">{message}</p>
         {stack.map((s, i) => (

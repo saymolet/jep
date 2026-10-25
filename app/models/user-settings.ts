@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { LOCALES } from "~/i18n/locales";
 import { normalizeAvatar } from "~/models/avatar";
 import {
   coercePlayerColor,
@@ -47,6 +48,9 @@ export const userSettingsSchema = z.object({
   sound: soundSchema.optional(),
   wagerHints: wagerHintsSchema.optional(),
   gameDefaults: gameDefaultsSchema.optional(),
+  /** UI language picked with the language switcher. An unknown value is
+   * dropped instead of invalidating all settings. */
+  language: z.enum(LOCALES).optional().catch(undefined),
 });
 
 export type UserSettings = z.infer<typeof userSettingsSchema>;

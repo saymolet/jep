@@ -1,0 +1,17 @@
+/** English messages: header. Keys start with "header.". */
+export const header = {
+  "header.logIn": "Log in",
+  "header.profile": "Profile",
+  "header.learnMore": "Learn more",
+  "header.howToPlay": "How to Play",
+  "header.uploadGame": "Upload a Game",
+  "header.about": "About",
+  "header.gameMenu": "Game options",
+  "header.roundCount": { one: "{count} round", other: "{count} rounds" },
+  "header.gameDetails": "Game details",
+  "header.copyRoomLink": "Copy link to room",
+  "header.report": "Report",
+  "header.reportGame": "Report game",
+  "header.primaryNavigation": "Primary navigation",
+  "header.communityGuidelines": "Community Guidelines",
+} as const;

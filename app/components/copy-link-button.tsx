@@ -2,6 +2,7 @@ import * as ToastPrimitive from "@radix-ui/react-toast";
 import * as React from "react";
 
 import { LinkIcon } from "~/components/icons";
+import { useTranslation } from "~/i18n";
 
 export default function CopyLinkButton({
   url,
@@ -10,6 +11,7 @@ export default function CopyLinkButton({
   url: string;
   text?: string;
 }) {
+  const { t } = useTranslation();
   const [open, setOpen] = React.useState(false);
   const timerRef = React.useRef(0);
 
@@ -31,7 +33,7 @@ export default function CopyLinkButton({
           }, 100);
         }}
       >
-        <LinkIcon className="h-6 w-6" title="Copy link" />
+        <LinkIcon className="h-6 w-6" title={t("common.copyLink")} />
         {text ? <span className="pr-1 pl-2 text-sm">{text}</span> : null}
       </button>
 
@@ -41,7 +43,7 @@ export default function CopyLinkButton({
         onOpenChange={setOpen}
       >
         <ToastPrimitive.Description asChild>
-          <p className="text-sm text-slate-700">Copied link to clipboard</p>
+          <p className="text-sm text-slate-700">{t("common.copiedLink")}</p>
         </ToastPrimitive.Description>
       </ToastPrimitive.Root>
     </>

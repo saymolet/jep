@@ -1,4 +1,5 @@
 import { Eye, EyeSlash } from "~/components/icons";
+import { useTranslation } from "~/i18n";
 
 export default function ShowPasswordButton({
   showPassword,
@@ -7,6 +8,7 @@ export default function ShowPasswordButton({
   showPassword: boolean;
   onClick: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <button
       type="button"
@@ -14,9 +16,9 @@ export default function ShowPasswordButton({
       onClick={onClick}
     >
       {showPassword ? (
-        <EyeSlash className="h-5 w-5" title="Hide password" />
+        <EyeSlash className="h-5 w-5" title={t("common.hidePassword")} />
       ) : (
-        <Eye className="h-5 w-5" title="Show password" />
+        <Eye className="h-5 w-5" title={t("common.showPassword")} />
       )}
     </button>
   );
