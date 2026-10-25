@@ -18,3 +18,4 @@ See the backlog in [../README.md](../README.md#feature-backlog).
 - [10 — Random board generator](./10-random-board.md)
 - [11 — Spectator mode + TV (presenter) mode](./11-spectator-presenter.md)
 - [12 — Mobile-first buzzer](./12-mobile-buzzer.md)
+- [15 — Soundboard](./15-soundboard.md)

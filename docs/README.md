@@ -104,11 +104,17 @@ Difficulty estimates from the original planning discussion.
       player's own device marks the answer wrong; finals excluded — see
       [features/14-answer-timer.md](./features/14-answer-timer.md) — ⭐⭐ medium
 
+- [x] Soundboard (F12b) — players tap reaction sounds (applause, drumroll, ta-da, wrong,
+      air horn, ha-ha, ooh, crickets, ding; synthesized with Web Audio, no files) that play
+      on every device in the room with a "🎺 Ann" toast; ephemeral Realtime broadcast on the
+      room channel (not stored), 1 sound / 2 s, spectators and the TV only listen, per-device
+      "Mute soundboard" — see [features/15-soundboard.md](./features/15-soundboard.md) — ⭐⭐ medium
+
 Question search ·
 admin panel · Discord login · keyboard shortcuts ·
 OBS/browser-source mode ·
 auto-reconnect · host controls from phone · game save/resume · live scoreboard ·
-soundboard · themes (Classic / Своя Игра / Dark).
+themes (Classic / Своя Игра / Dark).
 
 ## Status log
 
@@ -178,3 +184,8 @@ soundboard · themes (Classic / Своя Игра / Dark).
   `answerTimedOut` in state, `timedOut` on Check for multiple choice); countdown on players,
   spectators and the TV, auto-mark by the answering player's device. No migration, no new
   dependencies.
+- **2026-10-26** — Feature 15 on `feat/soundboard`: soundboard (nine Web Audio–synthesized
+  reaction sounds, loudness-balanced) sent as ephemeral Realtime broadcasts (`soundboard`)
+  on the room channel; floating 🎺 button for players, toasts for players, spectators and
+  the TV, send/receive cooldowns and overlap cap, per-device "Mute soundboard", ducking
+  during questions with audio/video. No migration, no new dependencies.
