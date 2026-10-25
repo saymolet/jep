@@ -36,9 +36,10 @@ Difficulty estimates from the original planning discussion.
       must hand it to another player, who answers it alone (right → +value and board control,
       wrong → −value) — see [features/05-secret-question.md](./features/05-secret-question.md)
       — ⭐ easy
-- [x] Upload avatar — emoji from a preset grid or your own photo (cropped and resized to 96×96
+- [x] Upload avatar — emoji from a preset grid or your own photo (cropped and resized to 192×192
       in the browser, sent inline as a data URL — no file hosting), remembered per device and as
-      an account default — see [features/07-avatars.md](./features/07-avatars.md) — ⭐ easy
+      an account default; shown as a large square on the player tiles — see
+      [features/07-avatars.md](./features/07-avatars.md) — ⭐ easy
 - [x] Audio/video questions — pictures, audio, video and YouTube clips with the question
       (`media`) and with the answer (`answerMedia`); additive, no full `blocks[]` redesign —
       see [features/03-media-questions.md](./features/03-media-questions.md) — ⭐ easy
@@ -116,3 +117,8 @@ per-question timer · soundboard · themes (Classic / Своя Игра / Dark).
   new public Storage bucket `game-media`, and a **Download JSON** link on the game page. Local
   Supabase now runs Storage. Migration `20261025172846_game_media_bucket.sql`; new deps `fflate`,
   `fast-xml-parser`.
+- **2026-10-25** — Feature 07 follow-up on `feat/big-avatars`: avatars are large rounded squares
+  (72 px on phones, 96 px on desktop) on redesigned player tiles (2 per row on phones, 3 on wide
+  screens; your own tile spans two), in the join dialog and on the summary; small squares in the
+  rooms list and replay chips. Photos now 192×192, cap raised to 48 KB (old 96×96 avatars still
+  valid). No migration.
