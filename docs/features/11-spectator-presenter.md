@@ -175,7 +175,10 @@
   "Show on TV" links to it, no hydration errors; (3) Ukrainian: TV ("Скануй, щоб
   приєднатися", QR label, status) and spectator ("Просто дивитися", "Глядач",
   "Приєднатися"). `e2e/hydration-room.spec.ts` also loads the presenter page.
-- `jep-validate`: see the status log / PR.
+- `jep-validate`: format, lint (0 errors, 2 pre-existing warnings), typecheck, 5983 unit tests,
+  89 e2e tests — all pass. (A first full run had 2 solo-spec timeouts under load — `i18n`
+  "plays a solo question in Ukrainian", `media` audio question — both passed 3/3 when re-run
+  alone and in the next full run.)
 
 ### Manual test script
 
