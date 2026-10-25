@@ -93,31 +93,37 @@ export type Database = {
       clues: {
         Row: {
           answer: string;
+          answer_media: Json | null;
           category_id: number;
           clue: string;
           id: number;
           image_src: string | null;
           long_form: boolean;
+          media: Json | null;
           value: number;
           wagerable: boolean;
         };
         Insert: {
           answer: string;
+          answer_media?: Json | null;
           category_id: number;
           clue: string;
           id?: number;
           image_src?: string | null;
           long_form?: boolean;
+          media?: Json | null;
           value: number;
           wagerable?: boolean;
         };
         Update: {
           answer?: string;
+          answer_media?: Json | null;
           category_id?: number;
           clue?: string;
           id?: number;
           image_src?: string | null;
           long_form?: boolean;
+          media?: Json | null;
           value?: number;
           wagerable?: boolean;
         };
