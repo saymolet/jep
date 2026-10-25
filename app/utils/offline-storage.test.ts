@@ -39,6 +39,20 @@ describe("serializeState / deserializeState", () => {
     expect(result.buzzes.get("user1")).toBe(12345);
   });
 
+  it("round-trips multiple choice picks", () => {
+    const state = stateFromGame(MOCK_GAME);
+    state.choicePicks.set("0,0,0", new Map([["user1", 2]]));
+    const result = deserializeState(serializeState(state), MOCK_GAME);
+    expect(result.choicePicks.get("0,0,0")?.get("user1")).toBe(2);
+  });
+
+  it("restores saves from before multiple choice without picks", () => {
+    const old = serializeState(stateFromGame(MOCK_GAME));
+    delete old.choicePicks;
+    const result = deserializeState(old, MOCK_GAME);
+    expect(result.choicePicks).toStrictEqual(new Map());
+  });
+
   it("preserves nested Maps with multiple entries", () => {
     const state = stateFromGame(MOCK_GAME);
     state.answers.set(

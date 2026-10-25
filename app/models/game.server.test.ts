@@ -37,6 +37,7 @@ function insertedRow(clue: Clue): DbClue {
     // jsonb round-trips through JSON serialization.
     media: JSON.parse(JSON.stringify(insert.media ?? null)),
     answer_media: JSON.parse(JSON.stringify(insert.answer_media ?? null)),
+    choices: JSON.parse(JSON.stringify(insert.choices ?? null)),
   };
 }
 
@@ -93,6 +94,38 @@ describe("clue media DB mapping", () => {
     });
     expect(back.media).toBeUndefined();
     expect(back.answerMedia).toBeUndefined();
+  });
+});
+
+describe("clue choices DB mapping", () => {
+  const clue: Clue = {
+    clue: "The capital of Australia",
+    answer: "Canberra",
+    value: 200,
+    choices: ["Sydney", "Canberra", "Perth"],
+  };
+
+  it("round-trips choices", () => {
+    expect(clueToDbClue(clue, 7).choices).toEqual(clue.choices);
+    expect(dbClueToClue(insertedRow(clue)).choices).toEqual(clue.choices);
+  });
+
+  it("stores no choices as null and reads null back as undefined", () => {
+    const plain: Clue = { clue: "Text", answer: "Answer", value: 200 };
+    expect(clueToDbClue(plain, 7).choices).toBeNull();
+    expect(dbClueToClue(insertedRow(plain)).choices).toBeUndefined();
+  });
+
+  it("ignores malformed choices in old or hand-edited rows", () => {
+    const row = insertedRow(clue);
+    for (const choices of [
+      "nonsense",
+      [1, 2],
+      ["Sydney", "Perth"],
+      ["Canberra"],
+    ]) {
+      expect(dbClueToClue({ ...row, choices }).choices).toBeUndefined();
+    }
   });
 });
 

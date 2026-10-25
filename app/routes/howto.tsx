@@ -143,6 +143,11 @@ export default function HowTo() {
           loud before other people have a chance to guess!
         </p>
         <p className="mb-4">
+          Some questions are multiple choice: everyone sees the options while
+          the question is read, and the fastest buzzer taps one. Jep! checks the
+          pick automatically, so there is nothing to check yourself.
+        </p>
+        <p className="mb-4">
           If they say they were right, the answer is revealed to everyone. If
           they were lying about being right earlier, don't play with them again!
         </p>

@@ -1,6 +1,7 @@
 import type { Clue, Game } from "~/models/convert.server";
 import type { PlayerColor } from "~/models/player-color";
 import { generateGrid } from "~/utils";
+import { hasChoices } from "~/utils/choices";
 
 /** UNREVEALED_PLACEHOLDER is used when a field was not revealed in the game
  * playthrough.
@@ -67,6 +68,8 @@ export interface State {
   // per game state
   readonly type: GameState;
   readonly answers: Map<RoundIJKey, Map<string, string>>;
+  /** Options picked on multiple choice clues: userId -> option index. */
+  readonly choicePicks: Map<RoundIJKey, Map<string, number>>;
   readonly boardControl: string | null;
   readonly game: Game;
   /** Active players in the game. */
@@ -106,6 +109,7 @@ export function stateFromGame(game: Game) {
     type: GameState.PreviewRound,
     activeClue: null,
     answers: new Map(),
+    choicePicks: new Map(),
     boardControl: null,
     buzzes: new Map(),
     game,
@@ -162,6 +166,13 @@ export function getCountedChecks(
   return counted;
 }
 
+/** isAutoCheckedClue is true for multiple choice clues, whose picks are
+ * checked against the answer instead of by the player. Long-form clues never
+ * have choices (rejected by the game schema). */
+export function isAutoCheckedClue(clue: Clue) {
+  return hasChoices(clue) && !clue.longForm;
+}
+
 /** Corrections are allowed in any state where the answer is public and the
  * next clue hasn't been chosen: the reveal screens, the board, and the
  * round preview (the last clue of a round transitions straight to the next
@@ -197,7 +208,8 @@ export function getCheckCorrectionForPlayer(
   const { round, i, j, checks } = correction;
 
   const clue = state.game.boards.at(round)?.categories.at(j)?.clues.at(i);
-  if (!clue) {
+  // Multiple choice picks are checked automatically, so they can't be undone.
+  if (!clue || isAutoCheckedClue(clue)) {
     return undefined;
   }
 

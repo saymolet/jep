@@ -115,6 +115,8 @@ export function stateToGameEngine(
      */
     answeredBy,
     answers: state.answers.get(clueKey) ?? new Map<string, string>(),
+    /** Options picked on the active multiple choice clue (userId -> index). */
+    choicePicks: state.choicePicks.get(clueKey) ?? new Map<string, number>(),
     numAnswered: state.numAnswered,
     board,
     buzzes: state.buzzes,

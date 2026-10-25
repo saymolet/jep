@@ -3,6 +3,7 @@ import { enableMapSet, produce } from "immer";
 
 import type { Board, Clue } from "~/models/convert.server";
 import { cyrb53 } from "~/utils";
+import { isChoiceIndex, isCorrectChoice } from "~/utils/choices";
 
 import {
   isAnswerAction,
@@ -27,6 +28,7 @@ import {
   getClueValueForRound,
   getCountedChecks,
   getNumCluesInBoard,
+  isAutoCheckedClue,
 } from "./state";
 
 enableMapSet();
@@ -731,7 +733,8 @@ export function gameEngine(state: State, action: Action): State {
         );
       }
       return produce(state, (draft) => {
-        const { userId, i, j, correct } = action.payload;
+        const { userId, i, j, choice } = action.payload;
+        let { correct } = action.payload;
         const player = draft.players.get(userId);
         if (
           (draft.type !== GameState.RevealAnswerToBuzzer &&
@@ -747,7 +750,6 @@ export function gameEngine(state: State, action: Action): State {
 
         const board = draft.game.boards.at(draft.round);
         const clue = board?.categories.at(j)?.clues.at(i);
-        const clueText = clue?.clue;
 
         // Ignore the action if it was from a player who didn't answer the clue.
         const key = `${draft.round},${i},${j}`;
@@ -757,10 +759,26 @@ export function gameEngine(state: State, action: Action): State {
             return;
           }
         } else {
-          const winningBuzzer = getWinningBuzzer(draft.buzzes, clueText);
+          const winningBuzzer = getWinningBuzzer(
+            draft.buzzes,
+            getTiebreakerSeed(clue),
+          );
           if (userId !== winningBuzzer?.userId) {
             return;
           }
+        }
+
+        // Multiple choice: the player answers by picking an option, which is
+        // checked against the answer here (every client derives the same
+        // result from the game data, so a forged "correct" flag is ignored).
+        if (clue && isAutoCheckedClue(clue)) {
+          if (choice === undefined || !isChoiceIndex(clue, choice)) {
+            return;
+          }
+          correct = isCorrectChoice(clue, choice);
+          const picks = draft.choicePicks.get(key) ?? new Map<string, number>();
+          picks.set(userId, choice);
+          draft.choicePicks.set(key, picks);
         }
 
         resumeClock(draft, action.ts);
@@ -882,7 +900,9 @@ export function gameEngine(state: State, action: Action): State {
         }
 
         const clue = draft.game.boards.at(round)?.categories.at(j)?.clues.at(i);
-        if (!clue) {
+        // Multiple choice picks were checked against the answer; they are
+        // final.
+        if (!clue || isAutoCheckedClue(clue)) {
           return;
         }
 
@@ -1098,6 +1118,15 @@ export function gameEngine(state: State, action: Action): State {
             const answerValue = answerMap.get(oldUserId)!;
             answerMap.delete(oldUserId);
             answerMap.set(newUserId, answerValue);
+          }
+        }
+
+        // Transfer multiple choice picks.
+        for (const [, pickMap] of draft.choicePicks.entries()) {
+          if (pickMap.has(oldUserId)) {
+            const pickValue = pickMap.get(oldUserId)!;
+            pickMap.delete(oldUserId);
+            pickMap.set(newUserId, pickValue);
           }
         }
 

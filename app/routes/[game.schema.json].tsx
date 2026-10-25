@@ -101,6 +101,15 @@ const SCHEMA = {
                         $ref: "#/definitions/mediaList",
                         description: "Media shown when the answer is revealed.",
                       },
+                      choices: {
+                        type: "array",
+                        items: { type: "string", minLength: 1 },
+                        minItems: 2,
+                        maxItems: 6,
+                        uniqueItems: true,
+                        description:
+                          "Options for a multiple choice question (2-6, unique). The answer must be one of them (ignoring case). Not allowed on long-form clues.",
+                      },
                     },
                     required: ["clue", "answer", "value"],
                   },

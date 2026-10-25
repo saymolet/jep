@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { choicesError } from "~/utils/choices";
 import {
   MAX_MEDIA_BLOCKS,
   MEDIA_TYPES,
@@ -47,6 +48,8 @@ export const ClueSchema = z
       .optional(),
     media: MediaListSchema,
     answerMedia: MediaListSchema,
+    /** Options for a multiple choice clue; `answer` must be one of them. */
+    choices: z.array(z.string().trim()).optional(),
     wagerable: z.boolean().optional(),
     longForm: z.boolean().optional(),
   })
@@ -62,6 +65,20 @@ export const ClueSchema = z
   )
   .refine((clue) => !clue.longForm || clue.wagerable, {
     message: "long-form clues must also be wagerable",
+  })
+  .superRefine((clue, ctx) => {
+    if (clue.choices === undefined) return;
+    if (clue.longForm) {
+      ctx.addIssue({
+        code: "custom",
+        message: "long-form clues cannot have choices",
+        path: ["choices"],
+      });
+      return;
+    }
+    const error = choicesError(clue.choices, clue.answer);
+    if (error)
+      ctx.addIssue({ code: "custom", message: error, path: ["choices"] });
   });
 
 export const CategorySchema = z.object({

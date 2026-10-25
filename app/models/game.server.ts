@@ -9,6 +9,7 @@ import { Convert, GameSchema, MediaBlockSchema } from "~/models/convert.server";
 import type { Database, Json } from "~/models/database.types";
 import { getSupabase } from "~/supabase";
 import { getSupabaseAdmin } from "~/supabase/admin.server";
+import { choicesError } from "~/utils/choices";
 
 /* Types */
 
@@ -57,6 +58,26 @@ function mediaToDbMedia(media: MediaBlock[] | undefined): Json | null {
   );
 }
 
+/** dbChoicesToChoices reads the `choices` jsonb column. Null or malformed
+ * values (which createGame never writes) become undefined, so a bad row plays
+ * as a normal clue instead of an unanswerable one. */
+function dbChoicesToChoices(
+  value: Json | null,
+  clue: Pick<DbClue, "answer" | "long_form">,
+): string[] | undefined {
+  if (value === null) return undefined;
+  if (
+    clue.long_form ||
+    !Array.isArray(value) ||
+    !value.every((c): c is string => typeof c === "string") ||
+    choicesError(value, clue.answer) !== null
+  ) {
+    console.warn("ignoring malformed clue choices");
+    return undefined;
+  }
+  return value;
+}
+
 /** dbClueToClue maps a clues row to the game representation. */
 export function dbClueToClue(clue: DbClue): Clue {
   return {
@@ -65,6 +86,7 @@ export function dbClueToClue(clue: DbClue): Clue {
     imageSrc: clue.image_src ?? undefined,
     media: dbMediaToMedia(clue.media),
     answerMedia: dbMediaToMedia(clue.answer_media),
+    choices: dbChoicesToChoices(clue.choices, clue),
   };
 }
 
@@ -83,6 +105,7 @@ export function clueToDbClue(
     image_src: clue.imageSrc,
     media: mediaToDbMedia(clue.media),
     answer_media: mediaToDbMedia(clue.answerMedia),
+    choices: clue.choices && clue.choices.length > 0 ? clue.choices : null,
   };
 }
 
