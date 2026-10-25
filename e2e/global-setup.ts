@@ -55,5 +55,21 @@ export default async function globalSetup() {
     throw new Error(`Failed to upsert accounts row: ${upsertError.message}`);
   }
 
+  // Every run uploads games as the test user and nothing deletes them, so
+  // the profile page grew with each run until profile specs timed out.
+  // Start each run with an empty profile — but only against a local stack,
+  // never a hosted project.
+  const { hostname } = new URL(supabaseUrl);
+  if (hostname === "127.0.0.1" || hostname === "localhost") {
+    const { count, error: deleteError } = await supabase
+      .from("games")
+      .delete({ count: "exact" })
+      .eq("uploaded_by", userId);
+    if (deleteError) {
+      throw new Error(`Failed to clean up test games: ${deleteError.message}`);
+    }
+    console.log(`[global-setup] Removed ${count ?? 0} games from earlier runs`);
+  }
+
   console.log(`[global-setup] Test user ready: ${EMAIL} (${userId})`);
 }
