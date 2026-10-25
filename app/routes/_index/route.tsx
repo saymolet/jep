@@ -14,6 +14,7 @@ import { LoadingSpinner } from "~/components/icons";
 import Main from "~/components/main";
 import Search from "~/components/search";
 import Upload from "~/components/upload";
+import { useTranslation } from "~/i18n";
 import { getValidAuthSession } from "~/models/auth";
 import { getGames } from "~/models/game.server";
 import { getSolvesForUser, Solve } from "~/models/solves.server";
@@ -47,6 +48,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 }
 
 export default function Index({ loaderData }: Route.ComponentProps) {
+  const { t } = useTranslation();
   const [params] = useSearchParams();
 
   // Upload
@@ -132,7 +134,9 @@ export default function Index({ loaderData }: Route.ComponentProps) {
       {formState ? <FormStateMessage formState={formState} /> : null}
       {games.length === 0 && (
         <p className="text-sm text-slate-500">
-          No games found{search ? ` for search "${debouncedSearch}"` : ""}
+          {search
+            ? t("home.noGamesForSearch", { search: debouncedSearch ?? "" })
+            : t("home.noGames")}
         </p>
       )}
       <div className="mb-4 flex flex-col gap-4 sm:grid sm:grid-cols-2">

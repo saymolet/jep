@@ -269,26 +269,27 @@ export function parseSiqXml(xml: string): SiqPackage {
   // No DTDs at all: they are the vector for entity expansion and external
   // entity attacks, and real packages never contain one.
   if (/<!DOCTYPE|<!ENTITY/i.test(source)) {
-    throw new SiqImportError("content.xml must not contain a DOCTYPE");
+    throw new SiqImportError("siq.error.doctype");
   }
   const valid = XMLValidator.validate(source);
   if (valid !== true) {
-    throw new SiqImportError(
-      `content.xml is not valid XML (line ${valid.err.line}: ${valid.err.msg})`,
-    );
+    throw new SiqImportError("siq.error.invalidXml", {
+      line: valid.err.line,
+      reason: valid.err.msg,
+    });
   }
 
   let doc: XmlNode | undefined;
   try {
     doc = asNode(parser.parse(source));
   } catch (error) {
-    throw new SiqImportError(
-      `content.xml could not be read: ${error instanceof Error ? error.message : String(error)}`,
-    );
+    throw new SiqImportError("siq.error.unreadableXml", {
+      reason: error instanceof Error ? error.message : String(error),
+    });
   }
   const pkg = child(doc, "package");
   if (!pkg) {
-    throw new SiqImportError("content.xml has no <package> element");
+    throw new SiqImportError("siq.error.noPackage");
   }
 
   const info = child(pkg, "info");

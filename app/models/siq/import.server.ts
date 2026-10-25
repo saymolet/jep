@@ -1,3 +1,4 @@
+import { createT, type Locale } from "~/i18n";
 /** Imports a SIGame pack (.siq): unzip in memory, parse content.xml, upload
  * the media the kept questions use, convert to a Jep! game and validate it.
  * Nothing is inserted into the database here; on any failure the uploaded
@@ -82,7 +83,8 @@ function describeIssue(error: {
 }
 
 /** importSiq converts a .siq file to a game. Throws {@link SiqImportError}
- * with a user-facing message when the pack can't be imported. */
+ * with a user-facing message when the pack can't be imported. Warnings (and
+ * names Jep! makes up, like "Round 2") are in `locale`. */
 export async function importSiq(
   bytes: Uint8Array,
   {
@@ -90,13 +92,16 @@ export async function importSiq(
     store,
     limits = DEFAULT_ARCHIVE_LIMITS,
     maxMediaFileSize = MAX_MEDIA_FILE_SIZE,
+    locale = "en",
   }: {
     fileName?: string;
     store: MediaStore;
     limits?: ArchiveLimits;
     maxMediaFileSize?: number;
+    locale?: Locale;
   },
 ): Promise<SiqImportResult> {
+  const t = createT(locale);
   const archive = openSiqArchive(bytes, limits);
   const pkg = parseSiqXml(archive.contentXml);
 
@@ -121,36 +126,43 @@ export async function importSiq(
       const block: MediaBlock = { type, src };
       return { block };
     } catch (error) {
-      if (error instanceof SiqImportError) return { skip: error.message };
+      if (error instanceof SiqImportError) {
+        return { skip: error.localize(locale) };
+      }
       console.error(`SIGame import: uploading ${file.path} failed`, error);
-      return { skip: `file "${ref}" could not be uploaded.` };
+      return { skip: t("siq.skip.uploadFailed", { ref }) };
     }
   }
 
   async function resolveMedia(content: SiqContent): Promise<ResolvedMedia> {
     const ref = content.value.trim();
     if (content.kind === "html") {
-      return { skip: `HTML content is not supported ("${ref}").` };
+      return { skip: t("siq.skip.html", { ref }) };
     }
     if (!isMediaType(content.kind)) {
-      return { skip: `content of type "${content.kind}" is not supported.` };
+      return { skip: t("siq.skip.unsupportedKind", { kind: content.kind }) };
     }
     if (!content.isRef) {
       // A link to a file on the web (old packs).
       const block: MediaBlock = { type: content.kind, src: ref };
       const error = mediaBlockError(block);
-      return error ? { skip: `link "${ref}" skipped (${error}).` } : { block };
+      return error
+        ? { skip: t("siq.skip.link", { ref, reason: error }) }
+        : { block };
     }
 
     const file = archive.findFile(content.kind, ref);
-    if (!file) return { skip: `file "${ref}" is missing from the pack.` };
+    if (!file) return { skip: t("siq.skip.missingFile", { ref }) };
     const fileType = mediaFileType(file.path);
     if (!fileType) {
-      return { skip: `file "${ref}" has an unsupported type.` };
+      return { skip: t("siq.skip.unsupportedType", { ref }) };
     }
     if (file.size > maxMediaFileSize) {
       return {
-        skip: `file "${ref}" is larger than ${Math.round(maxMediaFileSize / 1024 / 1024)} MB.`,
+        skip: t("siq.skip.tooLarge", {
+          ref,
+          max: Math.round(maxMediaFileSize / 1024 / 1024),
+        }),
       };
     }
     let upload = uploads.get(file.path);
@@ -165,17 +177,16 @@ export async function importSiq(
     const { game, warnings, stats } = await siqToGame(pkg, {
       fileName,
       resolveMedia,
+      locale,
     });
     if (stats.questions === 0) {
-      throw new SiqImportError(
-        "The SIGame pack has no questions Jep! can play.",
-      );
+      throw new SiqImportError("siq.error.noQuestions");
     }
     const parsed = GameSchema.safeParse(game);
     if (!parsed.success) {
-      throw new SiqImportError(
-        `The imported game is not valid (${describeIssue(parsed.error)}).`,
-      );
+      throw new SiqImportError("siq.error.invalidGame", {
+        issue: describeIssue(parsed.error),
+      });
     }
     return {
       game: parsed.data,

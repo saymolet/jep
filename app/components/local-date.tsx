@@ -1,3 +1,4 @@
+import { useTranslation } from "~/i18n";
 import { useHydrated } from "~/utils/use-hydrated";
 
 const OPTIONS: Intl.DateTimeFormatOptions = {
@@ -6,13 +7,23 @@ const OPTIONS: Intl.DateTimeFormatOptions = {
   day: "numeric",
 };
 
-// The server doesn't know the viewer's time zone, so the server render (and
-// the hydration render that must match it) uses UTC.
-const utcFormatter = new Intl.DateTimeFormat("en-US", {
-  ...OPTIONS,
-  timeZone: "UTC",
-});
-const localFormatter = new Intl.DateTimeFormat("en-US", OPTIONS);
+const formatters = new Map<string, Intl.DateTimeFormat>();
+
+/** dateFormatter returns a cached formatter for the UI language. The server
+ * doesn't know the viewer's time zone, so the server render (and the
+ * hydration render that must match it) uses UTC. */
+function dateFormatter(intlLocale: string, utc: boolean) {
+  const key = `${intlLocale}|${utc}`;
+  let formatter = formatters.get(key);
+  if (!formatter) {
+    formatter = new Intl.DateTimeFormat(
+      intlLocale,
+      utc ? { ...OPTIONS, timeZone: "UTC" } : OPTIONS,
+    );
+    formatters.set(key, formatter);
+  }
+  return formatter;
+}
 
 /** parseTimestamp parses a date, reading a timestamp without a time zone
  * (Postgres `timestamp without time zone`, like `games.created_at`) as UTC
@@ -28,10 +39,12 @@ export function parseTimestamp(date: string | number | Date): Date {
   return new Date(date);
 }
 
-/** LocalDate renders a date like "October 25, 2026" in the viewer's time
- * zone. Before hydration it renders the UTC date, which can be a day off. */
+/** LocalDate renders a date like "October 25, 2026" (in Ukrainian
+ * "25 жовтня 2026 р.") in the viewer's time zone. Before hydration it renders
+ * the UTC date, which can be a day off. */
 export default function LocalDate({ date }: { date: string | number | Date }) {
   const hydrated = useHydrated();
-  const formatter = hydrated ? localFormatter : utcFormatter;
+  const { intlLocale } = useTranslation();
+  const formatter = dateFormatter(intlLocale, !hydrated);
   return <>{formatter.format(parseTimestamp(date))}</>;
 }

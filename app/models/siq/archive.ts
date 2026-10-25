@@ -58,7 +58,7 @@ export class SiqArchive {
   constructor(bytes: Uint8Array, limits: ArchiveLimits) {
     this.bytes = bytes;
     if (bytes.length < 4 || bytes[0] !== 0x50 || bytes[1] !== 0x4b) {
-      throw new SiqImportError("The file is not a SIGame pack (not a zip).");
+      throw new SiqImportError("siq.error.notZip");
     }
 
     // Pass 1: list the entries (decompress nothing) and check the limits.
@@ -73,19 +73,21 @@ export class SiqArchive {
         },
       });
     } catch (error) {
-      throw new SiqImportError(
-        `The SIGame pack could not be opened: ${error instanceof Error ? error.message : String(error)}`,
-      );
+      throw new SiqImportError("siq.error.cannotOpen", {
+        reason: error instanceof Error ? error.message : String(error),
+      });
     }
     if (files.length > limits.maxEntries) {
-      throw new SiqImportError(
-        `The SIGame pack has too many files (${files.length}; at most ${limits.maxEntries}).`,
-      );
+      throw new SiqImportError("siq.error.tooManyFiles", {
+        files: files.length,
+        max: limits.maxEntries,
+      });
     }
     if (total > limits.maxTotalSize) {
-      throw new SiqImportError(
-        `The SIGame pack is too large when unpacked (${Math.round(total / MiB)} MB; at most ${Math.round(limits.maxTotalSize / MiB)} MB).`,
-      );
+      throw new SiqImportError("siq.error.tooLargeUnpacked", {
+        size: Math.round(total / MiB),
+        max: Math.round(limits.maxTotalSize / MiB),
+      });
     }
     this.files = files.filter((f) => !f.path.endsWith("/"));
 
@@ -93,14 +95,12 @@ export class SiqArchive {
       (f) => f.path.toLowerCase() === "content.xml",
     );
     if (!content) {
-      throw new SiqImportError(
-        "The SIGame pack has no content.xml. Is it a .siq file?",
-      );
+      throw new SiqImportError("siq.error.noContentXml");
     }
     if (content.size > limits.maxContentXmlSize) {
-      throw new SiqImportError(
-        `content.xml is too large (at most ${Math.round(limits.maxContentXmlSize / MiB)} MB).`,
-      );
+      throw new SiqImportError("siq.error.contentXmlTooLarge", {
+        max: Math.round(limits.maxContentXmlSize / MiB),
+      });
     }
     try {
       this.contentXml = new TextDecoder("utf-8", { fatal: true }).decode(
@@ -108,7 +108,7 @@ export class SiqArchive {
       );
     } catch (error) {
       if (error instanceof SiqImportError) throw error;
-      throw new SiqImportError("content.xml is not valid UTF-8 text.");
+      throw new SiqImportError("siq.error.notUtf8");
     }
   }
 
@@ -141,12 +141,13 @@ export class SiqArchive {
       });
       result = out[file.path];
     } catch (error) {
-      throw new SiqImportError(
-        `${file.path} could not be unpacked: ${error instanceof Error ? error.message : String(error)}`,
-      );
+      throw new SiqImportError("siq.error.cannotUnpack", {
+        path: file.path,
+        reason: error instanceof Error ? error.message : String(error),
+      });
     }
     if (!result) {
-      throw new SiqImportError(`${file.path} is missing from the pack.`);
+      throw new SiqImportError("siq.error.fileMissing", { path: file.path });
     }
     return result;
   }

@@ -1,3 +1,5 @@
+import { createT } from "~/i18n";
+import { getRequestLocale } from "~/i18n/resolve";
 import { getValidAuthSession } from "~/models/auth";
 import { gameToJson, getGame } from "~/models/game.server";
 
@@ -14,7 +16,10 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   const game = await getGame(gameId, authSession?.userId);
 
   if (!game) {
-    throw new Response("game not found", { status: 404 });
+    throw new Response(
+      createT(getRequestLocale(request))("errors.gameNotFound"),
+      { status: 404 },
+    );
   }
 
   return new Response(gameToJson(game), {

@@ -1,6 +1,7 @@
 import { parseUtcMs } from "~/engine/engine";
 import { applyRoomEventsToState } from "~/engine/room-event";
 import { GameState, stateFromGame } from "~/engine/state";
+import { createT, type TFunction } from "~/i18n";
 import { parseAvatar } from "~/models/avatar";
 import type { Game } from "~/models/convert.server";
 import type { DbRoomEvent } from "~/models/room-event.server";
@@ -61,9 +62,10 @@ export function summarizeActiveRoom(
   };
 }
 
-/** formatTimeAgo renders a compact relative time for the rooms list. */
-export function formatTimeAgo(minutes: number) {
-  if (minutes < 1) return "just now";
-  if (minutes < 60) return `${minutes} min ago`;
-  return `${Math.floor(minutes / 60)} h ago`;
+/** formatTimeAgo renders a compact relative time for the rooms list
+ * (`minutes` is computed on the server, so this is hydration-safe). */
+export function formatTimeAgo(minutes: number, t: TFunction = createT("en")) {
+  if (minutes < 1) return t("home.timeAgo.justNow");
+  if (minutes < 60) return t("home.timeAgo.minutes", { minutes });
+  return t("home.timeAgo.hours", { hours: Math.floor(minutes / 60) });
 }

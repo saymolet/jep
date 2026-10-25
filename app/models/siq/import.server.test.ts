@@ -506,3 +506,44 @@ describe("importSiq edge cases", () => {
     ).rejects.toThrow(/too large when unpacked/);
   });
 });
+
+describe("importSiq in Ukrainian", () => {
+  it("writes warnings in the user's language", async () => {
+    const { summary } = await importSiq(buildSiq("v5"), {
+      fileName: "test.siq",
+      store: fakeStore(),
+      locale: "uk",
+    });
+    expect(summary.warnings).toEqual(
+      expect.arrayContaining([
+        "Round 1 › Sounds & video › 300: файлу «missing.png» немає в пакеті.",
+        "Round 1 › Sounds & video › 500: HTML-вміст не підтримується («page.html»).",
+        "Final: у Jep! лише одне фінальне питання, тож імпортовано тільки тему «Final A»; ще 1 фінальну тему пропущено.",
+      ]),
+    );
+  });
+
+  it("names nameless rounds and themes in the user's language", async () => {
+    const xml =
+      '<package name="P" version="5"><rounds><round name=""><themes><theme name=""><questions>' +
+      '<question price="100"><params><param name="question" type="content"><item>Q</item></param></params><right><answer>A</answer></right></question>' +
+      "</questions></theme></themes></round></rounds></package>";
+    const { game } = await importSiq(zipFiles({ "content.xml": xml }), {
+      store: fakeStore(),
+      locale: "uk",
+    });
+    expect(game.boards[0].categoryNames).toEqual(["Тема 1"]);
+  });
+
+  it("localizes import errors", async () => {
+    const error = await importSiq(new TextEncoder().encode("{}"), {
+      store: fakeStore(),
+    }).catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(SiqImportError);
+    if (!(error instanceof SiqImportError)) return;
+    expect(error.message).toBe("The file is not a SIGame pack (not a zip).");
+    expect(error.localize("uk")).toBe(
+      "Цей файл не є пакетом SIGame (це не zip-архів).",
+    );
+  });
+});
