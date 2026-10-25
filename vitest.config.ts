@@ -7,6 +7,14 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "happy-dom",
+    environmentOptions: {
+      happyDOM: {
+        settings: {
+          // Unit tests must not hit the network (e.g. YouTube clue embeds).
+          disableIframePageLoading: true,
+        },
+      },
+    },
     include: ["./app/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
   },
 });

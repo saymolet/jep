@@ -1,7 +1,7 @@
 import type { Draft } from "immer";
 import { enableMapSet, produce } from "immer";
 
-import type { Board } from "~/models/convert.server";
+import type { Board, Clue } from "~/models/convert.server";
 import { cyrb53 } from "~/utils";
 
 import {
@@ -108,6 +108,14 @@ export const QUANTIZATION_FACTOR_MS = 200;
 
 function isValidBuzz(deltaMs: number): boolean {
   return deltaMs !== CANT_BUZZ_FLAG && deltaMs <= CLUE_TIMEOUT_MS;
+}
+
+/** getTiebreakerSeed is the per-clue seed used to break buzz ties. Media
+ * clues may have no text, so fall back to the answer to keep the tie order
+ * varying between clues. */
+export function getTiebreakerSeed(clue?: Pick<Clue, "clue" | "answer">) {
+  if (!clue) return undefined;
+  return clue.clue || clue.answer;
 }
 
 /** getWinningBuzzer returns undefined if there were no valid buzzes. */
@@ -651,7 +659,10 @@ export function gameEngine(state: State, action: Action): State {
         const board = draft.game.boards.at(draft.round);
         const clue = board?.categories.at(j)?.clues.at(i);
 
-        const winningBuzzer = getWinningBuzzer(draft.buzzes, clue?.clue);
+        const winningBuzzer = getWinningBuzzer(
+          draft.buzzes,
+          getTiebreakerSeed(clue),
+        );
         if (!winningBuzzer) {
           // Reveal the answer to everyone and mark it as answered. If the clue
           // was wagerable and the player didn't buzz, deduct their wager from

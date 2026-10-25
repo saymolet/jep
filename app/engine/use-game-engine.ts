@@ -6,7 +6,7 @@ import type { DbRoomEvent } from "~/models/room-event.server";
 import { getSupabase } from "~/supabase";
 
 import type { Action } from "./engine";
-import { gameEngine, getWinningBuzzer } from "./engine";
+import { gameEngine, getTiebreakerSeed, getWinningBuzzer } from "./engine";
 import {
   applyRoomEventsToState,
   compareRoomEvents,
@@ -96,7 +96,7 @@ export function stateToGameEngine(
       ?.answeredBy.get(userId);
   };
 
-  const winningBuzz = getWinningBuzzer(state.buzzes, clue?.clue);
+  const winningBuzz = getWinningBuzzer(state.buzzes, getTiebreakerSeed(clue));
   const winningBuzzer = winningBuzz?.userId ?? undefined;
 
   function getClueValueFn(idx: [number, number], userId: string) {
