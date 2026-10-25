@@ -273,6 +273,53 @@ describe("answer timer in the prompt", () => {
   });
 });
 
+describe("time's up notice", () => {
+  const timedOut = () =>
+    play(
+      STEPS.join,
+      timerOn(10),
+      STEPS.start,
+      STEPS.chooseFirst,
+      STEPS.buzzFirst,
+      [
+        {
+          type: ActionType.Check,
+          payload: { userId: ANN, i: 0, j: 0, correct: false, timedOut: true },
+        },
+      ],
+    );
+
+  it.each<[Locale, string, string]>([
+    ["en", "Time's up!", "Ann ran out of time."],
+    ["uk", "Час вийшов!", "Ann: час на відповідь вийшов."],
+  ])(
+    "tells the other players while they can buzz (%s)",
+    async (locale, title, line) => {
+      renderPrompt(timedOut(), BOB, locale);
+      await advance(0);
+      const notice = container.querySelector('[data-testid="times-up-notice"]');
+      expect(notice?.textContent).toContain(title);
+      expect(notice?.textContent).toContain(line);
+    },
+  );
+
+  it("is not shown after a normal answer", async () => {
+    const state = play(
+      STEPS.join,
+      timerOn(10),
+      STEPS.start,
+      STEPS.chooseFirst,
+      STEPS.buzzFirst,
+      STEPS.checkFirst,
+    );
+    renderPrompt(state, BOB);
+    await advance(0);
+    expect(
+      container.querySelector('[data-testid="times-up-notice"]'),
+    ).toBeNull();
+  });
+});
+
 describe("answer timer for viewers", () => {
   it("shows the countdown and time's up on the TV", async () => {
     const state = annAnswering(10);

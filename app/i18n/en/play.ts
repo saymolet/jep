@@ -158,4 +158,5 @@ export const play = {
     "When the time runs out, your answer counts as wrong.",
   "play.answerTimer.countedWrong": "Your answer counts as wrong.",
   "play.answerTimer.markNow": "Mark your answer now.",
+  "play.answerTimer.ranOutOfTime": "{name} ran out of time.",
 } as const;

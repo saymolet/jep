@@ -165,4 +165,5 @@ export const play: Dictionary<typeof en> = {
     "Коли час вийде, відповідь зарахується як неправильна.",
   "play.answerTimer.countedWrong": "Твою відповідь зараховано як неправильну.",
   "play.answerTimer.markNow": "Оціни свою відповідь зараз.",
+  "play.answerTimer.ranOutOfTime": "{name}: час на відповідь вийшов.",
 };

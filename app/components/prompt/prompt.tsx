@@ -28,6 +28,7 @@ import { useSoundSettings } from "~/utils/user-settings";
 import { ConnectedAnswerForm as AnswerForm } from "./answer-form";
 import {
   ConnectedAnswerTimer,
+  TimesUpNotice,
   useAnswerTimer,
   useAutoWrongOnTimeout,
 } from "./answer-timer";
@@ -646,6 +647,7 @@ function ReadCluePrompt({
         answer={clue.answer}
         touchBuzz={false}
       />
+      <TimesUpNotice />
       {hasChoices(clue) ? (
         // Options stay in the same place when the buzz winner picks one.
         <ConnectedChoiceList />
@@ -1075,6 +1077,7 @@ function RevealAnswerToAllPrompt({ roomId, userId }: RoomProps) {
         showAnswer
         answer={clue.answer}
       />
+      <TimesUpNotice />
       <ConnectedChoiceList revealCorrect />
       <NextClueForm roomId={roomId} userId={userId} />
       <Countdown startTime={undefined} />

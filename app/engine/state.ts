@@ -126,6 +126,10 @@ export interface State {
    * timestamp of the event that gave the player their turn. null outside an
    * answer turn (and for a turn restored from a solo save). */
   readonly answerStartedAt: number | null;
+  /** The last answer turn on the active clue ran out of time (the player's
+   * device sent a timed-out check), so everyone can be told "Time's up!"
+   * after the question moves on. Cleared when the next turn starts. */
+  readonly answerTimedOut: { userId: string; startedAt: number } | null;
 }
 
 /** stateFromGame creates a new initial state based on the game. */
@@ -156,6 +160,7 @@ export function stateFromGame(game: Game) {
     answerTimeSec: 0,
     autoWrongOnTimeout: DEFAULT_AUTO_WRONG_ON_TIMEOUT,
     answerStartedAt: null,
+    answerTimedOut: null,
   };
 
   for (let round = 0; round < game.boards.length; round++) {

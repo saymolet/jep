@@ -157,7 +157,7 @@ export function AnswerTimerControl({ roomId, userId }: RoomProps) {
       <Dialog
         isOpen={open && canChange}
         onClose={() => setOpen(false)}
-        title={t("room.answerTime")}
+        title={t("room.answerTimeSettings")}
         description={null}
       >
         <AnswerTimerSettings roomId={roomId} userId={userId} />

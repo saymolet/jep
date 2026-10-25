@@ -17,6 +17,28 @@ const TIMES_UP_SFX = "/sounds/times-up.mp3";
 const TICK_MS = 250;
 /** The bar turns red and pulses in the last seconds. */
 const HURRY_SEC = 3;
+/** A page that only learns about a timeout this long after it happened
+ * (e.g. a reload) shows it without the sound. */
+const TIMES_UP_SFX_WINDOW_MS = 5_000;
+
+/** Answer turns (by start time) this page played the "time's up" sound for,
+ * so it plays once per turn even if both the countdown and the notice after
+ * it see the time run out. */
+const timesUpPlayedFor = new Set<number>();
+
+/** useTimesUpSound returns a function playing the "time's up" sound once per
+ * answer turn. */
+function useTimesUpSound() {
+  const [play] = useGameSound(TIMES_UP_SFX);
+  return React.useCallback(
+    (turnStartedAt: number) => {
+      if (timesUpPlayedFor.has(turnStartedAt)) return;
+      timesUpPlayedFor.add(turnStartedAt);
+      play();
+    },
+    [play],
+  );
+}
 
 export interface AnswerTimer {
   /** A timed answer turn is going on. */
@@ -160,7 +182,8 @@ export function ConnectedAnswerTimer({
   children?: React.ReactNode;
 }) {
   const { status } = timer;
-  const [playTimesUpSfx] = useGameSound(TIMES_UP_SFX);
+  const { answerStartedAt } = useEngineContext();
+  const playTimesUp = useTimesUpSound();
 
   // Only when this page saw the time run out, not when it loads a turn that
   // is already over.
@@ -171,9 +194,9 @@ export function ConnectedAnswerTimer({
       sawRunning.current = true;
     } else if (expired === true && sawRunning.current) {
       sawRunning.current = false;
-      playTimesUpSfx();
+      if (answerStartedAt !== null) playTimesUp(answerStartedAt);
     }
-  }, [expired, playTimesUpSfx]);
+  }, [expired, answerStartedAt, playTimesUp]);
 
   if (!timer.timed) return null;
   return (
@@ -245,4 +268,49 @@ export function useAutoWrongOnTimeout({
   }, [timeUp, activeClue, answerStartedAt, marked, submit, userId, roomId]);
 
   return timeUp && !marked;
+}
+
+/** TimesUpNotice tells everyone that the last answer turn ran out of time
+ * (and was marked wrong), after the question moved on: other players can
+ * buzz, or the answer is shown. */
+export function TimesUpNotice({
+  variant = "screen",
+}: {
+  variant?: "screen" | "tv";
+}) {
+  const { answerTimedOut, answerTimeSec, players } = useEngineContext();
+  const { t } = useTranslation();
+  const playTimesUp = useTimesUpSound();
+
+  React.useEffect(() => {
+    if (!answerTimedOut) return;
+    const deadline = answerTimedOut.startedAt + answerTimeSec * 1000;
+    if (serverNow() - deadline < TIMES_UP_SFX_WINDOW_MS) {
+      playTimesUp(answerTimedOut.startedAt);
+    }
+  }, [answerTimedOut, answerTimeSec, playTimesUp]);
+
+  if (!answerTimedOut) return null;
+  const name =
+    players.get(answerTimedOut.userId)?.name ?? t("play.winningBuzzer");
+  const tv = variant === "tv";
+  return (
+    <div
+      className="flex flex-col items-center px-4 pb-2 text-center"
+      data-testid="times-up-notice"
+      role="status"
+    >
+      <p
+        className={clsx(
+          "font-bold text-red-300 uppercase",
+          tv ? "text-3xl lg:text-5xl" : "text-xl",
+        )}
+      >
+        {t("play.answerTimer.timesUp")}
+      </p>
+      <p className={clsx("text-white", tv && "text-2xl lg:text-4xl")}>
+        {t("play.answerTimer.ranOutOfTime", { name })}
+      </p>
+    </div>
+  );
 }

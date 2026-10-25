@@ -256,6 +256,7 @@ function giveSecretClue(
   );
   draft.type = GameState.RevealAnswerToBuzzer;
   draft.answerStartedAt = startedAt;
+  draft.answerTimedOut = null;
 }
 
 function getActiveClue(draft: Draft<State>) {
@@ -630,6 +631,7 @@ export function gameEngine(state: State, action: Action): State {
         }
 
         draft.checkCorrection = null;
+        draft.answerTimedOut = null;
         resumeClock(draft, action.ts);
 
         if (isSecretClue(clue)) {
@@ -821,6 +823,7 @@ export function gameEngine(state: State, action: Action): State {
         // correctness. Their answer turn (and answer timer) starts now.
         draft.type = GameState.RevealAnswerToBuzzer;
         draft.answerStartedAt = action.ts;
+        draft.answerTimedOut = null;
       });
     case ActionType.Answer:
       if (!isAnswerAction(action)) {
@@ -925,6 +928,12 @@ export function gameEngine(state: State, action: Action): State {
         resumeClock(draft, action.ts);
         if (!isLongForm) {
           // The answer turn is over.
+          draft.answerTimedOut =
+            timedOut === true &&
+            draft.answerTimeSec > 0 &&
+            draft.answerStartedAt !== null
+              ? { userId, startedAt: draft.answerStartedAt }
+              : null;
           draft.answerStartedAt = null;
         }
         recordCheckCorrection(draft, i, j, userId, correct);
@@ -1129,6 +1138,7 @@ export function gameEngine(state: State, action: Action): State {
         }
 
         resumeClock(draft, action.ts);
+        draft.answerTimedOut = null;
 
         if (draft.numAnswered === draft.numCluesInBoard) {
           const newRound = draft.round + 1;

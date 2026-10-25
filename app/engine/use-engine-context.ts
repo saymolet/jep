@@ -38,6 +38,7 @@ export const GameEngineContext = React.createContext<
   answerTimeSec: 0,
   autoWrongOnTimeout: true,
   answerStartedAt: null,
+  answerTimedOut: null,
   watchers: 0,
 });
 

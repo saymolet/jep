@@ -3,6 +3,7 @@ import * as React from "react";
 
 import {
   ConnectedAnswerTimer,
+  TimesUpNotice,
   useAnswerTimer,
 } from "~/components/prompt/answer-timer";
 import { Buzzes } from "~/components/prompt/buzz";
@@ -313,6 +314,9 @@ export function ViewerPromptContent({
         <LongFormAnswers variant={variant} />
       ) : null}
       {statusLine}
+      {type === GameState.ReadClue || type === GameState.RevealAnswerToAll ? (
+        <TimesUpNotice variant={variant} />
+      ) : null}
       <ConnectedAnswerTimer timer={timer} variant={variant} />
       <Buzzes />
     </>

@@ -283,6 +283,7 @@ export function deserializeState(
     // A turn restored from a save gets no timer: its start was in another
     // session (it would already be over).
     answerStartedAt: null,
+    answerTimedOut: null,
   };
 }
 

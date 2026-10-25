@@ -159,6 +159,8 @@ export function stateToGameEngine(
     autoWrongOnTimeout: state.autoWrongOnTimeout,
     /** When the current answer turn started (server clock), or null. */
     answerStartedAt: state.answerStartedAt,
+    /** Whose answer turn on the active clue ran out of time, if any. */
+    answerTimedOut: state.answerTimedOut,
     /** How many people are watching the room without playing (spectators,
      * counted with Realtime presence; 0 in solo play). */
     watchers,

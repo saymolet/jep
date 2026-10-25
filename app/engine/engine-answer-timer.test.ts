@@ -466,3 +466,60 @@ describe("getAnswerTimerStatus", () => {
     );
   });
 });
+
+describe("answerTimedOut", () => {
+  const P1_ANSWERING = [
+    ...LOBBY,
+    settings(P1.userId, 10),
+    start,
+    choose(NORMAL),
+    buzz(P1.userId, NORMAL, 100, 5000),
+    buzz(P2.userId, NORMAL, 300, 5100),
+  ];
+
+  it("records whose time ran out, until the next turn starts", () => {
+    const timedOut = run(
+      [
+        ...P1_ANSWERING,
+        check(P1.userId, NORMAL, { correct: false, timedOut: true }, 15_100),
+      ],
+      choiceState,
+    );
+    expect(timedOut.type).toBe(GameState.ReadClue);
+    expect(timedOut.players.get(P1.userId)?.score).toBe(-200);
+    expect(timedOut.answerTimedOut).toEqual({
+      userId: P1.userId,
+      startedAt: 5100,
+    });
+
+    const nextTurn = run([buzz(P2.userId, NORMAL, 100, 16_000)], timedOut);
+    expect(nextTurn.answerTimedOut).toBeNull();
+  });
+
+  it("stays while the answer is shown, and is cleared on the board", () => {
+    const shown = run(
+      [
+        ...LOBBY,
+        settings(P1.userId, 10),
+        start,
+        choose(NORMAL),
+        buzz(P1.userId, NORMAL, 100, 5000),
+        buzz(P2.userId, NORMAL, CLUE_TIMEOUT_MS + 1, 5100),
+        check(P1.userId, NORMAL, { correct: false, timedOut: true }),
+        buzz(P2.userId, NORMAL, CLUE_TIMEOUT_MS + 1),
+      ],
+      choiceState,
+    );
+    expect(shown.type).toBe(GameState.RevealAnswerToAll);
+    expect(shown.answerTimedOut?.userId).toBe(P1.userId);
+    expect(run([next(NORMAL)], shown).answerTimedOut).toBeNull();
+  });
+
+  it("is not set by a manual wrong answer", () => {
+    const state = run(
+      [...P1_ANSWERING, check(P1.userId, NORMAL, { correct: false })],
+      choiceState,
+    );
+    expect(state.answerTimedOut).toBeNull();
+  });
+});
