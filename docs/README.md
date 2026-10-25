@@ -41,11 +41,13 @@ Difficulty estimates from the original planning discussion.
 
 ### Found while playtesting
 
-- [ ] Join race: tapping "Join game" before the realtime channel subscribes can lose the
-      player's own join (it is saved, but the client never sees it). Re-fetch room events
-      after the player's own action. — ⭐ easy
-- [ ] "Rooms in progress" list on a game's page, so friends can join without a shared link
-      (today opening a game always creates a new room). — ⭐ easy
+- [x] Join race: tapping "Join game" before the realtime channel subscribes can lose the
+      player's own join (it is saved, but the client never sees it). Fixed by merging the
+      revalidated loader snapshot + correct catch-up — see
+      [features/02-join-sync-and-rooms-list.md](./features/02-join-sync-and-rooms-list.md) — ⭐ easy
+- [x] "Rooms in progress" list on a game's page (and on "Play with friends" when rooms
+      are running), so friends can join without a shared link — see
+      [features/02-join-sync-and-rooms-list.md](./features/02-join-sync-and-rooms-list.md) — ⭐ easy
 
 ### Nice-to-haves (while touching the code)
 
@@ -62,3 +64,6 @@ per-question timer · soundboard · themes (Classic / Своя Игра / Dark).
 - **2026-10-25** — Fork synced to upstream (28 commits: pnpm, Varlock env, undo); Pause re-applied
   on `feat/pause-and-public-hosting`. Self-hosted: production build behind nginx/TLS with
   hosted Supabase; first multiplayer playtest (phone + desktop) works.
+- **2026-10-25** — Feature 02 on `feat/join-sync-and-rooms-list`: join race fixed (client
+  converges via loader snapshots + correct catch-up; reconnect escalation fixes) and
+  "Rooms in progress" list on the game page / Play chooser. No migration.
