@@ -48,6 +48,10 @@ const PLAYER3: Player = {
 const PHOTO_AVATAR =
   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
 
+/** A ~40 KB photo avatar: bigger than the old 24 KB cap (96×96 photos), within
+ * the 48 KB cap for 192×192 photos. */
+const LARGE_PHOTO_AVATAR = "data:image/webp;base64," + "A".repeat(40 * 1024);
+
 const PLAYER1_JOIN_ACTION: TestAction = {
   type: ActionType.Join,
   payload: { name: PLAYER1.name, userId: PLAYER1.userId },
@@ -211,6 +215,27 @@ describe("gameEngine", () => {
         draft.players.set(PLAYER1.userId, {
           ...PLAYER1,
           avatar: PHOTO_AVATAR,
+        });
+      }),
+    },
+    {
+      name: "Player joins with a large (192×192) photo avatar",
+      state: initialState,
+      actions: [
+        {
+          type: ActionType.Join,
+          payload: {
+            name: PLAYER1.name,
+            userId: PLAYER1.userId,
+            avatar: LARGE_PHOTO_AVATAR,
+          },
+        },
+      ],
+      expectedState: produce(initialState, (draft) => {
+        draft.boardControl = PLAYER1.userId;
+        draft.players.set(PLAYER1.userId, {
+          ...PLAYER1,
+          avatar: LARGE_PHOTO_AVATAR,
         });
       }),
     },

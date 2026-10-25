@@ -1,7 +1,8 @@
 import { type Avatar, isValidAvatar } from "~/models/avatar";
 
-/** Avatar photos are square images of this many pixels per side. */
-export const AVATAR_SIZE = 96;
+/** Avatar photos are square images of this many pixels per side: twice the
+ * largest display size (96 CSS px), so they stay sharp on retina screens. */
+export const AVATAR_SIZE = 192;
 
 /** Encoder qualities tried in order until the photo fits the size cap. */
 const QUALITIES = [0.85, 0.7, 0.5, 0.3];

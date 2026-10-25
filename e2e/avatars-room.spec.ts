@@ -31,7 +31,7 @@ test.describe("avatars in a room", () => {
     const photo = 'img[src^="data:image/"]';
     const dialogPhoto = page.getByRole("dialog").locator(photo);
     await expect(dialogPhoto).toBeVisible();
-    // 40×30 PNG in, 96×96 WebP out.
+    // 40×30 PNG in, 192×192 WebP out.
     expect(await dialogPhoto.getAttribute("src")).toMatch(
       /^data:image\/webp;base64,/,
     );
@@ -40,7 +40,7 @@ test.describe("avatars in a room", () => {
         img.naturalWidth,
         img.naturalHeight,
       ]),
-    ).toEqual([96, 96]);
+    ).toEqual([192, 192]);
 
     await page.getByRole("button", { name: /join game/i }).click();
     await expect(

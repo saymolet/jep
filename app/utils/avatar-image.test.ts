@@ -2,7 +2,18 @@ import { describe, expect, it, vi } from "vitest";
 
 import { MAX_AVATAR_LENGTH } from "~/models/avatar";
 
-import { encodeAvatar, fitAvatar, squareCrop } from "./avatar-image";
+import {
+  AVATAR_SIZE,
+  encodeAvatar,
+  fitAvatar,
+  squareCrop,
+} from "./avatar-image";
+
+describe("AVATAR_SIZE", () => {
+  it("is 192 px, sharp on retina screens at the large tile size", () => {
+    expect(AVATAR_SIZE).toBe(192);
+  });
+});
 
 describe("squareCrop", () => {
   it.each([

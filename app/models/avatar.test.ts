@@ -28,6 +28,10 @@ describe("isValidAvatar", () => {
     ["webp data URL", "data:image/webp;base64,UklGRg=="],
     ["jpeg data URL", "data:image/jpeg;base64,/9j/4AAQ"],
     [
+      "40 KB data URL (a 192×192 photo)",
+      dataUrlOfLength("image/webp", 40 * 1024),
+    ],
+    [
       "data URL at the size cap",
       dataUrlOfLength("image/webp", MAX_AVATAR_LENGTH),
     ],
@@ -57,6 +61,10 @@ describe("isValidAvatar", () => {
     ["null", null],
   ])("rejects %s", (_, value) => {
     expect(isValidAvatar(value)).toBe(false);
+  });
+
+  it("caps photos at 48 KB", () => {
+    expect(MAX_AVATAR_LENGTH).toBe(48 * 1024);
   });
 
   it("accepts every preset emoji", () => {
