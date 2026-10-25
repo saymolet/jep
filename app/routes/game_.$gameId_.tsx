@@ -1,10 +1,12 @@
 import { redirect } from "react-router";
 import { z } from "zod";
 
+import { ActiveRoomsList } from "~/components/active-rooms";
 import { EmptyBoard } from "~/components/board/layout";
 import { ButtonLink } from "~/components/button";
 import { GameVisibilityTag } from "~/components/game-visibility-icon";
 import { Play, User } from "~/components/icons";
+import type { ActiveRoom } from "~/models/active-rooms";
 import { getValidAuthSession } from "~/models/auth";
 import {
   deleteGame,
@@ -12,6 +14,7 @@ import {
   updateGameVisibility,
 } from "~/models/game.server";
 import type { GameVisibility } from "~/models/game.server";
+import { getActiveRooms } from "~/models/room.server";
 import { flashFormState } from "~/session.server";
 import { parseFormData } from "~/utils/http.server";
 import { getPageMetadata } from "~/utils/seo";
@@ -87,6 +90,8 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     throw new Response("game not found", { status: 404 });
   }
 
+  const activeRooms = await getActiveRooms(game, authSession?.accessToken);
+
   const clueCount = game.boards.reduce(
     (total, board) =>
       total +
@@ -120,6 +125,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
       clueCount,
       startingGrid,
     },
+    activeRooms,
   };
 }
 
@@ -144,10 +150,20 @@ function GameStat({ count, label }: { count: number; label: string }) {
   );
 }
 
-function PlayLinks({ gameId }: { gameId: string }) {
+function PlayLinks({
+  gameId,
+  hasActiveRooms,
+}: {
+  gameId: string;
+  hasActiveRooms: boolean;
+}) {
   return (
     <div className="grid gap-3 sm:flex sm:flex-wrap">
-      <ButtonLink to={`/game/${gameId}/play`} variant="primary">
+      {/* Rooms in progress are listed below, so skip the room chooser. */}
+      <ButtonLink
+        to={`/game/${gameId}/play${hasActiveRooms ? "?new" : ""}`}
+        variant="primary"
+      >
         <Play className="h-4 w-4" />
         Play with friends
       </ButtonLink>
@@ -159,7 +175,13 @@ function PlayLinks({ gameId }: { gameId: string }) {
   );
 }
 
-function GameInvitation({ game }: { game: PreviewGame }) {
+function GameInvitation({
+  game,
+  activeRooms,
+}: {
+  game: PreviewGame;
+  activeRooms: ActiveRoom[];
+}) {
   return (
     <main className="flex grow flex-col bg-blue-1000 text-white">
       <EmptyBoard {...game.startingGrid} />
@@ -191,7 +213,9 @@ function GameInvitation({ game }: { game: PreviewGame }) {
           <GameStat count={game.clueCount} label="clue" />
         </div>
 
-        <PlayLinks gameId={game.id} />
+        <PlayLinks gameId={game.id} hasActiveRooms={activeRooms.length > 0} />
+
+        <ActiveRoomsList rooms={activeRooms} />
 
         {game.copyright ? (
           <p className="text-xs text-slate-400">{game.copyright}</p>
@@ -202,6 +226,6 @@ function GameInvitation({ game }: { game: PreviewGame }) {
 }
 
 export default function GamePreview({ loaderData }: Route.ComponentProps) {
-  const { game } = loaderData;
-  return <GameInvitation game={game} />;
+  const { game, activeRooms } = loaderData;
+  return <GameInvitation game={game} activeRooms={activeRooms} />;
 }
