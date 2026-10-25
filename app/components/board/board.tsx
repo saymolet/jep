@@ -100,7 +100,15 @@ export function BoardComponent({
   );
 }
 
-export function ConnectedBoardComponent({ roomId, userId }: RoomProps) {
+export function ConnectedBoardComponent({
+  roomId,
+  userId,
+  readOnly = false,
+}: RoomProps & {
+  /** Spectators and the TV screen only look at the board: nothing they tap
+   * is sent. */
+  readOnly?: boolean;
+}) {
   const {
     board,
     boardControl,
@@ -149,7 +157,8 @@ export function ConnectedBoardComponent({ roomId, userId }: RoomProps) {
     board.categories[0].clues.length === 1 &&
     Boolean(board.categories[0].clues[0].longForm);
 
-  const hasBoardControl = boardControl === userId || isSingleLongFormClue;
+  const hasBoardControl =
+    !readOnly && (boardControl === userId || isSingleLongFormClue);
 
   /** focusCell focuses the clue at (i, j) and returns whether there is one
    * (shorter categories leave empty cells at the bottom of the board). */

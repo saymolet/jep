@@ -53,8 +53,12 @@ export function PauseControl({ roomId }: Pick<RoomProps, "roomId">) {
   );
 }
 
-/** PausedOverlay covers the screen for everyone while the game is paused. */
-export function PausedOverlay({ roomId }: Pick<RoomProps, "roomId">) {
+/** PausedOverlay covers the screen for everyone while the game is paused.
+ * Spectators and the TV screen see it without the Resume button. */
+export function PausedOverlay({
+  roomId,
+  canResume = true,
+}: Pick<RoomProps, "roomId"> & { canResume?: boolean }) {
   const { t } = useTranslation();
   const { isPaused } = useEngineContext();
   const toggle = usePauseToggle(roomId);
@@ -68,14 +72,16 @@ export function PausedOverlay({ roomId }: Pick<RoomProps, "roomId">) {
     >
       <span className="text-7xl text-white">{PAUSE_SYMBOL}</span>
       <h2 className="text-3xl font-bold text-white">{t("room.gamePaused")}</h2>
-      <button
-        onClick={toggle}
-        aria-label={t("room.resumeGame")}
-        className="flex items-center gap-2 rounded-lg bg-white px-5 py-2.5 text-lg font-semibold text-blue-1000 transition-colors hover:bg-slate-200"
-      >
-        <span>{PLAY_SYMBOL}</span>
-        {t("room.resume")}
-      </button>
+      {canResume ? (
+        <button
+          onClick={toggle}
+          aria-label={t("room.resumeGame")}
+          className="flex items-center gap-2 rounded-lg bg-white px-5 py-2.5 text-lg font-semibold text-blue-1000 transition-colors hover:bg-slate-200"
+        >
+          <span>{PLAY_SYMBOL}</span>
+          {t("room.resume")}
+        </button>
+      ) : null}
     </div>
   );
 }

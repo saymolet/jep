@@ -10,6 +10,8 @@ import { PlayerScores } from "~/components/player";
 import Preview from "~/components/preview";
 import Prompt from "~/components/prompt";
 import { UndoArmingContext, UndoArmingProvider } from "~/components/undo-check";
+import { SpectatorBar, WatcherCount } from "~/components/watch/spectator-bar";
+import { SpectatorPrompt } from "~/components/watch/viewer-prompt";
 import { GameState, Player, useEngineContext } from "~/engine";
 import { useTranslation } from "~/i18n";
 import type { Game } from "~/models/convert.server";
@@ -91,6 +93,8 @@ export default function GameComponent({
   suppressDialogs = false,
   userId,
   url,
+  watching = false,
+  onWatchingChange,
 }: {
   game: Game;
   name: string;
@@ -98,6 +102,10 @@ export default function GameComponent({
   roomName: string;
   suppressDialogs?: boolean;
   url: string;
+  /** The visitor chose "Just watch" instead of joining. */
+  watching?: boolean;
+  /** Offers "Just watch" in the join dialog (rooms, not solo play). */
+  onWatchingChange?: (watching: boolean) => void;
 } & RoomProps) {
   const {
     boardControl,
@@ -107,7 +115,12 @@ export default function GameComponent({
     reconnect,
     round,
     type,
+    watchers,
   } = useEngineContext();
+
+  // Everyone who is not in the game (still deciding in the join dialog, or
+  // watching) sees the room read-only: no control on the page sends anything.
+  const isPlayer = players.has(userId);
 
   const [playBoardFillSfx] = useGameSound(BOARD_FILL_SFX);
   const [playFinalSfx] = useGameSound(FINAL_CATEGORY_REVEAL_SFX);
@@ -129,13 +142,15 @@ export default function GameComponent({
         name={name}
         numRounds={game.boards.length}
         onDismiss={isSingleLongFormClue ? playFinalSfx : playBoardFillSfx}
+        onWatch={onWatchingChange ? () => onWatchingChange(true) : undefined}
         playerColor={playerColor}
         url={url}
         roomId={roomId}
         userId={userId}
+        watching={watching}
       />
       <div className="flex grow flex-col bg-blue-1000">
-        <BoardComponent roomId={roomId} userId={userId} />
+        <BoardComponent roomId={roomId} userId={userId} readOnly={!isPlayer} />
         <div
           className={`mx-auto flex w-full max-w-screen-lg flex-col gap-4 p-3 text-slate-100 sm:p-6 md:p-12`}
         >
@@ -148,8 +163,12 @@ export default function GameComponent({
               userId={userId}
             />
             <div className="flex items-center gap-1">
-              <PauseControl roomId={roomId} />
-              <GameClock roomId={roomId} />
+              <WatcherCount
+                count={watchers}
+                className="px-2 text-sm whitespace-nowrap text-slate-300"
+              />
+              {isPlayer ? <PauseControl roomId={roomId} /> : null}
+              <GameClock roomId={roomId} readOnly={!isPlayer} />
             </div>
           </div>
           <PlayerScores roomId={roomId} userId={userId} />
@@ -159,9 +178,23 @@ export default function GameComponent({
             reconnect={reconnect}
           />
         </div>
-        <Prompt roomId={roomId} userId={userId} />
+        {isPlayer ? (
+          <Prompt roomId={roomId} userId={userId} />
+        ) : (
+          <SpectatorPrompt />
+        )}
       </div>
-      <PausedOverlay roomId={roomId} />
+      <PausedOverlay roomId={roomId} canResume={isPlayer} />
+      {!isPlayer && watching && onWatchingChange ? (
+        <>
+          {/* Room for the floating bar below the page content. */}
+          <div className="h-16" aria-hidden />
+          <SpectatorBar
+            onJoin={() => onWatchingChange(false)}
+            watchers={watchers}
+          />
+        </>
+      ) : null}
     </UndoArmingProvider>
   );
 }

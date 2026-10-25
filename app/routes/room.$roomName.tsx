@@ -1,15 +1,17 @@
+import * as React from "react";
 import { data, redirect, useMatches } from "react-router";
 import { ENV } from "varlock/env";
 
 import GameComponent from "~/components/game";
 import { ActionType, GameEngineContext, useGameEngine } from "~/engine";
+import type { PresenceRole } from "~/engine/presence";
 import { applyRoomEventsToState } from "~/engine/room-event";
 import { GameState, stateFromGame } from "~/engine/state";
 import { createT, getRequestLocale } from "~/i18n";
 import { getValidAuthSession } from "~/models/auth";
 import { getGame } from "~/models/game.server";
 import { createRoomEvent, getRoomEvents } from "~/models/room-event.server";
-import { getRoom } from "~/models/room.server";
+import { getRoomByName } from "~/models/room.server";
 import { getUserByEmail } from "~/models/user";
 import { parseUserSettings } from "~/models/user-settings";
 import { getOrCreateUserSession, getUserSession } from "~/session.server";
@@ -32,14 +34,12 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     throw new Response(t("room.error.noRoomInUrl"), { status: 404 });
   }
 
-  const roomParts = roomName.split("-");
-  const roomId = parseInt(roomParts[0]);
-  const roomWord = roomParts[1];
   const authSession = await getValidAuthSession(request);
-  const room = await getRoom(roomId, authSession?.accessToken);
-  if (!room || room.name !== roomWord) {
+  const room = await getRoomByName(roomName, authSession?.accessToken);
+  if (!room) {
     throw new Response(t("room.error.roomNotFound"), { status: 404 });
   }
+  const roomId = room.id;
 
   const game = await getGame(room.game_id, authSession?.userId);
   if (!game) {
@@ -134,12 +134,28 @@ export default function PlayGame({ loaderData }: Route.ComponentProps) {
   const matches = useMatches();
   const pathname = matches[matches.length - 1].pathname;
 
+  // "Just watch": the visitor closed the join dialog without joining.
+  const [watching, setWatching] = React.useState(false);
+  // Announced with Realtime presence so the room can show how many people
+  // watch. It depends on the engine's players, so it follows them one render
+  // later.
+  const [presence, setPresence] = React.useState<PresenceRole | null>(null);
+
   const engine = useGameEngine(
     loaderData.game,
     loaderData.roomEvents,
     loaderData.roomId,
     loaderData.accessToken,
+    presence,
   );
+
+  const isPlayer = engine.players.has(loaderData.userId);
+  const role: PresenceRole | null = isPlayer
+    ? "player"
+    : watching
+      ? "spectator"
+      : null;
+  React.useEffect(() => setPresence(role), [role]);
 
   return (
     <GameEngineContext.Provider value={engine}>
@@ -151,6 +167,8 @@ export default function PlayGame({ loaderData }: Route.ComponentProps) {
         roomName={loaderData.roomName}
         userId={loaderData.userId}
         url={loaderData.BASE_URL + pathname}
+        watching={watching}
+        onWatchingChange={setWatching}
       />
     </GameEngineContext.Provider>
   );
