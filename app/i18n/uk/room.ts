@@ -89,6 +89,8 @@ export const room: Dictionary<typeof en> = {
   "room.error.notInGame": "спершу приєднайся до гри",
   "room.error.teamsBetweenQuestions":
     "команду можна змінити лише між питаннями",
+  "room.error.settingsBetweenQuestions":
+    "налаштування можна змінити лише між питаннями",
   "room.error.notOnTeam": "перейменувати можна лише свою команду",
   "room.error.teamNameTooLong": "назва команди задовга",
   "room.error.gameIsOver": "гру вже закінчено",

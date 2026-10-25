@@ -165,4 +165,34 @@ describe("check route", () => {
       payload: { i: 0, j: 0, userId: USER, choice: 1 },
     });
   });
+
+  it("records a timeout as a wrong answer without a pick", async () => {
+    await callAction("5", {
+      i: "0",
+      j: "0",
+      userId: USER,
+      result: "correct",
+      timedOut: "true",
+    });
+    expect(mocks.createRoomEvent).toHaveBeenCalledWith(
+      ROOM.id,
+      ActionType.Check,
+      { i: 0, j: 0, userId: USER, correct: false, timedOut: true },
+      undefined,
+    );
+  });
+
+  it("returns a timeout for solo play", async () => {
+    const result = await callAction("-1", {
+      i: "0",
+      j: "1",
+      userId: USER,
+      result: "incorrect",
+      timedOut: "true",
+    });
+    expect(result).toMatchObject({
+      type: ActionType.Check,
+      payload: { i: 0, j: 1, userId: USER, correct: false, timedOut: true },
+    });
+  });
 });

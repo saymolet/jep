@@ -22,12 +22,27 @@ const formSchema = z.object({
   result: z.string().optional(),
   /** The option picked on a multiple choice question. */
   choice: z.coerce.number().int().optional(),
+  /** "true" when the answering player's own device sends this because their
+   * answer time ran out (answer timer). Always a wrong answer. */
+  timedOut: z
+    .literal("true")
+    .transform(() => true)
+    .optional(),
 });
 
 export async function action({ request, params }: Route.ActionArgs) {
   const t = createT(getRequestLocale(request));
   const formData = await request.formData();
-  const { i, j, userId, result, choice } = parseFormData(formData, formSchema);
+  const { i, j, userId, result, choice, timedOut } = parseFormData(
+    formData,
+    formSchema,
+  );
+  // Running out of time is never a right answer.
+  const claimedCorrect = !timedOut && result === "correct";
+  const extra = {
+    ...(choice === undefined ? {} : { choice }),
+    ...(timedOut ? { timedOut } : {}),
+  };
 
   const roomId = params.roomId ? parseInt(params.roomId) : undefined;
   if (!roomId) {
@@ -39,13 +54,7 @@ export async function action({ request, params }: Route.ActionArgs) {
     // against the answer itself (and ignores `correct` for it).
     return {
       type: ActionType.Check,
-      payload: {
-        i,
-        j,
-        userId,
-        correct: result === "correct",
-        ...(choice === undefined ? {} : { choice }),
-      },
+      payload: { i, j, userId, correct: claimedCorrect, ...extra },
       ts: Date.now(),
     };
   }
@@ -57,7 +66,7 @@ export async function action({ request, params }: Route.ActionArgs) {
     throw new Response(t("room.error.roomNotFound"), { status: 404 });
   }
 
-  let correct = result === "correct";
+  let correct = claimedCorrect;
   if (choice !== undefined) {
     // Multiple choice: decide correctness here from the game data, never from
     // the client. The engine re-checks it the same way on every client.
@@ -79,13 +88,7 @@ export async function action({ request, params }: Route.ActionArgs) {
   await createRoomEvent(
     room.id,
     ActionType.Check,
-    {
-      i,
-      j,
-      userId,
-      correct,
-      ...(choice === undefined ? {} : { choice }),
-    },
+    { i, j, userId, correct, ...extra },
     authSession?.accessToken,
   );
 

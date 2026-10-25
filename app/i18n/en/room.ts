@@ -76,6 +76,8 @@ export const room = {
   "room.error.notInGame": "join the game first",
   "room.error.teamsBetweenQuestions":
     "teams can only be changed between questions",
+  "room.error.settingsBetweenQuestions":
+    "settings can only be changed between questions",
   "room.error.notOnTeam": "you can only rename your own team",
   "room.error.teamNameTooLong": "the team name is too long",
   "room.error.gameIsOver": "the game is over",
