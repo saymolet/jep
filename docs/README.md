@@ -67,7 +67,12 @@ Difficulty estimates from the original planning discussion.
 
 ### Nice-to-haves (while touching the code)
 
-Import/export JSON · import SIQ packs · random board generator · question search ·
+- [x] Import/export JSON + import SIQ packs — **Download JSON** on the game page; the upload box
+      takes `.jep.json` and SIGame `.siq` packs (v4 and v5, up to 100 MB; media uploaded to the
+      public Storage bucket `game-media`, zip bomb / XXE guarded, summary of skipped items) — see
+      [features/08-import-export.md](./features/08-import-export.md) — ⭐⭐⭐ large
+
+Random board generator · question search ·
 team mode · spectator mode · admin panel · Discord login · keyboard shortcuts ·
 fullscreen presenter mode · OBS/browser-source mode · mobile-first buzzer ·
 auto-reconnect · host controls from phone · game save/resume · live scoreboard ·
@@ -106,3 +111,8 @@ per-question timer · soundboard · themes (Classic / Своя Игра / Dark).
   indicator read `navigator.onLine` during SSR, `/howto` timestamp, profile dates in the
   server's time zone); `<html data-hydrated>` marker + e2e `goto()`/`reload()` helpers that
   wait for it; `e2e/hydration*.spec.ts` regression tests. No migration.
+- **2026-10-25** — Feature 08 on `feat/siq-import`: SIGame pack import (`.siq` v4/v5 →
+  rounds/categories/questions with media, secret, wager, final, multiple choice) with media in the
+  new public Storage bucket `game-media`, and a **Download JSON** link on the game page. Local
+  Supabase now runs Storage. Migration `20261025172846_game_media_bucket.sql`; new deps `fflate`,
+  `fast-xml-parser`.
