@@ -94,6 +94,10 @@ export interface State {
   readonly clockRunning: boolean;
   readonly clockAccumulatedMs: number;
   readonly clockLastResumedAt: number | null;
+
+  /** Whether the game is paused. Buzzers and clue selection are disabled while
+   * paused. Pausing is only allowed when no clue is open (see engine.ts). */
+  readonly isPaused: boolean;
 }
 
 /** stateFromGame creates a new initial state based on the game. */
@@ -118,6 +122,7 @@ export function stateFromGame(game: Game) {
     clockRunning: false,
     clockAccumulatedMs: 0,
     clockLastResumedAt: null,
+    isPaused: false,
   };
 
   for (let round = 0; round < game.boards.length; round++) {
