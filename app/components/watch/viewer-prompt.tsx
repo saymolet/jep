@@ -1,6 +1,11 @@
 import clsx from "clsx";
 import * as React from "react";
 
+import {
+  ConnectedAnswerTimer,
+  TimesUpNotice,
+  useAnswerTimer,
+} from "~/components/prompt/answer-timer";
 import { Buzzes } from "~/components/prompt/buzz";
 import { ConnectedChoiceList } from "~/components/prompt/choices";
 import { SecretClueBanner } from "~/components/prompt/pass-clue";
@@ -198,6 +203,7 @@ export function ViewerPromptContent({
   } = useEngineContext();
   const { t } = useTranslation();
   const clueMedia = useClueMedia();
+  const timer = useAnswerTimer();
 
   if (!PROMPT_STATES.has(type) || !clue || !activeClue || !board) {
     return null;
@@ -308,6 +314,10 @@ export function ViewerPromptContent({
         <LongFormAnswers variant={variant} />
       ) : null}
       {statusLine}
+      {type === GameState.ReadClue || type === GameState.RevealAnswerToAll ? (
+        <TimesUpNotice variant={variant} />
+      ) : null}
+      <ConnectedAnswerTimer timer={timer} variant={variant} />
       <Buzzes />
     </>
   );

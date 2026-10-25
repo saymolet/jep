@@ -4,6 +4,8 @@ import type { PlayerColor } from "~/models/player-color";
 import type { TeamId } from "~/models/team";
 import { hasChoices } from "~/utils/choices";
 
+import { DEFAULT_AUTO_WRONG_ON_TIMEOUT } from "./answer-timer";
+
 /** UNREVEALED_PLACEHOLDER is used when a field was not revealed in the game
  * playthrough.
  */
@@ -112,6 +114,22 @@ export interface State {
   /** Whether the game is paused. Buzzers and clue selection are disabled while
    * paused. Pausing is only allowed when no clue is open (see engine.ts). */
   readonly isPaused: boolean;
+
+  // answer timer (room setting, see answer-timer.ts and ActionType.SetSettings)
+  /** Seconds the answering player has to answer and mark it; 0 = off. Older
+   * saved solo states have none. */
+  readonly answerTimeSec: number;
+  /** Whether the answering player's own device marks the answer wrong when
+   * their time runs out. */
+  readonly autoWrongOnTimeout: boolean;
+  /** When the current answer turn (RevealAnswerToBuzzer) started: the
+   * timestamp of the event that gave the player their turn. null outside an
+   * answer turn (and for a turn restored from a solo save). */
+  readonly answerStartedAt: number | null;
+  /** The last answer turn on the active clue ran out of time (the player's
+   * device sent a timed-out check), so everyone can be told "Time's up!"
+   * after the question moves on. Cleared when the next turn starts. */
+  readonly answerTimedOut: { userId: string; startedAt: number } | null;
 }
 
 /** stateFromGame creates a new initial state based on the game. */
@@ -139,6 +157,10 @@ export function stateFromGame(game: Game) {
     clockAccumulatedMs: 0,
     clockLastResumedAt: null,
     isPaused: false,
+    answerTimeSec: 0,
+    autoWrongOnTimeout: DEFAULT_AUTO_WRONG_ON_TIMEOUT,
+    answerStartedAt: null,
+    answerTimedOut: null,
   };
 
   for (let round = 0; round < game.boards.length; round++) {

@@ -28,7 +28,9 @@ export default function useGameSound(
     if (!audio || mute) return;
     // interrupt: restart if already playing
     audio.currentTime = 0;
-    audio.play();
+    // Browsers refuse to play before the first tap on a page (e.g. a TV
+    // screen nobody touched): no sound then, and no unhandled error.
+    audio.play()?.catch(() => {});
   }, [mute]);
 
   const stop = React.useCallback(() => {

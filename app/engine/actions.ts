@@ -56,6 +56,10 @@ const CheckPayload = CluePayload.extend({
   /** Index of the option picked on a multiple choice clue. Older events have
    * none. The engine validates the index against the clue. */
   choice: z.number().optional(),
+  /** Sent by the answering player's own device when their answer time ran
+   * out (answer timer). On a multiple choice clue it marks the answer wrong
+   * without a pick. Older events have none. */
+  timedOut: z.boolean().optional(),
 });
 const CorrectCheckPayload = CluePayload.extend({
   correct: z.boolean(),
@@ -75,6 +79,13 @@ const RenameTeamPayload = z.object({
   team: z.enum(TEAM_IDS),
   /** The new name ("" resets the default). The engine validates it. */
   name: z.string(),
+});
+const SetSettingsPayload = z.object({
+  userId: z.string(),
+  /** Seconds for the answer timer, 0 = off. The engine validates the value
+   * (see ANSWER_TIME_OPTIONS). */
+  answerTimeSec: z.number(),
+  autoWrongOnTimeout: z.boolean(),
 });
 const TransferPlayerPayload = z.object({
   oldUserId: z.string(),
@@ -179,6 +190,7 @@ export function isCheckAction(action: Action): action is {
     j: number;
     correct: boolean;
     choice?: number;
+    timedOut?: boolean;
   };
   ts: number;
 } {
@@ -235,6 +247,21 @@ export function isRenameTeamAction(action: Action): action is {
   return (
     action.type === ActionType.RenameTeam &&
     RenameTeamPayload.safeParse(action.payload).success
+  );
+}
+
+export function isSetSettingsAction(action: Action): action is {
+  type: ActionType.SetSettings;
+  payload: {
+    userId: string;
+    answerTimeSec: number;
+    autoWrongOnTimeout: boolean;
+  };
+  ts: number;
+} {
+  return (
+    action.type === ActionType.SetSettings &&
+    SetSettingsPayload.safeParse(action.payload).success
   );
 }
 

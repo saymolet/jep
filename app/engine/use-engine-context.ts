@@ -35,6 +35,10 @@ export const GameEngineContext = React.createContext<
   clockAccumulatedMs: 0,
   clockLastResumedAt: null,
   isPaused: false,
+  answerTimeSec: 0,
+  autoWrongOnTimeout: true,
+  answerStartedAt: null,
+  answerTimedOut: null,
   watchers: 0,
 });
 

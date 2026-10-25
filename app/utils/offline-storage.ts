@@ -1,3 +1,7 @@
+import {
+  DEFAULT_AUTO_WRONG_ON_TIMEOUT,
+  isAnswerTimeSec,
+} from "~/engine/answer-timer";
 import type { ClueAnswer, GameState, Player, State } from "~/engine/state";
 import { newAnswerGrid } from "~/engine/state";
 import type { Game } from "~/models/convert.server";
@@ -152,6 +156,9 @@ interface SerializedState {
   clockLastResumedAt: number | null;
   gameOverAt?: number | null;
   isPaused: boolean;
+  /** Missing in saves from before the answer timer. */
+  answerTimeSec?: number;
+  autoWrongOnTimeout?: boolean;
 }
 
 interface SerializedClueAnswer {
@@ -213,6 +220,8 @@ export function serializeState(state: State): SerializedState {
     clockLastResumedAt: state.clockLastResumedAt,
     gameOverAt: state.gameOverAt,
     isPaused: state.isPaused,
+    answerTimeSec: state.answerTimeSec,
+    autoWrongOnTimeout: state.autoWrongOnTimeout,
   };
 }
 
@@ -266,6 +275,15 @@ export function deserializeState(
     gameOverAt: serialized.gameOverAt ?? null,
     // Never restore into a paused state — resume fresh on reload.
     isPaused: false,
+    answerTimeSec: isAnswerTimeSec(serialized.answerTimeSec)
+      ? serialized.answerTimeSec
+      : 0,
+    autoWrongOnTimeout:
+      serialized.autoWrongOnTimeout ?? DEFAULT_AUTO_WRONG_ON_TIMEOUT,
+    // A turn restored from a save gets no timer: its start was in another
+    // session (it would already be over).
+    answerStartedAt: null,
+    answerTimedOut: null,
   };
 }
 

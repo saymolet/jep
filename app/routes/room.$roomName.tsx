@@ -16,6 +16,7 @@ import { getUserByEmail } from "~/models/user";
 import { parseUserSettings } from "~/models/user-settings";
 import { getOrCreateUserSession, getUserSession } from "~/session.server";
 import { getRandomEmoji } from "~/utils";
+import { noteServerTime } from "~/utils/server-clock";
 
 import type { Route } from "./+types/room.$roomName";
 
@@ -95,6 +96,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
         roomName,
         userId,
         BASE_URL: ENV.BASE_URL,
+        serverNow: Date.now(),
         accessToken,
       };
     }
@@ -108,6 +110,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
       roomName,
       userId,
       BASE_URL: ENV.BASE_URL,
+      serverNow: Date.now(),
       accessToken,
     };
   }
@@ -125,6 +128,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
       accessToken,
       userId,
       BASE_URL: ENV.BASE_URL,
+      serverNow: Date.now(),
     },
     { headers },
   );
@@ -148,6 +152,12 @@ export default function PlayGame({ loaderData }: Route.ComponentProps) {
     loaderData.accessToken,
     presence,
   );
+
+  // The server's time when the loader ran: a sample for the server clock
+  // estimate (answer timer), e.g. for a reload in the middle of a turn.
+  React.useEffect(() => {
+    noteServerTime(loaderData.serverNow);
+  }, [loaderData.serverNow]);
 
   const isPlayer = engine.players.has(loaderData.userId);
   const role: PresenceRole | null = isPlayer

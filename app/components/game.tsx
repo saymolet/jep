@@ -1,6 +1,7 @@
 import * as React from "react";
 import { useNavigate } from "react-router";
 
+import { AnswerTimerControl } from "~/components/answer-timer-settings";
 import BoardComponent from "~/components/board";
 import Connection from "~/components/connection";
 import GameClock from "~/components/game-clock";
@@ -167,6 +168,9 @@ export default function GameComponent({
                 count={watchers}
                 className="px-2 text-sm whitespace-nowrap text-slate-300"
               />
+              {isPlayer ? (
+                <AnswerTimerControl roomId={roomId} userId={userId} />
+              ) : null}
               {isPlayer ? <PauseControl roomId={roomId} /> : null}
               <GameClock roomId={roomId} readOnly={!isPlayer} />
             </div>

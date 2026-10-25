@@ -1,3 +1,4 @@
+import * as React from "react";
 import { ENV } from "varlock/env";
 
 import { Presenter } from "~/components/watch/presenter";
@@ -8,6 +9,7 @@ import { getValidAuthSession } from "~/models/auth";
 import { getGame } from "~/models/game.server";
 import { getRoomEvents } from "~/models/room-event.server";
 import { getRoomByName } from "~/models/room.server";
+import { noteServerTime } from "~/utils/server-clock";
 
 import type { Route } from "./+types/room.$roomName_.present";
 
@@ -47,6 +49,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     roomEvents,
     roomId: room.id,
     accessToken,
+    serverNow: Date.now(),
     // Phones scan this to open the room and join.
     joinUrl: `${ENV.BASE_URL}/room/${roomName}`,
   };
@@ -60,6 +63,10 @@ export default function PresentRoom({ loaderData }: Route.ComponentProps) {
     loaderData.accessToken,
     "presenter",
   );
+  // A sample for the server clock estimate (answer timer).
+  React.useEffect(() => {
+    noteServerTime(loaderData.serverNow);
+  }, [loaderData.serverNow]);
   return (
     <GameEngineContext.Provider value={engine}>
       <Presenter game={loaderData.game} joinUrl={loaderData.joinUrl} />

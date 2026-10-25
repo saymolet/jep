@@ -18,9 +18,11 @@ import {
   isRenameTeamAction,
   isRoundAction,
   isRestoreAction,
+  isSetSettingsAction,
   isSetTeamAction,
   isTransferPlayerAction,
 } from "./actions";
+import { isAnswerTimeSec } from "./answer-timer";
 import {
   type CheckCorrection,
   type ClueAnswer,
@@ -100,6 +102,9 @@ export enum ActionType {
   /** RenameTeam gives the player's own team a custom name ("" resets the
    * default name). Ignored after game over. */
   RenameTeam = "rename_team",
+  /** SetSettings changes the room settings (the answer timer). Any player
+   * may change them, between questions only; the last change wins. */
+  SetSettings = "set_settings",
   /** Restore replaces the entire state (used for restoring saved solo games). */
   Restore = "restore",
 }
@@ -236,8 +241,13 @@ function transferCheckCorrectionBoardControl(
 
 /** giveSecretClue hands the active secret clue to receiverId: they are the
  * only one who can answer (as if they had won the buzz) and everyone else is
- * locked out, so the regular reveal/check flow applies. */
-function giveSecretClue(draft: Draft<State>, receiverId: string) {
+ * locked out, so the regular reveal/check flow applies. `startedAt` is when
+ * their answer turn started (for the answer timer). */
+function giveSecretClue(
+  draft: Draft<State>,
+  receiverId: string,
+  startedAt: number | null,
+) {
   draft.buzzes = new Map(
     Array.from(draft.players.keys()).map((id) => [
       id,
@@ -245,6 +255,8 @@ function giveSecretClue(draft: Draft<State>, receiverId: string) {
     ]),
   );
   draft.type = GameState.RevealAnswerToBuzzer;
+  draft.answerStartedAt = startedAt;
+  draft.answerTimedOut = null;
 }
 
 function getActiveClue(draft: Draft<State>) {
@@ -261,13 +273,14 @@ function retireFromSecretClue(
   draft: Draft<State>,
   oldUserId: string,
   newUserId: string,
+  ts: number,
 ) {
   const clue = getActiveClue(draft);
   if (!clue || !isSecretClue(clue)) return;
   if (draft.type === GameState.PassClue) {
     const [onlyPlayer] = draft.players.keys();
     if (draft.players.size === 1 && onlyPlayer) {
-      giveSecretClue(draft, onlyPlayer);
+      giveSecretClue(draft, onlyPlayer, ts);
     }
     return;
   }
@@ -275,7 +288,8 @@ function retireFromSecretClue(
     draft.type === GameState.RevealAnswerToBuzzer &&
     draft.buzzes.get(oldUserId) === 0
   ) {
-    giveSecretClue(draft, newUserId);
+    // The same person keeps answering: their turn (and timer) goes on.
+    giveSecretClue(draft, newUserId, draft.answerStartedAt);
   }
 }
 
@@ -617,6 +631,7 @@ export function gameEngine(state: State, action: Action): State {
         }
 
         draft.checkCorrection = null;
+        draft.answerTimedOut = null;
         resumeClock(draft, action.ts);
 
         if (isSecretClue(clue)) {
@@ -624,7 +639,7 @@ export function gameEngine(state: State, action: Action): State {
           draft.buzzes = new Map();
           // With nobody to pass it to, the chooser answers it themselves.
           if (draft.players.size === 1 && draft.players.has(userId)) {
-            giveSecretClue(draft, userId);
+            giveSecretClue(draft, userId, action.ts);
             return;
           }
           draft.type = GameState.PassClue;
@@ -745,7 +760,7 @@ export function gameEngine(state: State, action: Action): State {
           return;
         }
         resumeClock(draft, action.ts);
-        giveSecretClue(draft, toUserId);
+        giveSecretClue(draft, toUserId, action.ts);
       });
     case ActionType.Buzz:
       if (!isBuzzAction(action)) {
@@ -805,8 +820,10 @@ export function gameEngine(state: State, action: Action): State {
         }
 
         // Reveal the answer to the winning buzzer and let them evaluate its
-        // correctness
+        // correctness. Their answer turn (and answer timer) starts now.
         draft.type = GameState.RevealAnswerToBuzzer;
+        draft.answerStartedAt = action.ts;
+        draft.answerTimedOut = null;
       });
     case ActionType.Answer:
       if (!isAnswerAction(action)) {
@@ -849,7 +866,7 @@ export function gameEngine(state: State, action: Action): State {
         );
       }
       return produce(state, (draft) => {
-        const { userId, i, j, choice } = action.payload;
+        const { userId, i, j, choice, timedOut } = action.payload;
         let { correct } = action.payload;
         const player = draft.players.get(userId);
         if (
@@ -888,16 +905,37 @@ export function gameEngine(state: State, action: Action): State {
         // checked against the answer here (every client derives the same
         // result from the game data, so a forged "correct" flag is ignored).
         if (clue && isAutoCheckedClue(clue)) {
-          if (choice === undefined || !isChoiceIndex(clue, choice)) {
-            return;
+          if (
+            choice === undefined &&
+            timedOut === true &&
+            draft.answerTimeSec > 0
+          ) {
+            // The player's answer time ran out before they picked: wrong,
+            // with no pick.
+            correct = false;
+          } else {
+            if (choice === undefined || !isChoiceIndex(clue, choice)) {
+              return;
+            }
+            correct = isCorrectChoice(clue, choice);
+            const picks =
+              draft.choicePicks.get(key) ?? new Map<string, number>();
+            picks.set(userId, choice);
+            draft.choicePicks.set(key, picks);
           }
-          correct = isCorrectChoice(clue, choice);
-          const picks = draft.choicePicks.get(key) ?? new Map<string, number>();
-          picks.set(userId, choice);
-          draft.choicePicks.set(key, picks);
         }
 
         resumeClock(draft, action.ts);
+        if (!isLongForm) {
+          // The answer turn is over.
+          draft.answerTimedOut =
+            timedOut === true &&
+            draft.answerTimeSec > 0 &&
+            draft.answerStartedAt !== null
+              ? { userId, startedAt: draft.answerStartedAt }
+              : null;
+          draft.answerStartedAt = null;
+        }
         recordCheckCorrection(draft, i, j, userId, correct);
 
         const clueValue = getClueValue(draft, [i, j], userId);
@@ -1100,6 +1138,7 @@ export function gameEngine(state: State, action: Action): State {
         }
 
         resumeClock(draft, action.ts);
+        draft.answerTimedOut = null;
 
         if (draft.numAnswered === draft.numCluesInBoard) {
           const newRound = draft.round + 1;
@@ -1201,7 +1240,7 @@ export function gameEngine(state: State, action: Action): State {
           transferCheckCorrectionBoardControl(draft, oldUserId);
           draft.players.delete(oldUserId);
           draft.leftPlayers.set(oldUserId, oldPlayer);
-          retireFromSecretClue(draft, oldUserId, newUserId);
+          retireFromSecretClue(draft, oldUserId, newUserId, action.ts);
           return;
         }
 
@@ -1328,6 +1367,25 @@ export function gameEngine(state: State, action: Action): State {
         } else {
           draft.teamNames.delete(team);
         }
+      });
+    case ActionType.SetSettings:
+      if (!isSetSettingsAction(action)) {
+        throw new Error("SetSettings action must have a user and settings");
+      }
+      return produce(state, (draft) => {
+        const { userId, answerTimeSec, autoWrongOnTimeout } = action.payload;
+        // Any player may change the settings, between questions only: a
+        // change mid-question would move the running answer timer.
+        if (
+          !draft.players.has(userId) ||
+          draft.type === GameState.GameOver ||
+          draft.activeClue !== null ||
+          !isAnswerTimeSec(answerTimeSec)
+        ) {
+          return;
+        }
+        draft.answerTimeSec = answerTimeSec;
+        draft.autoWrongOnTimeout = autoWrongOnTimeout;
       });
     case ActionType.Restore:
       if (!isRestoreAction(action)) {
