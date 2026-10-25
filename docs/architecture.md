@@ -48,6 +48,33 @@ DB tables: `games`, `categories`, `clues`, `accounts`, `rooms`, `room_events`,
   room loader's snapshot after every own action (fetcher revalidation); all are merged
   by id via `mergeRoomEvents`, rebuilding state if one arrives out of order.
 
+## Hydration (server render → client)
+
+Every page is server-rendered and then hydrated by React. If the first client render differs
+from the server HTML, React reports error #418 ("Hydration failed…"), throws the server HTML
+away and re-renders the page on the client, so the page becomes interactive later (worst on
+slow phones). Fixed on `fix/hydration`; the causes found were:
+
+| Where                                                      | Cause                                                                                                                                                                                         | Fix                                                                                                                                                 |
+| ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Solo games (`/mock`, `/mock?game=…`), connection indicator | `useSoloGameEngine` read `navigator.onLine` during render. Node 21+ has a global `navigator` **without** `onLine`, so the server rendered "Offline" (red) and the browser "Connected" (green) | start `CONNECTED`, read `navigator.onLine` in the mount effect                                                                                      |
+| `/howto` buzzer demo                                       | "Clue shown at" rendered `Date.now()` from the render                                                                                                                                         | set it in a mount effect                                                                                                                            |
+| `/profile` game and solve dates                            | formatted in the server's time zone; `games.created_at` is `timestamp without time zone`, so `new Date()` parsed it as _local_ time on each side                                              | `components/local-date.tsx`: zone-less timestamps parsed as UTC; UTC date in the hydration render, the viewer's local date after it (`useHydrated`) |
+
+Rules for new code:
+
+- Don't read `Date.now()`, `Math.random()`, `navigator`, `window`, `localStorage`, IndexedDB
+  or the local time zone during render of server-rendered UI. Render a server-safe value first
+  and update it in an effect, or branch on `useHydrated()` (`app/utils/use-hydrated.ts`).
+  (`typeof navigator === "undefined"` is **not** a server check any more.)
+- Format times on the server (as `active-rooms` does for "5 min ago") or with `LocalDate`.
+- Radix dialogs (e.g. "Join game") render in a portal that only mounts on the client, so they
+  are never in the server HTML and can't be tapped before hydration.
+- `root.tsx` sets `<html data-hydrated="true">` after hydration. E2E specs navigate with
+  `goto()`/`reload()` from `e2e/helpers.ts`, which wait for it, and
+  `e2e/hydration*.spec.ts` fail on any hydration error (run in two time zones, UTC+14 and
+  UTC−12, which always disagree with the server about the date).
+
 ## Open questions to resolve during feature work
 
 - Exact room-event protocol and how buzz order / lockout is tracked.

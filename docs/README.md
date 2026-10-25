@@ -60,6 +60,11 @@ Difficulty estimates from the original planning discussion.
       are running), so friends can join without a shared link — see
       [features/02-join-sync-and-rooms-list.md](./features/02-join-sync-and-rooms-list.md) — ⭐ easy
 
+- [x] Hydration error #418 on game pages: React discarded the server HTML and re-rendered on
+      the client (slower start on phones, e2e timing flakes). Three mismatches fixed and an
+      e2e regression test added — see [architecture.md](./architecture.md#hydration-server-render--client)
+      — ⭐ easy
+
 ### Nice-to-haves (while touching the code)
 
 Import/export JSON · import SIQ packs · random board generator · question search ·
@@ -97,3 +102,7 @@ per-question timer · soundboard · themes (Classic / Своя Игра / Dark).
   browser to a ≤24 KB data URL in the Join/ChangeName payload), validated in the route and
   ignored on replay when invalid; remembered in localStorage and `gameDefaults.playerAvatar`.
   No migration.
+- **2026-10-25** — Fix on `fix/hydration`: React hydration mismatches removed (solo connection
+  indicator read `navigator.onLine` during SSR, `/howto` timestamp, profile dates in the
+  server's time zone); `<html data-hydrated>` marker + e2e `goto()`/`reload()` helpers that
+  wait for it; `e2e/hydration*.spec.ts` regression tests. No migration.
