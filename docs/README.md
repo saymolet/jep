@@ -98,11 +98,17 @@ Difficulty estimates from the original planning discussion.
       on the TV, winning team on the summary; scoring stays per player — see
       [features/13-teams.md](./features/13-teams.md) — ⭐⭐ medium
 
+- [x] Answer timer (per-question timer, F12a) — optional room setting Off / 10–60 s +
+      "mark wrong when time runs out"; countdown for everyone from the event that gave the
+      player their turn (server clock estimate), "Time's up!" + sound; only the answering
+      player's own device marks the answer wrong; finals excluded — see
+      [features/14-answer-timer.md](./features/14-answer-timer.md) — ⭐⭐ medium
+
 Question search ·
 admin panel · Discord login · keyboard shortcuts ·
 OBS/browser-source mode ·
 auto-reconnect · host controls from phone · game save/resume · live scoreboard ·
-per-question timer · soundboard · themes (Classic / Своя Игра / Dark).
+soundboard · themes (Classic / Своя Игра / Dark).
 
 ## Status log
 
@@ -167,3 +173,8 @@ per-question timer · soundboard · themes (Classic / Своя Игра / Dark).
   events, team in the Join payload, `Player.team`, `State.teamNames`); grouped scoreboard,
   team picker in the join dialog and your tile, team totals on the TV, team standings and
   winning team on the summary and in the rooms list. No migration, no new dependencies.
+- **2026-10-26** — Feature 14 on `feat/answer-timer`: answer timer (`set_settings` room event,
+  `/room/:roomId/settings`, `answerTimeSec` / `autoWrongOnTimeout` / `answerStartedAt` /
+  `answerTimedOut` in state, `timedOut` on Check for multiple choice); countdown on players,
+  spectators and the TV, auto-mark by the answering player's device. No migration, no new
+  dependencies.
