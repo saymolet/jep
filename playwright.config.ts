@@ -30,13 +30,13 @@ export default defineConfig({
       name: "solo",
       use: { ...devices["Desktop Chrome"] },
       testIgnore:
-        /(auth|solves|game-management|settings|rooms|media-upload)\.spec\.ts/,
+        /(auth|solves|game-management|settings|rooms|media-upload|choices-room)\.spec\.ts/,
     },
     {
       name: "db",
       use: { ...devices["Desktop Chrome"] },
       testMatch:
-        /(auth|solves|game-management|settings|rooms|media-upload)\.spec\.ts/,
+        /(auth|solves|game-management|settings|rooms|media-upload|choices-room)\.spec\.ts/,
       dependencies: ["solo"],
       // These specs share one test user and one database, so they cannot
       // run concurrently with each other.
