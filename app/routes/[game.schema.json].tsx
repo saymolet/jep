@@ -8,6 +8,32 @@ const SCHEMA = {
   pattern: "^.*\\.jep\\.json$",
   title: "Jep! Game Schema",
   type: "object",
+  definitions: {
+    mediaBlock: {
+      type: "object",
+      description:
+        "A picture, sound or video. src must be an https:// URL; a YouTube link is allowed for type video.",
+      properties: {
+        type: {
+          type: "string",
+          enum: ["image", "audio", "video"],
+        },
+        src: {
+          type: "string",
+          pattern: "^\\s*https://",
+        },
+        alt: {
+          type: "string",
+        },
+      },
+      required: ["type", "src"],
+    },
+    mediaList: {
+      type: "array",
+      maxItems: 10,
+      items: { $ref: "#/definitions/mediaBlock" },
+    },
+  },
   properties: {
     title: {
       type: "string",
@@ -65,6 +91,15 @@ const SCHEMA = {
                       },
                       imageSrc: {
                         type: "string",
+                      },
+                      media: {
+                        $ref: "#/definitions/mediaList",
+                        description:
+                          "Media shown with the clue. The clue text may be empty when media is present.",
+                      },
+                      answerMedia: {
+                        $ref: "#/definitions/mediaList",
+                        description: "Media shown when the answer is revealed.",
                       },
                     },
                     required: ["clue", "answer", "value"],
