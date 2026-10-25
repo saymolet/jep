@@ -38,6 +38,9 @@ Game
 
 DB tables: `games`, `categories`, `clues`, `accounts`, `rooms`, `room_events`,
 `solves`, `reports`.
+SQL functions (RPC): `random_board_categories(max_count)` / `random_final_clues(max_count)` —
+random candidates from PUBLIC games for the random board generator
+(see [features/10-random-board.md](./features/10-random-board.md)).
 
 ## Realtime / rooms
 
