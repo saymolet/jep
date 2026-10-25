@@ -115,6 +115,12 @@ describe("getClueReadMs", () => {
     expect(getClueReadMs({ clue: text })).toBe(textMs);
   });
 
+  it("includes the options of a multiple choice clue", () => {
+    expect(getClueReadMs({ clue: text, choices: ["abc", "de"] })).toBe(
+      textMs + READ_PER_CHAR_MS * 5,
+    );
+  });
+
   it("gives pictures a minimum read time", () => {
     expect(
       getClueReadMs({

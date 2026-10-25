@@ -13,6 +13,7 @@ import {
   useEngineContext,
 } from "~/engine";
 import type { Clue } from "~/models/convert.server";
+import { hasChoices } from "~/utils/choices";
 import type { MediaBlock } from "~/utils/media";
 import { getClueMedia, getClueReadMs, hasPlayableMedia } from "~/utils/media";
 import useFitText from "~/utils/use-fit-text";
@@ -24,6 +25,7 @@ import useTimeout from "~/utils/use-timeout";
 import { ConnectedAnswerForm as AnswerForm } from "./answer-form";
 import { Buzzes } from "./buzz";
 import { ConnectedCheckForm as CheckForm } from "./check-form";
+import { ConnectedChoiceList, ConnectedChoicePicker } from "./choices";
 import { ClueImage, PlayableMedia } from "./clue-media";
 import { Countdown } from "./countdown";
 import { Fade } from "./fade";
@@ -314,6 +316,7 @@ function ReadWagerableCluePrompt({ roomId, userId }: RoomProps) {
         showAnswer={false}
         answer={clue.answer}
       />
+      <ConnectedChoiceList />
       <Countdown startTime={undefined} />
       <Buzzes buzzes={buzzes} />
     </>
@@ -514,14 +517,19 @@ function ReadCluePrompt({
         showAnswer={false}
         answer={clue.answer}
       />
-      <div className="invisible">
-        <CheckForm
-          roomId={roomId}
-          userId={userId}
-          showAnswer={false}
-          onClickShowAnswer={() => null}
-        />
-      </div>
+      {hasChoices(clue) ? (
+        // Options stay in the same place when the buzz winner picks one.
+        <ConnectedChoiceList />
+      ) : (
+        <div className="invisible">
+          <CheckForm
+            roomId={roomId}
+            userId={userId}
+            showAnswer={false}
+            onClickShowAnswer={() => null}
+          />
+        </div>
+      )}
       <Countdown startTime={undefined} />
       <Buzzes buzzes={optimisticBuzzes} />
     </>
@@ -627,6 +635,9 @@ function RevealAnswerToBuzzerPrompt({ roomId, userId }: RoomProps) {
 
   const canShowAnswer = winningBuzzer === userId;
   const [showAnswer, setShowAnswer] = React.useState(false);
+  // Multiple choice: the winner picks an option instead of revealing the
+  // answer and checking themselves.
+  const isMultipleChoice = hasChoices(clue);
 
   // Play the "time's up" sound after 5 seconds if the contestant can reveal the
   // answer but hasn't yet.
@@ -669,7 +680,18 @@ function RevealAnswerToBuzzerPrompt({ roomId, userId }: RoomProps) {
         onBuzz={() => null}
         showAnswer={false}
       />
-      {canShowAnswer ? (
+      {isMultipleChoice ? (
+        canShowAnswer ? (
+          <ConnectedChoicePicker roomId={roomId} userId={userId} />
+        ) : (
+          <>
+            <ConnectedChoiceList />
+            <p className="p-2 text-center font-bold text-white">
+              Waiting for {winningPlayerName} to pick an answer...
+            </p>
+          </>
+        )
+      ) : canShowAnswer ? (
         <CheckForm
           roomId={roomId}
           userId={userId}
@@ -829,6 +851,7 @@ function RevealAnswerToAllPrompt({ roomId, userId }: RoomProps) {
         showAnswer
         answer={clue.answer}
       />
+      <ConnectedChoiceList revealCorrect />
       <NextClueForm roomId={roomId} userId={userId} />
       <Countdown startTime={undefined} />
       <Buzzes />

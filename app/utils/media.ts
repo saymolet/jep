@@ -22,6 +22,8 @@ export interface ClueWithMedia {
   imageSrc?: string;
   media?: MediaBlock[];
   answerMedia?: MediaBlock[];
+  /** Options of a multiple choice clue; read together with the clue. */
+  choices?: string[];
 }
 
 /** MAX_MEDIA_BLOCKS caps the number of media blocks per clue/answer. */
@@ -175,12 +177,16 @@ export const PLAYBACK_READ_MS = 10_000;
 
 /** getClueReadMs is how long the buzzers stay locked while the clue is "read".
  *
- * - Text only: READ_BASE_MS + READ_PER_CHAR_MS per character (unchanged).
+ * - Text only: READ_BASE_MS + READ_PER_CHAR_MS per character (unchanged);
+ *   the options of a multiple choice clue count as text too.
  * - With pictures: at least IMAGE_READ_MS.
  * - With audio or video: at least PLAYBACK_READ_MS.
  */
 export function getClueReadMs(clue: ClueWithMedia): number {
-  const textMs = READ_BASE_MS + READ_PER_CHAR_MS * clue.clue.length;
+  const numChars =
+    clue.clue.length +
+    (clue.choices ?? []).reduce((sum, choice) => sum + choice.length, 0);
+  const textMs = READ_BASE_MS + READ_PER_CHAR_MS * numChars;
   const media = getClueMedia(clue);
   if (hasPlayableMedia(media)) return Math.max(textMs, PLAYBACK_READ_MS);
   if (media.length > 0) return Math.max(textMs, IMAGE_READ_MS);
