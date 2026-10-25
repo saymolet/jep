@@ -110,6 +110,23 @@ const SCHEMA = {
                         description:
                           "Options for a multiple choice question (2-6, unique). The answer must be one of them (ignoring case). Not allowed on long-form clues.",
                       },
+                      secret: {
+                        type: "boolean",
+                        description:
+                          'A secret ("cat in the bag") question: whoever chooses it gives it to another player, who answers it alone. Not allowed with wagerable or longForm.',
+                      },
+                      secretTopic: {
+                        type: "string",
+                        minLength: 1,
+                        description:
+                          "Topic shown when the secret question is handed over (default: the category name). Requires secret: true.",
+                      },
+                      secretValue: {
+                        type: "integer",
+                        exclusiveMinimum: 0,
+                        description:
+                          "What the secret question is worth (default: value). Requires secret: true.",
+                      },
                     },
                     required: ["clue", "answer", "value"],
                   },

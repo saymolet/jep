@@ -181,6 +181,41 @@ export default function Help() {
   "choices": ["Sydney", "Canberra", "Melbourne", "Perth"]
 }`}
         />
+        <h2 className="mb-4 text-xl font-semibold">
+          Secret questions (cat in the bag)
+        </h2>
+        <p className="mb-4">
+          Set <Code>"secret": true</Code> to hide a cat in the bag (
+          <i>Кот в мешке</i>). On the board it looks like any other question.
+          Whoever chooses it sees the cat, the topic and the value, and must
+          give it to another player. Only that player answers, without buzzing:
+          right wins the value and board control, wrong loses the value and the
+          chooser keeps board control. Playing alone, you get it yourself.
+        </p>
+        <ul className="mb-4 list-inside list-disc">
+          <li>
+            <Code>secretTopic</Code> (optional) is shown when the question is
+            handed over; the category name is shown by default.
+          </li>
+          <li>
+            <Code>secretValue</Code> (optional, a positive whole number) is what
+            the question is worth; the value on the board by default.
+          </li>
+          <li>
+            Works with media and with <Code>choices</Code>, but not with
+            wagerable or long-form questions.
+          </li>
+        </ul>
+        <CodeBlock
+          text={`{
+  "clue": "The author who created The Cat in the Hat",
+  "answer": "Dr. Seuss",
+  "value": 400,
+  "secret": true,
+  "secretTopic": "Famous cats",
+  "secretValue": 500
+}`}
+        />
         <h1 className="mb-4 text-2xl font-semibold">Type definition</h1>
         <CodeBlock
           text={`interface Game {
@@ -212,6 +247,9 @@ interface Clue {
   media?: MediaBlock[]; // shown with the clue
   answerMedia?: MediaBlock[]; // shown when the answer is revealed
   choices?: string[]; // 2-6 options for a multiple choice question
+  secret?: boolean; // cat in the bag: handed to another player; default false
+  secretTopic?: string; // shown when handed over; default: the category name
+  secretValue?: number; // worth this instead of value
 }
 
 interface MediaBlock {
