@@ -51,6 +51,10 @@ export async function startMockGame(page: Page, route = "/mock") {
   await startRound.click();
   // Until the round starts, the preview dialog still covers the board.
   await expect(startRound).toBeHidden();
+  // The dialog only unmounts after its close animation, and on unmount Radix
+  // restores focus to the element focused before it opened. Wait for that so
+  // it can't steal focus from whatever the test focuses next.
+  await expect(page.getByRole("dialog")).toHaveCount(0);
 }
 
 /** Play through a clue using only keyboard inputs.

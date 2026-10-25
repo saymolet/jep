@@ -7,10 +7,14 @@ test.describe("keyboard navigation: board grid", () => {
     await startMockGame(page, "/mock?game=3x3");
 
     // Wait for board fill animation to complete — all 9 cells must have their
-    // accessible names (cells with visibility:hidden text don't match).
-    await expect(page.getByRole("button", { name: "$ 600" })).toHaveCount(3, {
-      timeout: 10_000,
-    });
+    // accessible names (cells with visibility:hidden text don't match). Cells
+    // pop in out of order, so waiting for one row isn't enough: a "$ 200"
+    // locator could otherwise resolve to the wrong column.
+    for (const value of ["$ 200", "$ 400", "$ 600"]) {
+      await expect(page.getByRole("button", { name: value })).toHaveCount(3, {
+        timeout: 10_000,
+      });
+    }
   });
 
   test("arrow keys move focus between cells", async ({ page }) => {
