@@ -3,8 +3,14 @@ import { data, useFetcher } from "react-router";
 import { ENV } from "varlock/env";
 
 import Button from "~/components/button";
+import Dialog from "~/components/dialog";
 import { ErrorMessage, SuccessMessage } from "~/components/error";
-import { Cog6Tooth, PaperAirplane, PencilSquare } from "~/components/icons";
+import {
+  Cog6Tooth,
+  FaceSmile,
+  PaperAirplane,
+  PencilSquare,
+} from "~/components/icons";
 import Input from "~/components/input";
 import Link from "~/components/link";
 import Main from "~/components/main";
@@ -173,6 +179,7 @@ function PlayerDefaultsControl({
     setPlayerAvatar,
   } = useGameDefaults();
   const [editing, setEditing] = React.useState(false);
+  const [avatarOpen, setAvatarOpen] = React.useState(false);
   const [nameDraft, setNameDraft] = React.useState(playerName ?? "");
   const inputRef = React.useRef<HTMLInputElement | null>(null);
 
@@ -235,6 +242,13 @@ function PlayerDefaultsControl({
             onBlur={handleBlur}
             aria-label="Player name"
           />
+          <button
+            type="button"
+            onClick={() => setAvatarOpen(true)}
+            className="rounded-xl bg-white/10 px-3 py-2"
+          >
+            <FaceSmile className="h-5 w-5 opacity-50" title="Change avatar" />
+          </button>
           {editing ? (
             <button
               type="button"
@@ -271,10 +285,14 @@ function PlayerDefaultsControl({
         }}
       />
 
-      <div className="rounded-xl bg-blue-700 p-3">
-        <h2 className="mb-2 text-sm font-medium text-white">Avatar</h2>
+      <Dialog
+        isOpen={avatarOpen}
+        onClose={() => setAvatarOpen(false)}
+        title="Default avatar"
+        description="Used when you join a game. Pick an emoji or use a photo."
+      >
         <AvatarPicker value={playerAvatar} onChange={setPlayerAvatar} />
-      </div>
+      </Dialog>
 
       <div className="grid grid-cols-2 gap-3">
         <Button
