@@ -63,6 +63,47 @@ describe("PlayerIcon", () => {
   });
 });
 
+describe("PlayerIcon shape and sizes", () => {
+  function icon() {
+    return container.querySelector<HTMLElement>("[data-testid=player-icon]");
+  }
+
+  it.each(["xs", "sm", "md", "lg", "tile"] as const)(
+    "is a rounded square, not a circle (%s)",
+    (size) => {
+      render(
+        <PlayerIcon player={{ ...PLAYER, avatar: TINY_PNG }} size={size} />,
+      );
+      expect(icon()?.className).not.toContain("rounded-full");
+      expect(icon()?.className).toMatch(/rounded-(sm|md|lg|xl|2xl)/);
+      expect(icon()?.querySelector("img")?.className).not.toContain(
+        "rounded-full",
+      );
+    },
+  );
+
+  it("the tile size is large: 72px on phones, 96px+ on desktop", () => {
+    render(<PlayerIcon player={PLAYER} size="tile" />);
+    expect(icon()?.className).toContain("h-18");
+    expect(icon()?.className).toContain("w-18");
+    expect(icon()?.className).toContain("md:h-24");
+    expect(icon()?.className).toContain("md:w-24");
+  });
+
+  it("shows the initial on the player color without an avatar", () => {
+    render(<PlayerIcon player={PLAYER} size="tile" />);
+    expect(icon()?.textContent).toBe("Z");
+    expect(icon()?.style.backgroundColor).not.toBe("");
+    expect(icon()?.firstElementChild?.className).toContain("text-3xl");
+  });
+
+  it("shows a name's leading emoji at emoji size", () => {
+    render(<PlayerIcon player={{ ...PLAYER, name: "🦊 Fox" }} size="tile" />);
+    expect(icon()?.textContent).toBe("🦊");
+    expect(icon()?.firstElementChild?.className).toContain("text-5xl");
+  });
+});
+
 describe("AvatarPicker", () => {
   it("picks an emoji and removes it", () => {
     const onChange = vi.fn();

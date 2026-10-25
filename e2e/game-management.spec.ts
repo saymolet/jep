@@ -14,6 +14,8 @@ async function changeVisibility(
   gameRow: import("@playwright/test").Locator,
   visibility: "Make public" | "Make private" | "Make unlisted",
 ) {
+  // The open menu locks scrolling: center the row so all items are reachable.
+  await gameRow.evaluate((el) => el.scrollIntoView({ block: "center" }));
   await gameRow.getByRole("button", { name: "More actions" }).click();
   await page.getByText(visibility).click();
   // The PATCH action flashes "Updated game ... to ..." and redirects to /profile.
@@ -161,7 +163,10 @@ test.describe("game management", () => {
     const gameRow = page.locator(`li:has(a[href="/game/${gameId}/play"])`);
     await expect(gameRow).toBeVisible();
 
-    // Open the three-dot menu and click "Delete game"
+    // Open the three-dot menu and click "Delete game". Center the row first:
+    // the open menu locks scrolling, so a row near the bottom edge of the
+    // viewport would leave the menu's last item unreachable.
+    await gameRow.evaluate((el) => el.scrollIntoView({ block: "center" }));
     await gameRow.getByRole("button", { name: "More actions" }).click();
     await page.getByText("Delete game").click();
 

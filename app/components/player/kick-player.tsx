@@ -6,16 +6,18 @@ import type { Action, Player } from "~/engine";
 import { useEngineContext } from "~/engine";
 import useSoloAction from "~/utils/use-solo-action";
 
-import { PlayerIcon } from "./player-icon";
+import { PlayerIcon, type PlayerIconSize } from "./player-icon";
 
 export function KickablePlayerIcon({
   player,
   roomId,
   isSelf,
+  size = "tile",
 }: {
   player: Player;
   roomId: number;
   isSelf: boolean;
+  size?: PlayerIconSize;
 }) {
   const { soloDispatch } = useEngineContext();
 
@@ -26,10 +28,10 @@ export function KickablePlayerIcon({
     <DropdownMenu.Root>
       <DropdownMenu.Trigger asChild>
         <button
-          className="cursor-pointer self-start rounded-full focus:ring-2 focus:ring-blue-500 focus:outline-none"
+          className="shrink-0 cursor-pointer rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none md:rounded-2xl"
           aria-label={isSelf ? "Leave game" : `Kick player ${player.name}`}
         >
-          <PlayerIcon player={player} />
+          <PlayerIcon player={player} size={size} />
         </button>
       </DropdownMenu.Trigger>
       <DropdownMenu.Portal>

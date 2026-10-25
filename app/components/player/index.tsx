@@ -1,2 +1,7 @@
 export { EditPlayerForm } from "./edit-player";
-export { PlayerIcon, PlayerScore, PlayerScores } from "./player";
+export {
+  PLAYER_TILE_GRID,
+  PlayerIcon,
+  PlayerScore,
+  PlayerScores,
+} from "./player";

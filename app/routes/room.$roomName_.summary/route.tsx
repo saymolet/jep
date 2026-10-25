@@ -2,7 +2,7 @@ import { ENV } from "varlock/env";
 
 import { Dollars } from "~/components/dollars";
 import { ClockDisplay } from "~/components/game-clock";
-import { PlayerScore } from "~/components/player";
+import { PLAYER_TILE_GRID, PlayerScore } from "~/components/player";
 import {
   applyRoomEventsToState,
   isTypedRoomEvent,
@@ -117,7 +117,7 @@ export default function PlayGame({ loaderData }: Route.ComponentProps) {
         {state.clockAccumulatedMs > 0 && (
           <ClockDisplay displayMs={state.clockAccumulatedMs} disabled />
         )}
-        <div className="flex flex-col gap-2 sm:grid sm:grid-cols-3">
+        <div className={PLAYER_TILE_GRID}>
           {loaderData.sortedPlayers.map((p) => (
             <PlayerScore
               key={p.userId}
@@ -130,7 +130,7 @@ export default function PlayGame({ loaderData }: Route.ComponentProps) {
         {loaderData.sortedLeftPlayers.length > 0 && (
           <>
             <h3 className="text-lg text-slate-400">Left the game</h3>
-            <div className="flex flex-col gap-2 sm:grid sm:grid-cols-3">
+            <div className={PLAYER_TILE_GRID}>
               {loaderData.sortedLeftPlayers.map((p) => (
                 <PlayerScore
                   key={p.userId}
