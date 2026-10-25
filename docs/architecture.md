@@ -26,12 +26,14 @@ Game
      └─ categories[]
          ├─ name
          └─ clues[]
-             ├─ clue    (string — the prompt text)
+             ├─ clue    (string — the prompt text; may be "" if media is set)
              ├─ answer  (string)
              ├─ value   (number)
              ├─ wagerable?  (bool — Daily Double style wager)
              ├─ longForm?   (bool — Final Jeopardy long answer)
-             └─ imageSrc?   (string — added in migration 20230906)
+             ├─ imageSrc?   (string — added in migration 20230906)
+             ├─ media?       ({type: image|audio|video, src, alt?}[] — shown with the clue)
+             └─ answerMedia? (same — shown with the answer; jsonb columns, migration 20261025)
 ```
 
 DB tables: `games`, `categories`, `clues`, `accounts`, `rooms`, `room_events`,

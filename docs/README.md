@@ -34,7 +34,9 @@ Difficulty estimates from the original planning discussion.
 
 - [ ] Secret question (Daily Double / "Кот в мешке") — ⭐ easy
 - [ ] Upload avatar — ⭐ easy
-- [ ] Audio/video questions (redesign question model → `blocks[]`) — ⭐ easy
+- [x] Audio/video questions — pictures, audio, video and YouTube clips with the question
+      (`media`) and with the answer (`answerMedia`); additive, no full `blocks[]` redesign —
+      see [features/03-media-questions.md](./features/03-media-questions.md) — ⭐ easy
 - [ ] Multiple choice questions (typed question renderer) — ⭐ easy
 - [x] Pause game (`isPaused` state) — ⭐ very easy — see [features/01-pause-game.md](./features/01-pause-game.md)
 - [ ] More than 5 categories (dynamic grid) — ⭐⭐ medium
@@ -67,3 +69,6 @@ per-question timer · soundboard · themes (Classic / Своя Игра / Dark).
 - **2026-10-25** — Feature 02 on `feat/join-sync-and-rooms-list`: join race fixed (client
   converges via loader snapshots + correct catch-up; reconnect escalation fixes) and
   "Rooms in progress" list on the game page / Play chooser. No migration.
+- **2026-10-25** — Feature 03 on `feat/media-questions`: questions with pictures, audio, video
+  and YouTube (`media` / `answerMedia`), any https host, sample game `/mock?game=media`.
+  Migration `20261025124624_clues_media.sql` (additive jsonb columns on `clues`).
