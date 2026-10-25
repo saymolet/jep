@@ -1,0 +1,71 @@
+{
+  "title": "Multiple Choice Sampler",
+  "author": "Jep!",
+  "copyright": "Pictures: Wikimedia Commons (public domain).",
+  "note": "Questions with A/B/C/D options. Win the buzz, then tap an option: it is checked automatically.",
+  "boards": [
+    {
+      "categoryNames": ["Capitals", "Mixed Bag"],
+      "categories": [
+        {
+          "name": "Capitals",
+          "clues": [
+            {
+              "clue": "The capital of Australia",
+              "answer": "Canberra",
+              "value": 200,
+              "choices": ["Sydney", "Canberra", "Melbourne", "Perth"]
+            },
+            {
+              "clue": "The capital of Canada",
+              "answer": "Ottawa",
+              "value": 400,
+              "choices": ["Toronto", "Vancouver", "Ottawa", "Montreal"]
+            },
+            {
+              "clue": "The capital of Brazil",
+              "answer": "Brasília",
+              "value": 600,
+              "choices": ["Rio de Janeiro", "São Paulo", "Brasília"]
+            }
+          ]
+        },
+        {
+          "name": "Mixed Bag",
+          "clues": [
+            {
+              "clue": "This planet is known as the Red Planet",
+              "answer": "Mars",
+              "value": 200
+            },
+            {
+              "clue": "Who painted this portrait?",
+              "answer": "Leonardo da Vinci",
+              "value": 400,
+              "media": [
+                {
+                  "type": "image",
+                  "src": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Mona_Lisa%2C_by_Leonardo_da_Vinci%2C_from_C2RMF_retouched.jpg/500px-Mona_Lisa%2C_by_Leonardo_da_Vinci%2C_from_C2RMF_retouched.jpg",
+                  "alt": "A portrait of a woman with a faint smile"
+                }
+              ],
+              "choices": [
+                "Raphael",
+                "Leonardo da Vinci",
+                "Michelangelo",
+                "Rembrandt"
+              ]
+            },
+            {
+              "clue": "The chemical symbol for gold",
+              "answer": "Au",
+              "value": 600,
+              "wagerable": true,
+              "choices": ["Ag", "Au", "Gd", "Go"]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

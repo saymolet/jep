@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import choiceGame from "~/static/mock-choice.jep.json";
 import mediaGame from "~/static/mock-media.jep.json";
 import mockGame from "~/static/mock.jep.json";
 
@@ -107,7 +108,65 @@ describe("ClueSchema media", () => {
   });
 });
 
+describe("ClueSchema choices", () => {
+  const CHOICE = {
+    clue: "The capital of Australia",
+    answer: "Canberra",
+    value: 200,
+    choices: ["Sydney", "Canberra", "Perth"],
+  };
+
+  it("accepts a multiple choice clue", () => {
+    expect(ClueSchema.parse(CHOICE)).toEqual(CHOICE);
+  });
+
+  it("leaves clues without choices unchanged", () => {
+    expect(ClueSchema.parse(BASE)).not.toHaveProperty("choices");
+  });
+
+  it("trims options", () => {
+    expect(
+      ClueSchema.parse({ ...CHOICE, choices: [" Sydney ", "Canberra  "] })
+        .choices,
+    ).toEqual(["Sydney", "Canberra"]);
+  });
+
+  it("accepts choices on a wagerable clue", () => {
+    expect(ClueSchema.safeParse({ ...CHOICE, wagerable: true }).success).toBe(
+      true,
+    );
+  });
+
+  it.each([
+    [["Canberra"], "choices must have 2 to 6 options"],
+    [["a", "b", "c", "d", "e", "Canberra", "g"], /2 to 6/],
+    [["Canberra", "  "], "choices must not be empty"],
+    [["Canberra", "Perth", "perth "], "choices must be unique"],
+    [["Sydney", "Perth"], "answer must be one of the choices"],
+  ])("rejects choices %j", (choices, message) => {
+    const found = issues({ ...CHOICE, choices });
+    expect(found.length).toBeGreaterThan(0);
+    expect(found.join("\n")).toMatch(message);
+  });
+
+  it("rejects choices on a long-form clue", () => {
+    expect(
+      issues({ ...CHOICE, wagerable: true, longForm: true }).join("\n"),
+    ).toMatch("long-form clues cannot have choices");
+  });
+});
+
 describe("sample games", () => {
+  it("parses the multiple choice sample game", () => {
+    const game = GameSchema.parse(choiceGame);
+    const clues = game.boards.flatMap((b) =>
+      b.categories.flatMap((c) => c.clues),
+    );
+    expect(clues.some((c) => c.choices && c.wagerable)).toBe(true);
+    expect(clues.some((c) => c.choices && c.media)).toBe(true);
+    expect(clues.some((c) => !c.choices)).toBe(true);
+  });
+
   it("parses the existing sample game with imageSrc", () => {
     expect(() => GameSchema.parse(mockGame)).not.toThrow();
   });

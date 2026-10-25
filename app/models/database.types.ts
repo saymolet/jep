@@ -95,6 +95,7 @@ export type Database = {
           answer: string;
           answer_media: Json | null;
           category_id: number;
+          choices: Json | null;
           clue: string;
           id: number;
           image_src: string | null;
@@ -107,6 +108,7 @@ export type Database = {
           answer: string;
           answer_media?: Json | null;
           category_id: number;
+          choices?: Json | null;
           clue: string;
           id?: number;
           image_src?: string | null;
@@ -119,6 +121,7 @@ export type Database = {
           answer?: string;
           answer_media?: Json | null;
           category_id?: number;
+          choices?: Json | null;
           clue?: string;
           id?: number;
           image_src?: string | null;
