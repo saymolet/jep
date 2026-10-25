@@ -1,6 +1,7 @@
 import * as React from "react";
 
 import { Pause, Play, SadFile } from "~/components/icons";
+import { useTranslation } from "~/i18n";
 import type { MediaBlock } from "~/utils/media";
 import { parseYouTubeUrl, youTubeEmbedUrl } from "~/utils/media";
 import { useSoundSettings } from "~/utils/user-settings";
@@ -74,6 +75,7 @@ function useMediaVolume(ref: React.RefObject<HTMLMediaElement | null>) {
 }
 
 export function ClueImage({ block }: { block: MediaBlock }) {
+  const { t } = useTranslation();
   const [error, setError] = React.useState(false);
   const ref = React.useRef<HTMLImageElement>(null);
 
@@ -94,7 +96,7 @@ export function ClueImage({ block }: { block: MediaBlock }) {
         <img
           ref={ref}
           src={block.src}
-          alt={block.alt ?? "Clue image"}
+          alt={block.alt ?? t("play.media.clueImage")}
           className={`${MEDIA_MAX_HEIGHT} max-w-full object-contain`}
           onError={() => setError(true)}
         />
@@ -116,6 +118,7 @@ export function AudioPlayer({
   block: MediaBlock;
   autoPlay: boolean;
 }) {
+  const { t } = useTranslation();
   const ref = React.useRef<HTMLAudioElement>(null);
   const [playing, setPlaying] = React.useState(false);
   const [blocked, setBlocked] = React.useState(false);
@@ -136,7 +139,9 @@ export function AudioPlayer({
     }
   }
 
-  const label = playing ? "Pause audio" : "Play audio";
+  const label = playing
+    ? t("play.media.pauseAudio")
+    : t("play.media.playAudio");
   const progress =
     time.duration > 0 ? Math.min(100, (100 * time.current) / time.duration) : 0;
 
@@ -150,7 +155,7 @@ export function AudioPlayer({
         ref={ref}
         src={block.src}
         preload="auto"
-        aria-label={block.alt ?? "Clue audio"}
+        aria-label={block.alt ?? t("play.media.clueAudio")}
         onPlay={() => setPlaying(true)}
         onPause={() => setPlaying(false)}
         onEnded={() => setPlaying(false)}
@@ -191,7 +196,9 @@ export function AudioPlayer({
             )}
           </button>
           {blocked ? (
-            <p className="text-sm font-bold text-white">Tap to play audio</p>
+            <p className="text-sm font-bold text-white">
+              {t("play.media.tapToPlayAudio")}
+            </p>
           ) : null}
           <div className="flex w-full items-center gap-2 text-xs text-slate-200">
             <span className="w-10 text-right tabular-nums">
@@ -220,6 +227,7 @@ export function VideoPlayer({
   block: MediaBlock;
   autoPlay: boolean;
 }) {
+  const { t } = useTranslation();
   const ref = React.useRef<HTMLVideoElement>(null);
   const [error, setError] = React.useState(false);
   const [blocked, setBlocked] = React.useState(false);
@@ -241,14 +249,16 @@ export function VideoPlayer({
           controls
           playsInline
           preload="metadata"
-          aria-label={block.alt ?? "Clue video"}
+          aria-label={block.alt ?? t("play.media.clueVideo")}
           onPlay={() => setBlocked(false)}
           onError={() => setError(true)}
           className={`${MEDIA_MAX_HEIGHT} max-w-full bg-black`}
         />
       )}
       {blocked && !error ? (
-        <p className="text-sm font-bold text-white">Tap play to start</p>
+        <p className="text-sm font-bold text-white">
+          {t("play.media.tapPlayToStart")}
+        </p>
       ) : null}
     </div>
   );
@@ -261,6 +271,7 @@ export function YouTubePlayer({
   block: MediaBlock;
   autoPlay: boolean;
 }) {
+  const { t } = useTranslation();
   const { mute } = useSoundSettings();
   const video = parseYouTubeUrl(block.src);
   // Freeze the URL at mount: changing an iframe's src reloads the player.
@@ -273,7 +284,7 @@ export function YouTubePlayer({
       {src ? (
         <iframe
           src={src}
-          title={block.alt ?? "YouTube video"}
+          title={block.alt ?? t("play.media.youTubeVideo")}
           allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
           allowFullScreen
           className="aspect-video w-[min(100%,calc(40dvh*16/9))] border-0"

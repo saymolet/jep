@@ -5,6 +5,7 @@ import type { RoomProps } from "~/components/game";
 import Input from "~/components/input";
 import type { Action } from "~/engine";
 import { useEngineContext } from "~/engine";
+import { useTranslation } from "~/i18n";
 import useSoloAction from "~/utils/use-solo-action";
 
 function AnswerForm({
@@ -14,19 +15,21 @@ function AnswerForm({
   submittedAnswer?: string;
   loading: boolean;
 }) {
+  const { t, rich } = useTranslation();
   return (
     <div className="flex flex-col items-center gap-2 p-2">
       {submittedAnswer ? (
         <>
           <p className="font-bold text-white">
-            You answered:{" "}
-            <span className="font-handwriting text-xl font-bold">
-              {submittedAnswer}
-            </span>
+            {rich("play.answer.youAnswered", {
+              answer: (
+                <span className="font-handwriting text-xl font-bold">
+                  {submittedAnswer}
+                </span>
+              ),
+            })}
           </p>
-          <p className="text-sm text-slate-300">
-            You can change your answer until the last player submits an answer.
-          </p>
+          <p className="text-sm text-slate-300">{t("play.answer.canChange")}</p>
         </>
       ) : null}
       <div className="flex gap-2">
@@ -36,12 +39,12 @@ function AnswerForm({
             type="text"
             id="answer"
             name="answer"
-            placeholder="What is..."
+            placeholder={t("play.answer.placeholder")}
             required
           />
         </div>
         <Button variant="primary" type="submit" loading={loading}>
-          submit
+          {t("play.answer.submit")}
         </Button>
       </div>
     </div>

@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import { translate } from "~/i18n";
+
 import type { WagerRecommendation, WagerStrategy } from "./wager-strategy";
 import { getFinalClueStrategy } from "./wager-strategy";
 
@@ -14,7 +16,9 @@ function findRec(
   labelSubstring: string,
 ): WagerRecommendation | undefined {
   return strategy.recommendations.find((r) =>
-    r.label.toLowerCase().includes(labelSubstring.toLowerCase()),
+    translate("en", r.label)
+      .toLowerCase()
+      .includes(labelSubstring.toLowerCase()),
   );
 }
 
@@ -226,7 +230,7 @@ describe("getFinalClueStrategy", () => {
       expect(amounts(result)).toContain(0);
       // Should NOT claim "win by $1"
       const allIn = findRec(result, "all in");
-      expect(allIn!.reason).toContain("tied");
+      expect(translate("en", allIn!.reason)).toContain("tied");
     });
 
     it("tied at small amount", () => {
@@ -243,7 +247,7 @@ describe("getFinalClueStrategy", () => {
       const allIn = findRec(result, "all in");
       expect(allIn).toBeDefined();
       expect(allIn!.amount).toBe(10000);
-      expect(allIn!.reason).toContain("tied");
+      expect(translate("en", allIn!.reason)).toContain("tied");
     });
 
     it("three-way tie: offers all-in and bet nothing", () => {

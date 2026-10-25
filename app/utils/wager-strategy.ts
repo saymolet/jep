@@ -1,3 +1,5 @@
+import type { MessageKey } from "~/i18n";
+
 /**
  * Final clue wagering strategy recommendations.
  *
@@ -16,13 +18,24 @@
 
 export type PlayerPosition = "leader" | "second" | "third_or_lower" | "solo";
 
+/** Message keys (see `app/i18n/en/play.ts`) for a strategy's label and its
+ * explanation; translate them with `t`. */
+export type WagerLabelKey = Extract<
+  MessageKey,
+  `play.strategy.label.${string}`
+>;
+export type WagerReasonKey = Extract<
+  MessageKey,
+  `play.strategy.reason.${string}`
+>;
+
 export interface WagerRecommendation {
-  /** Human-readable label for the strategy. */
-  label: string;
+  /** Label for the strategy (a message key). */
+  label: WagerLabelKey;
   /** The recommended wager amount, clamped to [0, playerScore]. */
   amount: number;
-  /** Brief explanation of why this wager is recommended. */
-  reason: string;
+  /** Brief explanation of why this wager is recommended (a message key). */
+  reason: WagerReasonKey;
 }
 
 export interface WagerStrategy {
@@ -59,9 +72,9 @@ export function getFinalClueStrategy(
       position: "solo",
       recommendations: [
         {
-          label: "Wager everything",
+          label: "play.strategy.label.wagerEverything",
           amount: myScore,
-          reason: "No opponents to worry about.",
+          reason: "play.strategy.reason.noOpponents",
         },
       ],
     };
@@ -103,16 +116,14 @@ function computeLeaderStrategy(
 
   if (isTied) {
     recommendations.push({
-      label: "Go all in",
+      label: "play.strategy.label.goAllIn",
       amount: myScore,
-      reason:
-        "You're tied. Bet everything — if your opponent bets big and is correct, you need to match.",
+      reason: "play.strategy.reason.tiedAllIn",
     });
     recommendations.push({
-      label: "Bet nothing",
+      label: "play.strategy.label.betNothing",
       amount: 0,
-      reason:
-        "If both miss and your opponent bet big, you win. But you lose if they're right and bet anything.",
+      reason: "play.strategy.reason.tiedNothing",
     });
     return { position: "leader", recommendations: dedup(recommendations) };
   }
@@ -129,25 +140,22 @@ function computeLeaderStrategy(
 
   if (isRunaway) {
     recommendations.push({
-      label: "Safe bet",
+      label: "play.strategy.label.safeBet",
       amount: 0,
-      reason:
-        "You have more than double second place. Bet $0 to guarantee the win.",
+      reason: "play.strategy.reason.runawaySafe",
     });
     if (coverBet > 0) {
       recommendations.push({
-        label: "Cover bet",
+        label: "play.strategy.label.coverBet",
         amount: coverBet,
-        reason:
-          "Bet to stay ahead even if second place doubles up and is correct.",
+        reason: "play.strategy.reason.runawayCover",
       });
     }
   } else {
     recommendations.push({
-      label: "Cover bet",
+      label: "play.strategy.label.coverBet",
       amount: coverBet,
-      reason:
-        "If both you and second place answer correctly, you still win by $1.",
+      reason: "play.strategy.reason.cover",
     });
   }
 
@@ -180,10 +188,9 @@ function computeSecondStrategy(
     // Crush scenario: bet everything.
     // Source: J! Archive — "the second-place player should bet everything"
     recommendations.push({
-      label: "Go all in",
+      label: "play.strategy.label.goAllIn",
       amount: myScore,
-      reason:
-        "You need the leader to miss. Maximize your score for the best chance.",
+      reason: "play.strategy.reason.crushAllIn",
     });
   } else if (ratio < 3 / 4) {
     // Two-thirds game: can't pass the leader even if both right.
@@ -192,15 +199,14 @@ function computeSecondStrategy(
     // Max safe bet: 3×own - 2×leader (keeps you ahead on a double stumper)
     const safeBet = clamp(3 * myScore - 2 * leaderScore);
     recommendations.push({
-      label: "Conservative bet",
+      label: "play.strategy.label.conservativeBet",
       amount: safeBet,
-      reason:
-        "You can't pass the leader if both right. Stay ahead if both miss.",
+      reason: "play.strategy.reason.twoThirdsConservative",
     });
     recommendations.push({
-      label: "Go all in",
+      label: "play.strategy.label.goAllIn",
       amount: myScore,
-      reason: "High-risk: maximizes your score if the leader also misses.",
+      reason: "play.strategy.reason.twoThirdsAllIn",
     });
   } else {
     // Three-quarters game: you CAN pass the leader if both right.
@@ -211,16 +217,15 @@ function computeSecondStrategy(
     const safeBet = clamp(3 * myScore - 2 * leaderScore);
 
     recommendations.push({
-      label: "Competitive bet",
+      label: "play.strategy.label.competitiveBet",
       amount: competitiveBet,
-      reason: "Minimum wager to beat the leader if you both answer correctly.",
+      reason: "play.strategy.reason.competitive",
     });
     if (safeBet !== competitiveBet) {
       recommendations.push({
-        label: "Safe bet",
+        label: "play.strategy.label.safeBet",
         amount: safeBet,
-        reason:
-          "Maximum wager that keeps you ahead if both you and the leader miss.",
+        reason: "play.strategy.reason.threeQuartersSafe",
       });
     }
   }
@@ -260,10 +265,9 @@ function computeThirdStrategy(
   if (myScore > leaderIfWrong && myScore > secondIfWrong) {
     // We're already above both targets — bet $0
     recommendations.push({
-      label: "Safe bet",
+      label: "play.strategy.label.safeBet",
       amount: 0,
-      reason:
-        "If both opponents miss with standard bets, you win without risking anything.",
+      reason: "play.strategy.reason.thirdSafe",
     });
   }
 
@@ -271,18 +275,17 @@ function computeThirdStrategy(
   if (leaderIfWrong >= myScore) {
     // Can't reach the target — just go all in
     recommendations.push({
-      label: "Go all in",
+      label: "play.strategy.label.goAllIn",
       amount: myScore,
-      reason:
-        "You need opponents ahead to miss. Maximize your potential score.",
+      reason: "play.strategy.reason.thirdAllIn",
     });
   } else if (leaderIfWrong > 0) {
     const targetBet = clamp(leaderIfWrong + 1 - myScore);
     if (targetBet > 0) {
       recommendations.push({
-        label: "Target bet",
+        label: "play.strategy.label.targetBet",
         amount: targetBet,
-        reason: "Bet enough to pass where the leader falls if they miss.",
+        reason: "play.strategy.reason.thirdTarget",
       });
     }
   }
@@ -290,10 +293,9 @@ function computeThirdStrategy(
   // Fallback: always offer all-in if not already suggested
   if (!recommendations.some((r) => r.amount === myScore)) {
     recommendations.push({
-      label: "Go all in",
+      label: "play.strategy.label.goAllIn",
       amount: myScore,
-      reason:
-        "You need opponents ahead to miss. Maximize your potential score.",
+      reason: "play.strategy.reason.thirdAllIn",
     });
   }
 

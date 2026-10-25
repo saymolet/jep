@@ -12,6 +12,7 @@ import {
 } from "~/components/undo-check";
 import type { Action, Player } from "~/engine";
 import { useEngineContext } from "~/engine";
+import { useTranslation } from "~/i18n";
 import useSoloAction from "~/utils/use-solo-action";
 import useTimeout from "~/utils/use-timeout";
 
@@ -28,6 +29,7 @@ function CheckForm({
   loading: boolean;
   myAnswer?: string;
 }) {
+  const { t, rich } = useTranslation();
   return (
     <div className="flex flex-col items-center gap-2 p-2">
       {longForm ? null : (
@@ -36,22 +38,25 @@ function CheckForm({
             {answer}
           </p>
           <p className="text-center text-sm text-slate-300">
-            (don't spoil the answer for others!)
+            {t("play.check.dontSpoil")}
           </p>
         </>
       )}
       {myAnswer && (
         <p className="text-center text-sm text-slate-300">
-          Your answer:{" "}
-          <span className="font-handwriting text-2xl font-bold text-white">
-            {myAnswer}
-          </span>
+          {rich("play.check.yourAnswer", {
+            answer: (
+              <span className="font-handwriting text-2xl font-bold text-white">
+                {myAnswer}
+              </span>
+            ),
+          })}
         </p>
       )}
-      <p className="font-bold text-white">Were you right?</p>
+      <p className="font-bold text-white">{t("play.check.wereYouRight")}</p>
       <div className="flex gap-2">
         <Button type="submit" name="result" value="incorrect" loading={loading}>
-          incorrect
+          {t("play.check.incorrect")}
         </Button>
         <Button
           type="submit"
@@ -61,7 +66,7 @@ function CheckForm({
           autoFocus
           loading={loading}
         >
-          correct!
+          {t("play.check.correct")}
         </Button>
       </div>
     </div>
@@ -93,6 +98,7 @@ export function ConnectedCheckForm({
     soloDispatch,
     players,
   } = useEngineContext();
+  const { t, rich } = useTranslation();
   const fetcher = useFetcher<Action>();
   useSoloAction(fetcher, soloDispatch);
   const loading = fetcher.state === "loading";
@@ -125,9 +131,7 @@ export function ConnectedCheckForm({
   if (!showAnswer) {
     return (
       <div className="flex flex-col items-center gap-2 p-2">
-        <p className="text-sm text-slate-300">
-          Answer in the form of a question, then
-        </p>
+        <p className="text-sm text-slate-300">{t("play.check.answerThen")}</p>
         <div className="relative">
           <span
             className={clsx(
@@ -145,7 +149,7 @@ export function ConnectedCheckForm({
             onClick={onClickShowAnswer}
             loading={loading}
           >
-            Reveal answer
+            {t("play.check.revealAnswer")}
           </Button>
         </div>
       </div>
@@ -173,7 +177,7 @@ export function ConnectedCheckForm({
           <UndoCheckConfirm
             roomId={roomId}
             userId={userId}
-            prompt="Undo your check on this clue?"
+            prompt={t("play.undo.thisClue")}
             onCancel={() => setConfirmingUndo(false)}
           />
         </div>
@@ -184,15 +188,18 @@ export function ConnectedCheckForm({
       <div className="flex flex-col items-center gap-2 p-2">
         <div className="flex items-center gap-3">
           <p className="font-bold text-white">
-            You {checkResult ? "won" : "lost"} <DollarsDiff amount={value} />
+            {rich(checkResult ? "play.check.won" : "play.check.lost", {
+              amount: <DollarsDiff amount={value} />,
+            })}
           </p>
           {correction ? (
             <UndoCheckButton onClick={() => setConfirmingUndo(true)} />
           ) : null}
         </div>
         <p className="text-sm text-slate-300">
-          Waiting for check(s) from{" "}
-          {uncheckedPlayers.map((p) => p.name).join(", ")}...
+          {t("play.check.waitingForChecks", {
+            names: uncheckedPlayers.map((p) => p.name).join(", "),
+          })}
         </p>
       </div>
     );

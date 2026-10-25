@@ -141,14 +141,19 @@ export function mediaBlockError(block: MediaBlock): string | null {
 }
 
 /** getClueMedia returns the media shown with the clue text. A legacy
- * `imageSrc` is treated as an image block shown before any other media. */
-export function getClueMedia(clue: ClueWithMedia): MediaBlock[] {
+ * `imageSrc` is treated as an image block shown before any other media;
+ * `imageAlt` describes it (pass a translated one in the UI). */
+export function getClueMedia(
+  clue: ClueWithMedia,
+  imageAlt: (clueText: string) => string = (clueText) =>
+    `Image for clue: ${clueText}`,
+): MediaBlock[] {
   const blocks: MediaBlock[] = [];
   if (clue.imageSrc) {
     blocks.push({
       type: "image",
       src: clue.imageSrc,
-      alt: clue.clue ? `Image for clue: ${clue.clue}` : undefined,
+      alt: clue.clue ? imageAlt(clue.clue) : undefined,
     });
   }
   return blocks.concat(clue.media ?? []);

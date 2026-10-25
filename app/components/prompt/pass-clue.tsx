@@ -6,6 +6,7 @@ import type { RoomProps } from "~/components/game";
 import type { Action, Player } from "~/engine";
 import { useEngineContext } from "~/engine";
 import { getSecretTopic } from "~/engine/state";
+import { useTranslation } from "~/i18n";
 import { formatDollars, getPlayerColor } from "~/utils";
 import useSoloAction from "~/utils/use-solo-action";
 import useGameSound from "~/utils/use-sound";
@@ -25,15 +26,16 @@ export function SecretClueBanner({
   topic: string;
   value: number;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="flex flex-col items-center gap-2 p-4 text-center">
       <span className="text-7xl sm:text-8xl" aria-hidden>
         🐱
       </span>
       <div className="relative text-4xl sm:text-6xl">
-        <ShinyText text="Cat in the bag!" />
+        <ShinyText text={t("play.secret.title")} />
       </div>
-      <p className="text-sm text-slate-300">Кот в мешке · secret question</p>
+      <p className="text-sm text-slate-300">{t("play.secret.subtitle")}</p>
       <p className="font-korinna text-2xl font-bold text-white uppercase text-shadow-md sm:text-4xl">
         {topic}
       </p>
@@ -62,10 +64,11 @@ export function PassCluePicker({
   passingTo?: string;
   onPass: (userId: string) => void;
 }) {
+  const { t } = useTranslation();
   if (!canPass) {
     return (
       <p className="p-4 text-center font-bold text-white">
-        {chooserName} is choosing who gets the secret question...
+        {t("play.secret.choosing", { name: chooserName })}
       </p>
     );
   }
@@ -76,12 +79,12 @@ export function PassCluePicker({
     <div className="mx-auto flex w-full max-w-screen-md flex-col gap-3 px-4 pb-4">
       <p className="text-center font-bold text-white">
         {passingToName
-          ? `Giving it to ${passingToName}...`
-          : "Give this question to another player:"}
+          ? t("play.secret.givingTo", { name: passingToName })
+          : t("play.secret.giveTo")}
       </p>
       <ul
         className="grid grid-cols-1 gap-3 sm:grid-cols-2"
-        aria-label="Players"
+        aria-label={t("play.secret.players")}
       >
         {players.map((player) => (
           <li key={player.userId}>
@@ -125,6 +128,7 @@ export function ConnectedPassCluePrompt({ roomId, userId }: RoomProps) {
     players,
     soloDispatch,
   } = useEngineContext();
+  const { t } = useTranslation();
   const fetcher = useFetcher<Action>();
   useSoloAction(fetcher, soloDispatch);
   const submit = fetcher.submit;
@@ -145,8 +149,8 @@ export function ConnectedPassCluePrompt({ roomId, userId }: RoomProps) {
   if (!activeClue || !board) return null;
 
   const chooserName = boardControl
-    ? (players.get(boardControl)?.name ?? "The chooser")
-    : "The chooser";
+    ? (players.get(boardControl)?.name ?? t("play.secret.theChooser"))
+    : t("play.secret.theChooser");
   const receivers = Array.from(players.values()).filter(
     (p) => p.userId !== boardControl,
   );
