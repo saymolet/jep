@@ -101,6 +101,9 @@ export type Database = {
           image_src: string | null;
           long_form: boolean;
           media: Json | null;
+          secret: boolean | null;
+          secret_topic: string | null;
+          secret_value: number | null;
           value: number;
           wagerable: boolean;
         };
@@ -114,6 +117,9 @@ export type Database = {
           image_src?: string | null;
           long_form?: boolean;
           media?: Json | null;
+          secret?: boolean | null;
+          secret_topic?: string | null;
+          secret_value?: number | null;
           value: number;
           wagerable?: boolean;
         };
@@ -127,6 +133,9 @@ export type Database = {
           image_src?: string | null;
           long_form?: boolean;
           media?: Json | null;
+          secret?: boolean | null;
+          secret_topic?: string | null;
+          secret_value?: number | null;
           value?: number;
           wagerable?: boolean;
         };

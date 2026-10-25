@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import choiceGame from "~/static/mock-choice.jep.json";
 import mediaGame from "~/static/mock-media.jep.json";
+import secretGame from "~/static/mock-secret.jep.json";
 import mockGame from "~/static/mock.jep.json";
 
 import { ClueSchema, GameSchema } from "./convert.server";
@@ -156,7 +157,75 @@ describe("ClueSchema choices", () => {
   });
 });
 
+describe("ClueSchema secret", () => {
+  const SECRET = { ...BASE, secret: true };
+
+  it("accepts a secret clue with an optional topic and value", () => {
+    expect(ClueSchema.parse(SECRET)).toEqual(SECRET);
+    const full = { ...SECRET, secretTopic: "Cats", secretValue: 500 };
+    expect(ClueSchema.parse(full)).toEqual(full);
+  });
+
+  it("leaves clues without secret unchanged", () => {
+    expect(ClueSchema.parse(BASE)).not.toHaveProperty("secret");
+  });
+
+  it("trims the secret topic", () => {
+    expect(
+      ClueSchema.parse({ ...SECRET, secretTopic: "  Cats " }).secretTopic,
+    ).toBe("Cats");
+  });
+
+  it("accepts secret multiple choice and media clues", () => {
+    expect(
+      ClueSchema.safeParse({
+        ...SECRET,
+        answer: "Canberra",
+        choices: ["Sydney", "Canberra"],
+        media: [{ type: "image", src: "https://a.example/pic.png" }],
+      }).success,
+    ).toBe(true);
+  });
+
+  it.each([
+    [{ wagerable: true }, "secret clues cannot be wagerable"],
+    [
+      { wagerable: true, longForm: true },
+      "secret clues cannot be wagerable or long-form",
+    ],
+    [{ secretTopic: "  " }, "secretTopic must not be empty"],
+    [{ secretValue: 0 }, "secretValue must be positive"],
+    [{ secretValue: -100 }, "secretValue must be positive"],
+  ])("rejects a secret clue with %j", (extra, message) => {
+    const found = issues({ ...SECRET, ...extra });
+    expect(found.length).toBeGreaterThan(0);
+    expect(found.join("\n")).toMatch(message);
+  });
+
+  it.each([
+    [{ secretTopic: "Cats" }],
+    [{ secretValue: 500 }],
+    [{ secret: false, secretValue: 500 }],
+  ])("rejects secret fields without secret: true (%j)", (extra) => {
+    expect(issues({ ...BASE, ...extra }).join("\n")).toMatch(
+      "secretTopic and secretValue need secret: true",
+    );
+  });
+});
+
 describe("sample games", () => {
+  it("parses the secret question sample game", () => {
+    const game = GameSchema.parse(secretGame);
+    const clues = game.boards.flatMap((b) =>
+      b.categories.flatMap((c) => c.clues),
+    );
+    expect(clues.some((c) => c.secret && c.choices)).toBe(true);
+    expect(clues.some((c) => c.secret && c.media)).toBe(true);
+    expect(clues.some((c) => c.secret && c.secretTopic)).toBe(true);
+    expect(clues.some((c) => c.secret && !c.secretTopic)).toBe(true);
+    expect(clues.some((c) => !c.secret)).toBe(true);
+  });
+
   it("parses the multiple choice sample game", () => {
     const game = GameSchema.parse(choiceGame);
     const clues = game.boards.flatMap((b) =>
