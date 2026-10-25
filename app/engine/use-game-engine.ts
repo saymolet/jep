@@ -9,7 +9,9 @@ import type { Action } from "./engine";
 import { gameEngine, getWinningBuzzer } from "./engine";
 import {
   applyRoomEventsToState,
+  compareRoomEvents,
   isTypedRoomEvent,
+  mergeRoomEvents,
   roomEventToAction,
 } from "./room-event";
 import {
@@ -35,6 +37,27 @@ const STALENESS_CHECK_MS = 30_000;
 
 /** How long to remain in RECONNECTING before escalating to DISCONNECTED. */
 const RECONNECTING_TIMEOUT_MS = 60_000;
+
+/** Delay for the second catch-up fetch after SUBSCRIBED. Supabase can drop
+ * postgres_changes INSERTs that happen right after the channel subscribes
+ * (the CDC pipeline is still warming up), so fetch once more after it. */
+const CATCH_UP_DELAY_MS = 3_000;
+
+/** Internal reducer action that swaps in a state rebuilt from all known room
+ * events (used when an event arrives out of order). */
+const REPLACE_STATE = "__replace_state";
+type EngineAction = Action | { type: typeof REPLACE_STATE; state: State };
+
+function syncedGameEngine(state: State, action: EngineAction): State {
+  if (action.type === REPLACE_STATE) {
+    return action.state;
+  }
+  return gameEngine(state, action);
+}
+
+function maxEventId(events: readonly DbRoomEvent[], initial = 0) {
+  return events.reduce((max, e) => Math.max(max, e.id), initial);
+}
 
 export function stateToGameEngine(
   game: Game,
@@ -135,7 +158,16 @@ export function useGameEngine(
   roomId: number,
   accessToken?: AuthSession["accessToken"],
 ) {
-  const seenEventIds = React.useRef(new Set(serverRoomEvents.map((e) => e.id)));
+  // Every room event applied to `state`, sorted by (ts, id). Used to dedupe
+  // events by id and to rebuild state if an event arrives out of order.
+  const knownEvents = React.useRef<DbRoomEvent[] | null>(null);
+  if (knownEvents.current === null) {
+    knownEvents.current = [...serverRoomEvents].sort(compareRoomEvents);
+  }
+  // Highest event id up to which we hold a complete snapshot (from the loader
+  // or a catch-up fetch). Realtime events never advance it: if realtime drops
+  // event N but delivers N+1, the next catch-up must still fetch event N.
+  const fetchedUpToId = React.useRef(maxEventId(serverRoomEvents));
 
   const hasConnectedOnce = React.useRef(false);
   const [connectionState, setConnectionState] = React.useState<ConnectionState>(
@@ -151,11 +183,52 @@ export function useGameEngine(
   }, []);
 
   const [state, dispatch] = React.useReducer(
-    gameEngine,
+    syncedGameEngine,
     { game, serverRoomEvents },
     (arg) =>
       applyRoomEventsToState(stateFromGame(arg.game), arg.serverRoomEvents),
   );
+
+  const gameRef = React.useRef(game);
+  React.useEffect(() => {
+    gameRef.current = game;
+  }, [game]);
+
+  /** Merge room events from any source (realtime, catch-up fetch, loader
+   * snapshot) into state. `complete` marks a source that returns every event
+   * after `fetchedUpToId`, so the watermark may advance. */
+  const ingestEvents = React.useCallback(
+    (incoming: readonly DbRoomEvent[], { complete }: { complete: boolean }) => {
+      if (complete) {
+        fetchedUpToId.current = maxEventId(incoming, fetchedUpToId.current);
+      }
+      const { events, added, appendOnly } = mergeRoomEvents(
+        knownEvents.current ?? [],
+        incoming,
+      );
+      if (added.length === 0) return false;
+      knownEvents.current = events;
+      if (appendOnly) {
+        for (const re of added) {
+          dispatch(roomEventToAction(re));
+        }
+      } else {
+        dispatch({
+          type: REPLACE_STATE,
+          state: applyRoomEventsToState(stateFromGame(gameRef.current), events),
+        });
+      }
+      return true;
+    },
+    [],
+  );
+
+  // React Router revalidates the room loader after every fetcher action, so
+  // the player's own actions (e.g. Join) come back in a fresh snapshot even
+  // if the realtime channel is not subscribed yet or drops the INSERT.
+  React.useEffect(() => {
+    ingestEvents(serverRoomEvents, { complete: true });
+  }, [serverRoomEvents, ingestEvents]);
 
   const client = React.useMemo(() => getSupabase(accessToken), [accessToken]);
 
@@ -165,26 +238,17 @@ export function useGameEngine(
 
     /** Fetch events from the DB that we haven't seen yet. */
     async function fetchMissedEvents() {
-      const maxSeenId =
-        seenEventIds.current.size > 0 ? Math.max(...seenEventIds.current) : 0;
-
       try {
         const { data, error } = await client
           .from("room_events")
           .select("*")
           .eq("room_id", roomId)
-          .gt("id", maxSeenId)
+          .gt("id", fetchedUpToId.current)
           .order("ts", { ascending: true });
 
         if (error || !data || disposed) return;
 
-        for (const event of data) {
-          if (!seenEventIds.current.has(event.id) && isTypedRoomEvent(event)) {
-            seenEventIds.current.add(event.id);
-            dispatch(roomEventToAction(event));
-          }
-        }
-        if (data.length > 0) {
+        if (ingestEvents(data, { complete: true })) {
           setLastMessageAt(Date.now());
         }
       } catch (err) {
@@ -192,17 +256,28 @@ export function useGameEngine(
       }
     }
 
+    let catchUpTimer: ReturnType<typeof setTimeout> | undefined;
+
     // Timer to escalate RECONNECTING → DISCONNECTED after prolonged failure.
     let reconnectingTimer: ReturnType<typeof setTimeout> | undefined;
+    // Once escalated, stay DISCONNECTED (offering a manual retry) until the
+    // channel actually subscribes again, instead of flickering back to
+    // RECONNECTING on every background retry.
+    let gaveUp = false;
     function startReconnectingTimer() {
-      clearTimeout(reconnectingTimer);
+      // Don't restart a running timer: Supabase retries emit CHANNEL_ERROR /
+      // TIMED_OUT repeatedly, which would otherwise postpone the escalation
+      // forever.
+      if (reconnectingTimer !== undefined) return;
       reconnectingTimer = setTimeout(() => {
+        gaveUp = true;
         if (!disposed) setConnectionState(ConnectionState.DISCONNECTED);
       }, RECONNECTING_TIMEOUT_MS);
     }
     function clearReconnectingTimer() {
       clearTimeout(reconnectingTimer);
       reconnectingTimer = undefined;
+      gaveUp = false;
     }
 
     setConnectionState(
@@ -230,10 +305,7 @@ export function useGameEngine(
             );
             return;
           }
-          if (!seenEventIds.current.has(newEvent.id)) {
-            seenEventIds.current.add(newEvent.id);
-            dispatch(roomEventToAction(newEvent));
-          }
+          ingestEvents([newEvent], { complete: false });
         },
       )
       .subscribe((status, err) => {
@@ -245,6 +317,8 @@ export function useGameEngine(
             clearReconnectingTimer();
             setConnectionState(ConnectionState.CONNECTED);
             fetchMissedEvents();
+            clearTimeout(catchUpTimer);
+            catchUpTimer = setTimeout(fetchMissedEvents, CATCH_UP_DELAY_MS);
             return;
 
           case "CLOSED":
@@ -257,7 +331,7 @@ export function useGameEngine(
             const nextState = hasConnectedOnce.current
               ? ConnectionState.RECONNECTING
               : ConnectionState.CONNECTING;
-            setConnectionState(nextState);
+            if (!gaveUp) setConnectionState(nextState);
             // Escalate to DISCONNECTED if retries don't succeed in time —
             // including on the first connection attempt, which previously
             // showed "Connecting..." forever with no manual retry offered
@@ -273,21 +347,39 @@ export function useGameEngine(
         }
       });
 
-    // Re-sync when the tab returns to the foreground.
-    function handleVisibilityChange() {
+    /** Whether the channel (and its socket) still look alive. */
+    function isChannelHealthy() {
+      return (
+        (channel.state === "joined" || channel.state === "joining") &&
+        client.realtime.isConnected()
+      );
+    }
+
+    // Re-sync when the tab returns to the foreground or the device comes back
+    // online (e.g. a phone unlocking or switching networks).
+    function resync() {
       if (document.visibilityState !== "visible" || disposed) return;
       fetchMissedEvents();
       // If the channel silently disconnected, trigger a full reconnect.
-      if (channel.state !== "joined" && channel.state !== "joining") {
+      if (!isChannelHealthy()) {
         setReconnectTrigger((t) => t + 1);
       }
     }
-    document.addEventListener("visibilitychange", handleVisibilityChange);
+    // Safari restores pages from the back/forward cache with their sockets
+    // closed; the effect does not re-run, so force a fresh channel.
+    function handlePageShow(e: PageTransitionEvent) {
+      if (!e.persisted || disposed) return;
+      fetchMissedEvents();
+      setReconnectTrigger((t) => t + 1);
+    }
+    document.addEventListener("visibilitychange", resync);
+    window.addEventListener("online", resync);
+    window.addEventListener("pageshow", handlePageShow);
 
     // Periodic check for silent disconnects.
     const stalenessInterval = setInterval(() => {
       if (disposed) return;
-      if (channel.state !== "joined" && channel.state !== "joining") {
+      if (!isChannelHealthy()) {
         console.info(
           "Staleness check: channel not joined, triggering reconnect",
         );
@@ -298,11 +390,14 @@ export function useGameEngine(
     return () => {
       disposed = true;
       clearReconnectingTimer();
+      clearTimeout(catchUpTimer);
       clearInterval(stalenessInterval);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      document.removeEventListener("visibilitychange", resync);
+      window.removeEventListener("online", resync);
+      window.removeEventListener("pageshow", handlePageShow);
       client.removeChannel(channel);
     };
-  }, [client, roomId, reconnectTrigger]);
+  }, [client, roomId, reconnectTrigger, ingestEvents]);
 
   return stateToGameEngine(game, state, dispatch, {
     connectionState,

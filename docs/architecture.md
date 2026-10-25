@@ -41,6 +41,10 @@ DB tables: `games`, `categories`, `clues`, `accounts`, `rooms`, `room_events`,
 
 - Supabase Realtime drives multiplayer. `rooms` + `room_events` tables; buzzing and
   scoring sync through room events. (Details TBD in deep-dive.)
+- Client sync (`useGameEngine`): state = replay of `room_events`. New events come from
+  realtime INSERTs, catch-up fetches (on SUBSCRIBED, +3 s, visibility/online) and the
+  room loader's snapshot after every own action (fetcher revalidation); all are merged
+  by id via `mergeRoomEvents`, rebuilding state if one arrives out of order.
 
 ## Open questions to resolve during feature work
 
