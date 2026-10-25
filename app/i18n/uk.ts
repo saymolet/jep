@@ -17,6 +17,7 @@ import { room } from "./uk/room";
 import { settings } from "./uk/settings";
 import { siq } from "./uk/siq";
 import { summary } from "./uk/summary";
+import { team } from "./uk/team";
 import { upload } from "./uk/upload";
 import { uploadHelp } from "./uk/uploadHelp";
 import { watch } from "./uk/watch";
@@ -45,4 +46,5 @@ export const uk: Dictionary<typeof en> = {
   ...settings,
   ...random,
   ...watch,
+  ...team,
 };

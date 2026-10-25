@@ -3,10 +3,13 @@ import * as React from "react";
 
 import { Dollars } from "~/components/dollars";
 import Popover from "~/components/popover";
+import { getTeamName, TeamHeader } from "~/components/team/team";
 import { UndoArmingContext, UndoCheckConfirm } from "~/components/undo-check";
 import type { Player } from "~/engine";
 import { GameState, useEngineContext } from "~/engine";
+import { getTeamStandings, isTeamMode } from "~/engine/teams";
 import { useTranslation } from "~/i18n";
+import { TEAM_COLORS } from "~/models/team";
 
 import { RoomProps } from "../game";
 import { EditPlayerForm } from "./edit-player";
@@ -80,8 +83,14 @@ export function PlayerScoreBox({
           "bg-blue-700": hasBoardControl,
           "animate-score-pulse-green": pulse === "up",
           "animate-score-pulse-red": pulse === "down",
+          // Team mode: a stripe in the team's color.
+          "border-l-4": player.team,
         },
       )}
+      style={
+        player.team ? { borderColor: TEAM_COLORS[player.team] } : undefined
+      }
+      data-team={player.team}
     >
       {icon ?? <PlayerIcon player={player} size="tile" />}
       <div className="flex min-w-0 grow flex-col justify-center gap-1">
@@ -243,6 +252,8 @@ function useCorrectionPulses() {
 export function PlayerScores({ roomId, userId }: RoomProps) {
   const {
     players,
+    leftPlayers,
+    teamNames,
     boardControl,
     type,
     round,
@@ -312,47 +323,88 @@ export function PlayerScores({ roomId, userId }: RoomProps) {
     />
   ) : undefined;
 
-  return (
-    <div className={PLAYER_TILE_GRID}>
-      {yourPlayer ? (
-        // Your own tile has the name input and buttons, so it gets a wider
-        // slot.
-        <div className="col-span-2 min-w-0">
-          {editable ? (
-            <EditPlayerForm
-              roomId={roomId}
-              userId={userId}
-              winning={yourPlayer.score === maxScore}
-              icon={kickIcon(yourPlayer, true)}
-              scorePopover={scorePopover}
-              scorePopoverKey={correction?.correct}
-              scorePopoverAutoOpen={pickUpArmedUndo}
-              pulse={pulses.get(yourPlayer.userId)}
-            />
-          ) : (
-            <PlayerScore
-              player={yourPlayer}
-              hasBoardControl={yourPlayer.userId === boardControl}
-              winning={yourPlayer.score === maxScore}
-              icon={kickIcon(yourPlayer, true)}
-              scorePopover={scorePopover}
-              scorePopoverKey={correction?.correct}
-              scorePopoverAutoOpen={pickUpArmedUndo}
-              pulse={pulses.get(yourPlayer.userId)}
-            />
-          )}
-        </div>
-      ) : null}
-      {sortedOtherPlayers.map((p) => (
-        <PlayerScore
-          key={p.userId}
-          player={p}
-          hasBoardControl={p.userId === boardControl}
-          winning={p.score === maxScore}
-          icon={kickIcon(p, false)}
-          pulse={pulses.get(p.userId)}
+  const yourTile = yourPlayer ? (
+    // Your own tile has the name input and buttons, so it gets a wider slot.
+    <div key={yourPlayer.userId} className="col-span-2 min-w-0">
+      {editable ? (
+        <EditPlayerForm
+          roomId={roomId}
+          userId={userId}
+          winning={yourPlayer.score === maxScore}
+          icon={kickIcon(yourPlayer, true)}
+          scorePopover={scorePopover}
+          scorePopoverKey={correction?.correct}
+          scorePopoverAutoOpen={pickUpArmedUndo}
+          pulse={pulses.get(yourPlayer.userId)}
         />
+      ) : (
+        <PlayerScore
+          player={yourPlayer}
+          hasBoardControl={yourPlayer.userId === boardControl}
+          winning={yourPlayer.score === maxScore}
+          icon={kickIcon(yourPlayer, true)}
+          scorePopover={scorePopover}
+          scorePopoverKey={correction?.correct}
+          scorePopoverAutoOpen={pickUpArmedUndo}
+          pulse={pulses.get(yourPlayer.userId)}
+        />
+      )}
+    </div>
+  ) : null;
+  const otherTile = (p: Player) => (
+    <PlayerScore
+      key={p.userId}
+      player={p}
+      hasBoardControl={p.userId === boardControl}
+      winning={p.score === maxScore}
+      icon={kickIcon(p, false)}
+      pulse={pulses.get(p.userId)}
+    />
+  );
+
+  if (!isTeamMode({ players, leftPlayers })) {
+    return (
+      <div className={PLAYER_TILE_GRID}>
+        {yourTile}
+        {sortedOtherPlayers.map(otherTile)}
+      </div>
+    );
+  }
+
+  // Team mode: tiles grouped under their team, teams with the highest total
+  // first, then the players without a team. Your tile leads its group.
+  const tilesFor = (members: Player[]) => (
+    <div className={PLAYER_TILE_GRID}>
+      {members.some((p) => p.userId === userId) ? yourTile : null}
+      {members.filter((p) => p.userId !== userId).map(otherTile)}
+    </div>
+  );
+  const soloPlayers = Array.from(players.values())
+    .filter((p) => !p.team)
+    .sort((a, b) => b.score - a.score);
+  return (
+    <div className="flex flex-col gap-4" data-testid="team-scores">
+      {getTeamStandings({ players, leftPlayers, teamNames }).map((s) => (
+        <section
+          key={s.team}
+          className="flex flex-col gap-2"
+          data-testid={`team-${s.team}`}
+        >
+          <TeamHeader
+            team={s.team}
+            name={getTeamName(t, s.team, s.name)}
+            score={s.score}
+            leftCount={s.leftMembers.length}
+          />
+          {s.members.length > 0 ? tilesFor(s.members) : null}
+        </section>
       ))}
+      {soloPlayers.length > 0 ? (
+        <section className="flex flex-col gap-2" data-testid="team-none">
+          <TeamHeader name={t("team.noTeam")} />
+          {tilesFor(soloPlayers)}
+        </section>
+      ) : null}
     </div>
   );
 }

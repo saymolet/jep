@@ -1,10 +1,12 @@
 import { parseUtcMs } from "~/engine/engine";
 import { applyRoomEventsToState } from "~/engine/room-event";
 import { GameState, stateFromGame } from "~/engine/state";
+import { getTeamStandings, isTeamMode } from "~/engine/teams";
 import { createT, type TFunction } from "~/i18n";
 import { parseAvatar } from "~/models/avatar";
 import type { Game } from "~/models/convert.server";
 import type { DbRoomEvent } from "~/models/room-event.server";
+import type { TeamId } from "~/models/team";
 import { getPlayerColor } from "~/utils";
 
 /** How far back to look for activity when listing rooms in progress. */
@@ -20,6 +22,9 @@ export interface ActiveRoom {
   /** `emoji` is the player's emoji avatar. Photo avatars are left out: they
    * are several KB each and the list is only a glance. */
   players: { name: string; color: string; emoji?: string }[];
+  /** Team totals, highest first, when the room plays in teams. `name` is a
+   * custom team name (else the default name is shown). */
+  teams?: { team: TeamId; name?: string; score: number }[];
   /** Whole minutes since the room's last event. */
   minutesAgo: number;
 }
@@ -58,6 +63,15 @@ export function summarizeActiveRoom(
         ...(avatar?.kind === "emoji" ? { emoji: avatar.emoji } : {}),
       };
     }),
+    ...(isTeamMode(state)
+      ? {
+          teams: getTeamStandings(state).map(({ team, name, score }) => ({
+            team,
+            ...(name ? { name } : {}),
+            score,
+          })),
+        }
+      : {}),
     minutesAgo: Math.max(0, Math.floor((now - lastActivity) / 60_000)),
   };
 }

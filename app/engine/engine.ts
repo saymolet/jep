@@ -2,6 +2,7 @@ import type { Draft } from "immer";
 import { enableMapSet, produce } from "immer";
 
 import type { Board, Clue } from "~/models/convert.server";
+import { normalizeTeamName } from "~/models/team";
 import { cyrb53 } from "~/utils";
 import { isChoiceIndex, isCorrectChoice } from "~/utils/choices";
 
@@ -14,8 +15,10 @@ import {
   isClueWagerAction,
   isPassClueAction,
   isPlayerAction,
+  isRenameTeamAction,
   isRoundAction,
   isRestoreAction,
+  isSetTeamAction,
   isTransferPlayerAction,
 } from "./actions";
 import {
@@ -91,6 +94,12 @@ export enum ActionType {
    * selection are disabled. Pausing is only allowed when no clue is open. */
   TogglePause = "toggle_pause",
   TransferPlayer = "transfer_player",
+  /** SetTeam puts a player on a team (or takes them off it, team null).
+   * Ignored while a question is open and after game over. */
+  SetTeam = "set_team",
+  /** RenameTeam gives the player's own team a custom name ("" resets the
+   * default name). Ignored after game over. */
+  RenameTeam = "rename_team",
   /** Restore replaces the entire state (used for restoring saved solo games). */
   Restore = "restore",
 }
@@ -267,6 +276,20 @@ function retireFromSecretClue(
     draft.buzzes.get(oldUserId) === 0
   ) {
     giveSecretClue(draft, newUserId);
+  }
+}
+
+/** forgetEmptyTeamNames drops the custom names of teams nobody is (or was)
+ * on any more, so a team started later gets its default name. */
+function forgetEmptyTeamNames(draft: Draft<State>) {
+  for (const team of Array.from(draft.teamNames.keys())) {
+    const hasMember = [
+      ...draft.players.values(),
+      ...draft.leftPlayers.values(),
+    ].some((p) => p.team === team);
+    if (!hasMember) {
+      draft.teamNames.delete(team);
+    }
   }
 }
 
@@ -448,10 +471,11 @@ export function gameEngine(state: State, action: Action): State {
         if (draft.type === GameState.GameOver) {
           return;
         }
-        const { avatar, ...player } = action.payload;
+        const { avatar, team, ...player } = action.payload;
         draft.players.set(action.payload.userId, {
           ...player,
           ...(avatar ? { avatar } : {}),
+          ...(team ? { team } : {}),
           score: 0,
         });
         // If this is the first player joining, give them board control.
@@ -479,6 +503,7 @@ export function gameEngine(state: State, action: Action): State {
         }
         transferBoardControl(draft, action.payload.userId);
         draft.players.delete(action.payload.userId);
+        forgetEmptyTeamNames(draft);
       });
     case ActionType.Leave:
       if (!isPlayerAction(action)) {
@@ -1254,6 +1279,54 @@ export function gameEngine(state: State, action: Action): State {
               ),
             );
           }
+        }
+      });
+    case ActionType.SetTeam:
+      if (!isSetTeamAction(action)) {
+        throw new Error("SetTeam action must have a user and a team");
+      }
+      return produce(state, (draft) => {
+        const { userId, team } = action.payload;
+        const player = draft.players.get(userId);
+        // Teams are settled between questions: changing teams while a
+        // question is open would regroup the scoreboard mid-play.
+        if (
+          !player ||
+          draft.type === GameState.GameOver ||
+          draft.activeClue !== null
+        ) {
+          return;
+        }
+        if (team) {
+          player.team = team;
+        } else {
+          delete player.team;
+        }
+        forgetEmptyTeamNames(draft);
+      });
+    case ActionType.RenameTeam:
+      if (!isRenameTeamAction(action)) {
+        throw new Error("RenameTeam action must have a user, team and name");
+      }
+      return produce(state, (draft) => {
+        const { userId, team } = action.payload;
+        const player = draft.players.get(userId);
+        // Only a current member can rename their own team.
+        if (
+          !player ||
+          player.team !== team ||
+          draft.type === GameState.GameOver
+        ) {
+          return;
+        }
+        const name = normalizeTeamName(action.payload.name);
+        if (name === undefined) {
+          return;
+        }
+        if (name) {
+          draft.teamNames.set(team, name);
+        } else {
+          draft.teamNames.delete(team);
         }
       });
     case ActionType.Restore:

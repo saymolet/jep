@@ -2,8 +2,10 @@ import { Link } from "react-router";
 
 import { Play } from "~/components/icons";
 import { firstCharacter } from "~/components/player/player-icon";
+import { getTeamName, TeamSwatch } from "~/components/team/team";
 import { useTranslation } from "~/i18n";
 import { type ActiveRoom, formatTimeAgo } from "~/models/active-rooms";
+import { formatDollars } from "~/utils";
 
 function PlayerList({ players }: { players: ActiveRoom["players"] }) {
   return (
@@ -22,6 +24,23 @@ function PlayerList({ players }: { players: ActiveRoom["players"] }) {
             )}
           </span>
           <span className="truncate">{player.name}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function TeamList({ teams }: { teams: NonNullable<ActiveRoom["teams"]> }) {
+  const { t } = useTranslation();
+  return (
+    <ul className="flex flex-wrap gap-x-3 gap-y-1" aria-label={t("team.teams")}>
+      {teams.map((team) => (
+        <li key={team.team} className="flex min-w-0 items-center gap-1.5">
+          <TeamSwatch team={team.team} />
+          <span className="truncate font-semibold">
+            {getTeamName(t, team.team, team.name)}
+          </span>
+          <span className="text-slate-300">{formatDollars(team.score)}</span>
         </li>
       ))}
     </ul>
@@ -63,6 +82,7 @@ export function ActiveRoomsList({ rooms }: { rooms: ActiveRoom[] }) {
                     })}
                   </span>
                 </div>
+                {room.teams ? <TeamList teams={room.teams} /> : null}
                 <PlayerList players={room.players} />
               </div>
               <span className="flex shrink-0 items-center gap-1 font-medium text-blue-200">

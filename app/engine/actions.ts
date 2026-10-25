@@ -6,6 +6,7 @@ import {
   PLAYER_COLOR_HEX_REGEX,
   type PlayerColor,
 } from "~/models/player-color";
+import { isTeamId, TEAM_IDS, type TeamId } from "~/models/team";
 
 import type { Action } from "./engine";
 import { ActionType } from "./engine";
@@ -34,6 +35,12 @@ export const PlayerPayload = z.object({
     (value) => (value === "" ? "" : normalizeAvatar(value)),
     z.string().optional(),
   ),
+  /** The team picked when joining (team mode). Older events have none; an
+   * unknown team is dropped rather than failing the whole action. */
+  team: z.preprocess(
+    (value) => (isTeamId(value) ? value : undefined),
+    z.enum(TEAM_IDS).optional(),
+  ),
 });
 /** PlayerFormPayload validates a Join/ChangeName request from a client.
  * Unlike PlayerPayload (used on replay, where bad avatars are ignored), an
@@ -57,6 +64,17 @@ const CorrectCheckPayload = CluePayload.extend({
 const PassCluePayload = CluePayload.extend({
   /** The player who gets the secret clue. */
   toUserId: z.string(),
+});
+const SetTeamPayload = z.object({
+  userId: z.string(),
+  /** null leaves the player's team (they play solo). */
+  team: z.enum(TEAM_IDS).nullable(),
+});
+const RenameTeamPayload = z.object({
+  userId: z.string(),
+  team: z.enum(TEAM_IDS),
+  /** The new name ("" resets the default). The engine validates it. */
+  name: z.string(),
 });
 const TransferPlayerPayload = z.object({
   oldUserId: z.string(),
@@ -103,6 +121,7 @@ export function isPlayerAction(action: Action): action is {
     name: string;
     color?: PlayerColor;
     avatar?: Avatar | "";
+    team?: TeamId;
   };
   ts: number;
 } {
@@ -194,6 +213,28 @@ export function isPassClueAction(action: Action): action is {
   return (
     action.type === ActionType.PassClue &&
     PassCluePayload.safeParse(action.payload).success
+  );
+}
+
+export function isSetTeamAction(action: Action): action is {
+  type: ActionType.SetTeam;
+  payload: { userId: string; team: TeamId | null };
+  ts: number;
+} {
+  return (
+    action.type === ActionType.SetTeam &&
+    SetTeamPayload.safeParse(action.payload).success
+  );
+}
+
+export function isRenameTeamAction(action: Action): action is {
+  type: ActionType.RenameTeam;
+  payload: { userId: string; team: TeamId; name: string };
+  ts: number;
+} {
+  return (
+    action.type === ActionType.RenameTeam &&
+    RenameTeamPayload.safeParse(action.payload).success
   );
 }
 

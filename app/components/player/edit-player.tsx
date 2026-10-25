@@ -10,6 +10,7 @@ import {
   PencilSquare,
 } from "~/components/icons";
 import Input from "~/components/input";
+import { getTeamName, TeamButton, TeamDialog } from "~/components/team/team";
 import type { Action, Player } from "~/engine";
 import { useEngineContext } from "~/engine";
 import { useTranslation } from "~/i18n";
@@ -36,6 +37,7 @@ function EditPlayer({
   scorePopoverKey,
   scorePopoverAutoOpen,
   pulse,
+  teamButton,
 }: {
   hasBoardControl: boolean;
   loading: boolean;
@@ -51,6 +53,8 @@ function EditPlayer({
   scorePopoverKey?: boolean;
   scorePopoverAutoOpen?: boolean;
   pulse?: ScorePulse;
+  /** Opens the team dialog (shown under the name). */
+  teamButton?: React.ReactNode;
 }) {
   const { t } = useTranslation();
   const inputRef = React.useRef<HTMLInputElement | null>(null);
@@ -121,6 +125,7 @@ function EditPlayer({
           </button>
         )}
       </div>
+      {teamButton}
     </PlayerScoreBox>
   );
 }
@@ -143,7 +148,7 @@ export function EditPlayerForm({
   pulse?: ScorePulse;
 } & RoomProps) {
   const { t } = useTranslation();
-  const { players, soloDispatch, boardControl } = useEngineContext();
+  const { players, soloDispatch, boardControl, teamNames } = useEngineContext();
 
   const fetcher = useFetcher<Action>();
   const loading = fetcher.state === "loading";
@@ -154,6 +159,7 @@ export function EditPlayerForm({
   const avatarFetcher = useFetcher<Action>();
   useSoloAction(avatarFetcher, soloDispatch);
   const [avatarOpen, setAvatarOpen] = React.useState(false);
+  const [teamOpen, setTeamOpen] = React.useState(false);
 
   const [editing, setEditing] = React.useState(false);
   const formRef = React.useRef<HTMLFormElement | null>(null);
@@ -230,8 +236,29 @@ export function EditPlayerForm({
           scorePopoverKey={scorePopoverKey}
           scorePopoverAutoOpen={scorePopoverAutoOpen}
           pulse={pulse}
+          teamButton={
+            <TeamButton
+              team={optimisticPlayer.team}
+              name={
+                optimisticPlayer.team
+                  ? getTeamName(
+                      t,
+                      optimisticPlayer.team,
+                      teamNames.get(optimisticPlayer.team),
+                    )
+                  : t("team.noTeam")
+              }
+              onClick={() => setTeamOpen(true)}
+            />
+          }
         />
       </fetcher.Form>
+      <TeamDialog
+        roomId={roomId}
+        userId={userId}
+        isOpen={teamOpen}
+        onClose={() => setTeamOpen(false)}
+      />
       <Dialog
         isOpen={avatarOpen}
         onClose={() => setAvatarOpen(false)}

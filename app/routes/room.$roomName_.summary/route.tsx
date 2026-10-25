@@ -3,6 +3,7 @@ import { ENV } from "varlock/env";
 import { Dollars } from "~/components/dollars";
 import { ClockDisplay } from "~/components/game-clock";
 import { PLAYER_TILE_GRID, PlayerScore } from "~/components/player";
+import { TeamStandings } from "~/components/team/team-standings";
 import {
   applyRoomEventsToState,
   isTypedRoomEvent,
@@ -129,6 +130,7 @@ export default function PlayGame({ loaderData }: Route.ComponentProps) {
             }).format(winningPlayers),
           })}
         </h2>
+        <TeamStandings state={state} />
         {state.clockAccumulatedMs > 0 && (
           <ClockDisplay displayMs={state.clockAccumulatedMs} disabled />
         )}

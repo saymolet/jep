@@ -1,6 +1,7 @@
 import type { ClueAnswer, GameState, Player, State } from "~/engine/state";
 import { newAnswerGrid } from "~/engine/state";
 import type { Game } from "~/models/convert.server";
+import type { TeamId } from "~/models/team";
 
 const DB_NAME = "jep-offline";
 const DB_VERSION = 1;
@@ -138,6 +139,8 @@ interface SerializedState {
   wagers: [string, [string, number][]][];
   isAnswered: SerializedClueAnswer[][][];
   checkCorrection?: SerializedCheckCorrection | null;
+  /** Missing in saves from before team mode. */
+  teamNames?: [TeamId, string][];
   activeClue: [number, number] | null;
   numAnswered: number;
   numCluesInBoard: number;
@@ -198,6 +201,7 @@ export function serializeState(state: State): SerializedState {
           checks: Array.from(state.checkCorrection.checks.entries()),
         }
       : null,
+    teamNames: Array.from(state.teamNames.entries()),
     activeClue: state.activeClue,
     numAnswered: state.numAnswered,
     numCluesInBoard: state.numCluesInBoard,
@@ -249,6 +253,7 @@ export function deserializeState(
           checks: new Map(serialized.checkCorrection.checks),
         }
       : null,
+    teamNames: new Map(serialized.teamNames ?? []),
     activeClue: serialized.activeClue,
     numAnswered: serialized.numAnswered,
     numCluesInBoard: serialized.numCluesInBoard,
