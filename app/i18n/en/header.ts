@@ -6,7 +6,7 @@ export const header = {
   "header.howToPlay": "How to Play",
   "header.uploadGame": "Upload a Game",
   "header.about": "About",
-  "header.gameMenu": "Game options",
+  "header.gameMenu": "Customise options",
   "header.roundCount": { one: "{count} round", other: "{count} rounds" },
   "header.gameDetails": "Game details",
   "header.copyRoomLink": "Copy link to room",

@@ -73,6 +73,10 @@ Difficulty estimates from the original planning discussion.
       public Storage bucket `game-media`, zip bomb / XXE guarded, summary of skipped items) — see
       [features/08-import-export.md](./features/08-import-export.md) — ⭐⭐⭐ large
 
+- [x] Ukrainian translation — whole UI in English and Ukrainian (EN / УКР switcher, cookie +
+      account setting + Accept-Language, typed dictionaries, plurals); game content is never
+      translated — see [features/09-ukrainian.md](./features/09-ukrainian.md) — ⭐⭐ medium
+
 Random board generator · question search ·
 team mode · spectator mode · admin panel · Discord login · keyboard shortcuts ·
 fullscreen presenter mode · OBS/browser-source mode · mobile-first buzzer ·
@@ -122,3 +126,7 @@ per-question timer · soundboard · themes (Classic / Своя Игра / Dark).
   screens; your own tile spans two), in the join dialog and on the summary; small squares in the
   rooms list and replay chips. Photos now 192×192, cap raised to 48 KB (old 96×96 avatars still
   valid). No migration.
+- **2026-10-25** — Feature 09 on `feat/i18n-uk`: English + Ukrainian UI (`app/i18n`, typed
+  dictionaries, `Intl.PluralRules`), language from the `lang` cookie → account setting
+  (`accounts.settings.language`) → Accept-Language, EN / УКР switcher in the header and
+  settings. No migration, no new dependencies.

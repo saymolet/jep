@@ -75,6 +75,36 @@ Rules for new code:
   `e2e/hydration*.spec.ts` fail on any hydration error (run in two time zones, UTC+14 and
   UTC−12, which always disagree with the server about the date).
 
+## i18n (English + Ukrainian)
+
+The UI is translated into English (`en`, the source language) and Ukrainian (`uk`) with a
+small typed layer in `app/i18n/` (no library). **Every new user-facing string goes into both
+languages.** Game content (titles, categories, questions, answers) is never translated.
+
+- **Dictionaries:** `app/i18n/en/<area>.ts` (English, the source of truth) and
+  `app/i18n/uk/<area>.ts`, one file per area (`common`, `header`, `play`, `room`, `auth`, ...),
+  merged in `app/i18n/en.ts` / `uk.ts` (`en/areas.ts` lists the areas). Keys start with the
+  area: `"room.startRound"`. Each `uk/<area>.ts` is typed `Dictionary<typeof en>`, so a
+  missing or extra key, or a plural where English has a string, is a **type error**;
+  `app/i18n/i18n.test.ts` also checks key prefixes, placeholders and plural forms.
+- **Messages:** `"Hi {name}"` placeholders; plurals are objects keyed by `Intl.PluralRules`
+  category with a `{count}` param — English `{ one, other }`, Ukrainian
+  `{ one, few, many, other }` (1 гравець, 2 гравці, 5 гравців, 1,5 гравця).
+- **In components:** `const { t, rich, locale, intlLocale } = useTranslation()` from
+  `~/i18n`. `t("room.players", { count })` returns a string (params are type-checked against
+  the English message). `rich(key, { link: (c) => <Link to="/x">{c}</Link>, name })` renders
+  messages with simple tags (`<link>…</link>`) and React values. Format dates and numbers with
+  `intlLocale` (`"en-US"` / `"uk-UA"`). "$" game points keep `formatDollars` (en-US).
+- **In `meta` functions:** `metaT(matches)("about.title")` (`~/i18n/meta`).
+- **On the server** (actions/loaders producing text, e.g. errors, upload summaries):
+  `createT(getRequestLocale(request))` (`~/i18n/resolve`).
+- **Language resolution** (`resolveLocale`, run in the root loader so server and client render
+  the same language — no hydration mismatch): the `lang` cookie (set by the **EN / УКР**
+  switcher in the header and settings) → the logged-in user's `accounts.settings.language` →
+  `Accept-Language` (only `uk*` gives Ukrainian) → English. Tests without a cookie or
+  Accept-Language get English. The root sets `<html lang>`.
+- Components rendered without the provider (unit tests) get English.
+
 ## Open questions to resolve during feature work
 
 - Exact room-event protocol and how buzz order / lockout is tracked.
