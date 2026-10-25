@@ -28,6 +28,16 @@
   }
 }
 
+/* buzzbar: phones, tablets and narrow windows, where the question prompt shows
+   a big BUZZ button pinned to the bottom of the screen. Pure CSS so the server
+   and the browser render the same markup. Keep in sync with BUZZ_BAR_MEDIA in
+   app/components/prompt/buzz-button.tsx. */
+@custom-variant buzzbar {
+  @media (pointer: coarse), (max-width: 639.98px) {
+    @slot;
+  }
+}
+
 @theme {
   --color-blue-1000: #0b163f;
   --color-yellow-1000: #d69f4c;

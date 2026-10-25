@@ -25,6 +25,22 @@ export const play: Dictionary<typeof en> = {
   "play.waitingForChecks": "Чекаємо на перевірку від: {names}...",
   "play.noAnswer": "[без відповіді]",
   "play.lockout": "ЗАРАНО!",
+  "play.tapHint": "Тисни кнопку внизу, коли вона стане зеленою",
+
+  // Big BUZZ button on phones
+  "play.buzzer.wait": "Чекай…",
+  "play.buzzer.waitHint": "Натиснеш зараз — кнопку заблокує",
+  "play.buzzer.open": "ТИСНИ!",
+  "play.buzzer.tooEarly": "Зарано!",
+  "play.buzzer.tooEarlyHint": "Кнопку заблоковано на мить",
+  "play.buzzer.alreadyAnswered": "Заблоковано",
+  "play.buzzer.alreadyAnsweredHint":
+    "Твою спробу на це питання вже використано",
+  "play.buzzer.timedOut": "Час вийшов",
+  "play.buzzer.timedOutHint": "Кнопку не натиснуто вчасно",
+  "play.buzzer.otherWon": "Швидше за всіх: {name}",
+  "play.buzzer.otherWonHint": "Чекай на відповідь",
+  "play.buzzer.won": "Твоя черга — відповідай!",
 
   // Check form
   "play.check.dontSpoil": "(не підказуй відповідь іншим!)",
