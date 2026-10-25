@@ -26,6 +26,11 @@ import useTimeout from "~/utils/use-timeout";
 import { useSoundSettings } from "~/utils/user-settings";
 
 import { ConnectedAnswerForm as AnswerForm } from "./answer-form";
+import {
+  ConnectedAnswerTimer,
+  useAnswerTimer,
+  useAutoWrongOnTimeout,
+} from "./answer-timer";
 import { Buzzes } from "./buzz";
 import { BuzzButton, getBuzzButtonState, isBuzzBarShown } from "./buzz-button";
 import { ConnectedCheckForm as CheckForm } from "./check-form";
@@ -754,12 +759,33 @@ function ReadLongFormCluePrompt({ roomId, userId }: RoomProps) {
   );
 }
 
+/** AnswerTimerHint tells the answering player what happens when their time
+ * runs out (or, without auto-marking, to mark their answer now). */
+function AnswerTimerHint({
+  expired,
+  autoWrong,
+}: {
+  expired: boolean;
+  autoWrong: boolean;
+}) {
+  const { t } = useTranslation();
+  if (expired === autoWrong) return null;
+  return (
+    <p className="text-center text-sm text-slate-300">
+      {expired
+        ? t("play.answerTimer.markNow")
+        : t("play.answerTimer.autoWrongHint")}
+    </p>
+  );
+}
+
 /** RevealAnswerToBuzzerPrompt handles all frontend behavior while the game state
  * is GameState.RevealAnswerToBuzzer.
  */
 function RevealAnswerToBuzzerPrompt({ roomId, userId }: RoomProps) {
   const {
     activeClue,
+    autoWrongOnTimeout,
     board,
     category,
     clue,
@@ -769,6 +795,13 @@ function RevealAnswerToBuzzerPrompt({ roomId, userId }: RoomProps) {
   } = useEngineContext();
   const { t } = useTranslation();
   const clueMedia = useClueMedia();
+
+  // The answer timer (room setting): everyone sees the countdown; when it
+  // runs out, the answering player's own device marks the answer wrong.
+  const timer = useAnswerTimer();
+  const [marked, setMarked] = React.useState(false);
+  const timedOut = useAutoWrongOnTimeout({ roomId, userId, timer, marked });
+
   if (!clue) throw new Error("clue is undefined");
   if (!activeClue) throw new Error("activeClue is undefined");
   if (!winningBuzzer) throw new Error("winningBuzzer is undefined");
@@ -786,15 +819,16 @@ function RevealAnswerToBuzzerPrompt({ roomId, userId }: RoomProps) {
   // so they get time to read it (no 5-second countdown).
   const isSecret = isSecretClue(clue);
 
-  // Play the "time's up" sound after 5 seconds if the contestant can reveal the
-  // answer but hasn't yet.
+  // Without the answer timer: play the "time's up" sound after 5 seconds if
+  // the contestant can reveal the answer but hasn't yet (a hint only).
+  const hintCountdown = canShowAnswer && !isSecret && !timer.timed;
   const [playTimesUpSfx] = useGameSound(TIMES_UP_SFX);
   useTimeout(
     playTimesUpSfx,
-    canShowAnswer && !showAnswer && !isSecret ? CLUE_TIMEOUT_MS : null,
+    hintCountdown && !showAnswer ? CLUE_TIMEOUT_MS : null,
   );
   const [countdownStartedAt] = React.useState(
-    canShowAnswer && !showAnswer && !isSecret ? Date.now() : undefined,
+    hintCountdown && !showAnswer ? Date.now() : undefined,
   );
 
   const winningPlayerName = winningBuzzer
@@ -841,9 +875,23 @@ function RevealAnswerToBuzzerPrompt({ roomId, userId }: RoomProps) {
         onBuzz={() => null}
         showAnswer={false}
       />
-      {isMultipleChoice ? (
+      {timedOut ? (
+        <>
+          {isMultipleChoice ? <ConnectedChoiceList /> : null}
+          <p
+            className="p-2 text-center font-bold text-white"
+            data-testid="answer-timed-out"
+          >
+            {t("play.answerTimer.countedWrong")}
+          </p>
+        </>
+      ) : isMultipleChoice ? (
         canShowAnswer ? (
-          <ConnectedChoicePicker roomId={roomId} userId={userId} />
+          <ConnectedChoicePicker
+            roomId={roomId}
+            userId={userId}
+            onPick={() => setMarked(true)}
+          />
         ) : (
           <>
             <ConnectedChoiceList />
@@ -860,13 +908,25 @@ function RevealAnswerToBuzzerPrompt({ roomId, userId }: RoomProps) {
           onClickShowAnswer={
             canShowAnswer ? () => setShowAnswer(true) : () => null
           }
+          onSubmit={() => setMarked(true)}
         />
       ) : (
         <p className="p-2 text-center font-bold text-white">
           {t("play.waitingForResponse", { name: winningPlayerName })}
         </p>
       )}
-      <Countdown startTime={showAnswer ? undefined : countdownStartedAt} />
+      {timer.timed ? (
+        <ConnectedAnswerTimer timer={timer}>
+          {canShowAnswer && timer.status ? (
+            <AnswerTimerHint
+              expired={timer.status.expired}
+              autoWrong={autoWrongOnTimeout}
+            />
+          ) : null}
+        </ConnectedAnswerTimer>
+      ) : (
+        <Countdown startTime={showAnswer ? undefined : countdownStartedAt} />
+      )}
       <Buzzes />
     </>
   );

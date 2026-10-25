@@ -83,10 +83,13 @@ export function ConnectedCheckForm({
   longForm = false,
   showAnswer,
   onClickShowAnswer,
+  onSubmit,
 }: {
   longForm?: boolean;
   showAnswer: boolean;
   onClickShowAnswer: () => void;
+  /** Called when the player marks their answer. */
+  onSubmit?: () => void;
 } & RoomProps) {
   const {
     activeClue,
@@ -206,7 +209,11 @@ export function ConnectedCheckForm({
   }
 
   return (
-    <fetcher.Form method="POST" action={`/room/${roomId}/check`}>
+    <fetcher.Form
+      method="POST"
+      action={`/room/${roomId}/check`}
+      onSubmit={onSubmit}
+    >
       <input type="hidden" value={userId} name="userId" />
       <input type="hidden" value={i} name="i" />
       <input type="hidden" value={j} name="j" />

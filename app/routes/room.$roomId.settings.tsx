@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { ActionType } from "~/engine";
-import { ANSWER_TIME_OPTIONS } from "~/engine/answer-timer";
+import { isAnswerTimeSec } from "~/engine/answer-timer";
 import { applyRoomEventsToState } from "~/engine/room-event";
 import { GameState, stateFromGame } from "~/engine/state";
 import { createT, getRequestLocale } from "~/i18n";
@@ -18,10 +18,7 @@ const formSchema = z.object({
   /** The player changing the settings: any player, only as themselves. */
   userId: z.string().min(1),
   /** Seconds for the answer timer, 0 = off. */
-  answerTimeSec: z.coerce
-    .number()
-    .int()
-    .refine((n) => (ANSWER_TIME_OPTIONS as readonly number[]).includes(n)),
+  answerTimeSec: z.coerce.number().int().refine(isAnswerTimeSec),
   /** "true" / "false": mark the answer wrong when the time runs out. */
   autoWrongOnTimeout: z.enum(["true", "false"]).transform((v) => v === "true"),
 });

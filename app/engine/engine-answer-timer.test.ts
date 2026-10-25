@@ -206,7 +206,7 @@ describe("SetSettings (answer timer)", () => {
   });
 
   it("replays the same from room events", () => {
-    const events: DbRoomEvent[] = [
+    const payloads: [ActionType, DbRoomEvent["payload"]][] = [
       [ActionType.Join, P1],
       [ActionType.Join, P2],
       [
@@ -217,12 +217,13 @@ describe("SetSettings (answer timer)", () => {
         ActionType.SetSettings,
         { userId: P2.userId, answerTimeSec: 99, autoWrongOnTimeout: true },
       ],
-    ].map(([type, payload], k) => ({
+    ];
+    const events: DbRoomEvent[] = payloads.map(([type, payload], k) => ({
       id: k + 1,
       room_id: 1,
       ts: `2026-10-26T10:00:0${k + 1}`,
-      type: type as string,
-      payload: payload as DbRoomEvent["payload"],
+      type,
+      payload,
     }));
     const replayed = applyRoomEventsToState(stateFromGame(CHOICE_GAME), events);
     expect(timer(replayed)).toEqual({

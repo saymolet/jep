@@ -5,9 +5,15 @@ import type { AuthSession } from "~/models/auth";
 import type { Clue, Game } from "~/models/convert.server";
 import type { DbRoomEvent } from "~/models/room-event.server";
 import { getSupabase } from "~/supabase";
+import { noteServerTime } from "~/utils/server-clock";
 
 import type { Action } from "./engine";
-import { gameEngine, getTiebreakerSeed, getWinningBuzzer } from "./engine";
+import {
+  gameEngine,
+  getTiebreakerSeed,
+  getWinningBuzzer,
+  parseUtcMs,
+} from "./engine";
 import { countWatchers, type PresenceRole } from "./presence";
 import {
   applyRoomEventsToState,
@@ -148,6 +154,11 @@ export function stateToGameEngine(
     clockAccumulatedMs: state.clockAccumulatedMs,
     clockLastResumedAt: state.clockLastResumedAt,
     isPaused: state.isPaused,
+    /** Answer timer (room setting): seconds per answer turn, 0 = off. */
+    answerTimeSec: state.answerTimeSec,
+    autoWrongOnTimeout: state.autoWrongOnTimeout,
+    /** When the current answer turn started (server clock), or null. */
+    answerStartedAt: state.answerStartedAt,
     /** How many people are watching the room without playing (spectators,
      * counted with Realtime presence; 0 in solo play). */
     watchers,
@@ -337,6 +348,9 @@ export function useGameEngine(
           if (disposed) return;
           const newEvent = payload.new;
           setLastMessageAt(Date.now());
+          // A live event was stamped by the server a moment ago: a sample
+          // for the server clock estimate (answer timer).
+          noteServerTime(parseUtcMs(newEvent.ts));
           if (!isTypedRoomEvent(newEvent)) {
             console.error(
               "unhandled room event type from DB: " + newEvent.type,

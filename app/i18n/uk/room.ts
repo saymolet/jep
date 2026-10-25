@@ -101,4 +101,13 @@ export const room: Dictionary<typeof en> = {
   "room.alreadyPlaying":
     "У цю гру вже грають. Приєднуйся до кімнати, де триває гра, або створи власну.",
   "room.startNewRoom": "Створити нову кімнату",
+  "room.answerTime": "Час на відповідь",
+  "room.answerTimeHelp":
+    "Скільки часу має гравець, щоб відповісти й оцінити відповідь. Будь-який гравець може змінити це між питаннями.",
+  "room.answerTimeOff": "Вимк.",
+  "room.answerTimeSeconds": "{seconds} с",
+  "room.answerTimeAutoWrong": "Зараховувати як неправильну, коли час вийде",
+  "room.answerTimeSettings": "Налаштування часу на відповідь",
+  "room.answerTimeBetweenQuestions":
+    "Час на відповідь можна змінити між питаннями",
 };

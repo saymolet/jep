@@ -153,4 +153,16 @@ export const play: Dictionary<typeof en> = {
   "play.undo.cancel": "скасувати",
   "play.undo.thisClue": "Виправити свою оцінку цього питання?",
   "play.undo.lastClue": "Виправити свою оцінку останнього питання?",
+  "play.answerTimer.label": "Таймер відповіді",
+  "play.answerTimer.secondsLeft": {
+    one: "Залишилася {count} секунда",
+    few: "Залишилося {count} секунди",
+    many: "Залишилося {count} секунд",
+    other: "Залишилося {count} секунди",
+  },
+  "play.answerTimer.timesUp": "Час вийшов!",
+  "play.answerTimer.autoWrongHint":
+    "Коли час вийде, відповідь зарахується як неправильна.",
+  "play.answerTimer.countedWrong": "Твою відповідь зараховано як неправильну.",
+  "play.answerTimer.markNow": "Оціни свою відповідь зараз.",
 };

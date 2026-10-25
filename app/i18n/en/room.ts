@@ -88,4 +88,13 @@ export const room = {
   "room.alreadyPlaying":
     "This game is already being played. Join a room in progress or start your own.",
   "room.startNewRoom": "Start a new room",
+  "room.answerTime": "Answer time",
+  "room.answerTimeHelp":
+    "How long the player whose turn it is has to answer and mark it. Any player can change it between questions.",
+  "room.answerTimeOff": "Off",
+  "room.answerTimeSeconds": "{seconds} s",
+  "room.answerTimeAutoWrong": "Mark wrong when time runs out",
+  "room.answerTimeSettings": "Answer time settings",
+  "room.answerTimeBetweenQuestions":
+    "The answer time can be changed between questions",
 } as const;

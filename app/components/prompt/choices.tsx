@@ -164,7 +164,14 @@ export function ConnectedChoiceList({
 /** ConnectedChoicePicker is shown to the winning buzzer of a multiple choice
  * question instead of "Reveal answer" + self-check: tapping an option submits
  * it, and the server checks it against the answer. Keys 1-6 pick too. */
-export function ConnectedChoicePicker({ roomId, userId }: RoomProps) {
+export function ConnectedChoicePicker({
+  roomId,
+  userId,
+  onPick,
+}: RoomProps & {
+  /** Called when the player picks an option. */
+  onPick?: () => void;
+}) {
   const { activeClue, clue, choicePicks, players, soloDispatch } =
     useEngineContext();
   const { t } = useTranslation();
@@ -180,6 +187,7 @@ export function ConnectedChoicePicker({ roomId, userId }: RoomProps) {
     (choice: number) => {
       if (!ready || picked !== undefined || !activeClue) return;
       setPicked(choice);
+      onPick?.();
       const [i, j] = activeClue;
       submit(
         {
@@ -191,7 +199,7 @@ export function ConnectedChoicePicker({ roomId, userId }: RoomProps) {
         { method: "post", action: `/room/${roomId}/check` },
       );
     },
-    [ready, picked, activeClue, submit, userId, roomId],
+    [ready, picked, activeClue, submit, userId, roomId, onPick],
   );
 
   const numChoices = clue?.choices?.length ?? 0;

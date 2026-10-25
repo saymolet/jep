@@ -1,6 +1,7 @@
 import * as React from "react";
 import { Form as fetcherForm, useFetcher } from "react-router";
 
+import { AnswerTimerSettings } from "~/components/answer-timer-settings";
 import Button from "~/components/button";
 import CopyLinkButton from "~/components/copy-link-button";
 import Dialog from "~/components/dialog";
@@ -210,6 +211,9 @@ function PreviewRoundDialog({
           </div>
         </div>
       ) : null}
+      <div className="mb-4">
+        <AnswerTimerSettings roomId={roomId} userId={userId} />
+      </div>
       {correction ? (
         <div className="mb-2 flex justify-center">
           {armed ? (

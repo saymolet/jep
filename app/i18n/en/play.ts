@@ -148,4 +148,14 @@ export const play = {
   "play.undo.cancel": "cancel",
   "play.undo.thisClue": "Undo your check on this clue?",
   "play.undo.lastClue": "Undo your check on the last clue?",
+  "play.answerTimer.label": "Answer timer",
+  "play.answerTimer.secondsLeft": {
+    one: "{count} second left",
+    other: "{count} seconds left",
+  },
+  "play.answerTimer.timesUp": "Time's up!",
+  "play.answerTimer.autoWrongHint":
+    "When the time runs out, your answer counts as wrong.",
+  "play.answerTimer.countedWrong": "Your answer counts as wrong.",
+  "play.answerTimer.markNow": "Mark your answer now.",
 } as const;

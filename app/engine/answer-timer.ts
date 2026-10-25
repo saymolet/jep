@@ -7,10 +7,7 @@ export type AnswerTimeSec = (typeof ANSWER_TIME_OPTIONS)[number];
 export const DEFAULT_AUTO_WRONG_ON_TIMEOUT = true;
 
 export function isAnswerTimeSec(value: unknown): value is AnswerTimeSec {
-  return (
-    typeof value === "number" &&
-    (ANSWER_TIME_OPTIONS as readonly number[]).includes(value)
-  );
+  return ANSWER_TIME_OPTIONS.some((option) => option === value);
 }
 
 export interface AnswerTimerStatus {
