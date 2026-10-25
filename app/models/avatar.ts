@@ -12,8 +12,9 @@ export type Avatar = string;
 export const EMOJI_AVATAR_PREFIX = "emoji:";
 
 /** Upper bound on the length (= bytes; data URLs are ASCII) of an avatar. A
- * 96×96 WebP/JPEG is a few KB, so this leaves plenty of room. */
-export const MAX_AVATAR_LENGTH = 24 * 1024;
+ * 192×192 WebP/JPEG is usually 5–20 KB, so this leaves room for busy photos.
+ * (Older avatars were 96×96 and at most 24 KB; they remain valid.) */
+export const MAX_AVATAR_LENGTH = 48 * 1024;
 
 /** Maximum number of code points of an emoji avatar (after the prefix). */
 export const MAX_EMOJI_AVATAR_CODE_POINTS = 16;

@@ -50,23 +50,25 @@ function JoinGameDialog({
         players.size === 1 ? "" : "s"
       } so far`}
     >
-      <ul className="mb-4 flex flex-col gap-1 font-handwriting text-xl font-bold">
-        {Array.from(players.values()).map((p, i) => (
-          <li
-            key={i}
-            className="flex items-center gap-2"
-            style={{ color: getPlayerColor(p) }}
-          >
-            <PlayerIcon player={p} size="sm" />
-            {p.name}
-          </li>
-        ))}
-      </ul>
+      {players.size > 0 ? (
+        <ul className="mb-4 grid grid-cols-3 gap-3 font-handwriting text-lg font-bold sm:grid-cols-4">
+          {Array.from(players.values()).map((p, i) => (
+            <li
+              key={i}
+              className="flex min-w-0 flex-col items-center gap-1"
+              style={{ color: getPlayerColor(p) }}
+            >
+              <PlayerIcon player={p} size="tile" />
+              <span className="w-full truncate text-center">{p.name}</span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
       <div className="mb-4 flex flex-col gap-3">
         <div className="flex items-center gap-3">
           <PlayerIcon
             player={{ name, userId, color: playerColor, avatar }}
-            size="lg"
+            size="tile"
           />
           <p className="text-slate-300">Pick an avatar (optional)</p>
         </div>
@@ -166,7 +168,7 @@ function PreviewRoundDialog({
           <EditPlayerForm roomId={roomId} userId={userId} winning={false} />
           <div className="flex flex-wrap gap-2">
             {Array.from(players.values()).map((p, i) => (
-              <PlayerIcon key={i} player={p} />
+              <PlayerIcon key={i} player={p} size="lg" />
             ))}
           </div>
           <WagerHintsControl theme="dark" />

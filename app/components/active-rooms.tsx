@@ -1,6 +1,7 @@
 import { Link } from "react-router";
 
 import { Play } from "~/components/icons";
+import { firstCharacter } from "~/components/player/player-icon";
 import { type ActiveRoom, formatTimeAgo } from "~/models/active-rooms";
 
 function PlayerList({ players }: { players: ActiveRoom["players"] }) {
@@ -8,17 +9,17 @@ function PlayerList({ players }: { players: ActiveRoom["players"] }) {
     <ul className="flex flex-wrap gap-x-3 gap-y-1">
       {players.map((player, i) => (
         <li key={i} className="flex min-w-0 items-center gap-1.5">
-          {player.emoji ? (
-            <span aria-hidden="true" className="shrink-0 leading-none">
-              {player.emoji}
-            </span>
-          ) : (
-            <span
-              aria-hidden="true"
-              className="h-2.5 w-2.5 shrink-0 rounded-full"
-              style={{ backgroundColor: player.color }}
-            />
-          )}
+          <span
+            aria-hidden="true"
+            className="flex h-5 w-5 shrink-0 items-center justify-center rounded-sm text-xs leading-none"
+            style={{ backgroundColor: player.color }}
+          >
+            {player.emoji ?? (
+              <span className="font-mono text-[0.625rem] font-bold text-white">
+                {firstCharacter(player.name)}
+              </span>
+            )}
+          </span>
           <span className="truncate">{player.name}</span>
         </li>
       ))}

@@ -41,6 +41,10 @@ describe("PlayerFormPayload", () => {
   it.each([
     ["an emoji avatar", "emoji:🦊"],
     ["a photo avatar", TINY_PNG],
+    [
+      "a 40 KB (192×192) photo avatar",
+      "data:image/webp;base64," + "A".repeat(40 * 1024),
+    ],
     ["an empty avatar (remove)", ""],
   ])("accepts %s", (_, avatar) => {
     expect(parse({ userId: "u", name: "Ann", avatar }).avatar).toBe(avatar);

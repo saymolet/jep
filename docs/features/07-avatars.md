@@ -1,13 +1,17 @@
 # Feature 07 — Player avatars
 
-**Branch:** `feat/avatars`
+**Branch:** `feat/avatars`; big squares follow-up on `feat/big-avatars`
 **Status:** ✅ implemented & tested
 **Migration:** none
 
 ## Goal
 
-Let each player pick an avatar — a fun emoji or their own photo — shown in their player bubble
+Let each player pick an avatar — a fun emoji or their own photo — shown on their player tile
 instead of the first letter of their name. No file hosting.
+
+Follow-up (`feat/big-avatars`): "Make avatar images bigger, like a whole square so it's clearly
+visible on phone and web" — avatars are now large rounded squares on redesigned player tiles
+(see [Big squares](#big-squares-feat-big-avatars)).
 
 ## How to use it
 
@@ -19,7 +23,7 @@ instead of the first letter of their name. No file hosting.
   the account like the default name and color, and pre-selected when joining a game.
 - Guests (and logged-in players without a default) get the avatar they last picked on this
   device pre-selected.
-- Without an avatar the bubble is the initial letter on the player color, as before.
+- Without an avatar the square shows the initial letter on the player color, as before.
 
 ## Design decisions
 
@@ -29,17 +33,19 @@ An avatar is one string, so it fits in room event payloads and user settings as-
 (`app/models/avatar.ts`):
 
 - `"emoji:🦊"` — an emoji (1–16 code points, emoji characters only, at least one pictograph).
-- `"data:image/(webp|jpeg|png);base64,…"` — a photo, at most **24 KB** in total, with a valid
-  base64 body. SVG, GIF, remote URLs etc. are rejected.
+- `"data:image/(webp|jpeg|png);base64,…"` — a photo, at most **48 KB** in total (24 KB before
+  `feat/big-avatars`), with a valid base64 body. SVG, GIF, remote URLs etc. are rejected.
 
 ### Photos: no hosting, resized in the browser
 
 `app/utils/avatar-image.ts` decodes the picked file (`createImageBitmap`, falling back to
 `<img>`), crops the largest centered square, draws it at **96×96** on a canvas (white
-background, so transparent pictures don't turn black as JPEG) and encodes it as **WebP**. When
+background, so transparent pictures don't turn black as JPEG) and encodes it as **WebP**.
+(**192×192** since `feat/big-avatars` — twice the largest display size, so photos are sharp on
+retina screens.) When
 the browser can't encode WebP (`toDataURL` silently returns PNG, e.g. older Safari) it uses
-**JPEG**. Quality steps down (0.85 → 0.3) until the result fits the cap. A 96×96 photo is
-usually a few KB. The data URL travels inside the Join/ChangeName payload (`avatar`), is stored
+**JPEG**. Quality steps down (0.85 → 0.3) until the result fits the cap. A 192×192 photo is
+usually 3–20 KB. The data URL travels inside the Join/ChangeName payload (`avatar`), is stored
 in `room_events` and reaches other players over realtime like any other event — no Storage
 bucket, no new table.
 
@@ -77,20 +83,47 @@ to JPEG when handing the file to the browser.
 
 ### Where avatars show
 
-- `PlayerIcon` (`app/components/player/player-icon.tsx`, moved out of `player.tsx`, now with
-  sizes `sm`/`md`/`lg`): emoji large on the player color; photo as a round image with the player
-  color as a ring. Used by the score boxes, round preview, buzzer list, kick/leave menu, join
+- `PlayerIcon` (`app/components/player/player-icon.tsx`, moved out of `player.tsx`; sizes
+  `xs`/`sm`/`md`/`lg`/`tile`): a rounded square — emoji large on the player color; photo framed
+  in the player color. (Round bubbles before `feat/big-avatars`.) Used by the score boxes, round preview, buzzer list, kick/leave menu, join
   dialog player list (new), profile, and the summary page (score boxes + replay score chips).
-- Rooms-in-progress list: **emoji avatars only**; photos keep the colored dot. That list is in the
+- Rooms-in-progress list: **emoji avatars only**; photos show the initial on a small colored
+  square. That list is in the
   loader data of the game page (up to 8 rooms × N players) and is only a glance, so it shouldn't
   carry several KB per photo.
 - The tiny buzz dots on the summary replay board stay letters (too small for a picture).
+
+## Big squares (`feat/big-avatars`)
+
+User request: _"Make avatar images bigger, like a whole square so it's clearly visible on phone
+and web"_.
+
+- **Player tiles** (`PlayerScoreBox` in `app/components/player/player.tsx`, used in game and on
+  the summary): the avatar is a large rounded square — **72 px on phones, 96 px from the `md`
+  breakpoint** (`PlayerIcon size="tile"`) — with the name (truncated) and the score + 👑 to its
+  right. The square is the player color (photos get a 4–6 px frame in it). Board control is still
+  the blue tile background.
+- **Grid** (`PLAYER_TILE_GRID`): 2 tiles per row on phones and tablets, 3 from `lg`. Your own
+  tile spans two columns because it carries the name input and the avatar/edit buttons. On a
+  390 px phone four players take three short rows below the board; during a question the prompt
+  covers the screen as before, so the buzzer is unaffected.
+- **Without an avatar** the square shows the initial in white on the player color. Names that
+  start with an emoji (the random default names do) show that emoji at emoji size, so it looks
+  like an emoji avatar instead of a tiny glyph.
+- **Join dialog**: the players already in the room are a grid of big squares with the name under
+  each (3 per row on phones, 4 from `sm`); the preview of your own pick is a big square too.
+  Round-preview list uses `lg` (56 px) squares; the profile defaults box uses the big square.
+- **Small places stay small but square**: rooms-in-progress list (20 px square, emoji or
+  initial), replay score chips (`sm`, 24 px), buzz list and kick menu (via the tile).
+- **Photo quality**: resized to **192×192**; the cap is **48 KB** in `MAX_AVATAR_LENGTH`, which
+  is the single check used by the route (`AvatarInput`), the engine (`normalizeAvatar`), settings
+  and `PlayerIcon` (`parseAvatar`). Old 96×96 avatars (≤24 KB) remain valid — no migration.
 
 ## Not done / limitations
 
 - A photo adds a few KB to each Join/ChangeName event that carries it; every client downloads
   the room's events, so a player who changes photos many times grows the room's history a bit
-  (24 KB cap per event).
+  (48 KB cap per event).
 - A logged-in player's default photo is part of the settings sent with every page load (root
   loader) and re-posted with every settings change — a few KB.
 - No cropping UI: photos are center-cropped.
@@ -116,6 +149,16 @@ to JPEG when handing the file to the browser.
   `e2e/helpers.ts` (`pickEmoji`), `playwright.config.ts` (db project).
 
 ## Verification
+
+**`feat/big-avatars`:** unit — `MAX_AVATAR_LENGTH` is 48 KB, a 40 KB photo is accepted by
+`isValidAvatar`, the route payload and the engine (Join), `AVATAR_SIZE` is 192, `PlayerIcon` is a
+rounded square at every size (no `rounded-full`), `tile` is 72 px / 96 px, initial fallback on
+the player color, a leading name emoji shown at emoji size. E2E — the uploaded photo is now
+192×192. Visual — Playwright screenshots at 390×844 and 1280×800 with four players (photo, two
+emoji, letter/no avatar, a long name): board + tiles, join dialog, round preview, question
+prompt, summary, rooms-in-progress list.
+
+**Original feature:**
 
 - Unit: avatar accept/reject table (emoji, compound emoji, flag, png/webp/jpeg, at the 24 KB cap;
   empty, no prefix, text, too long, SVG, GIF, non-base64, bad base64/padding, http/javascript

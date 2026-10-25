@@ -17,7 +17,8 @@ export { PlayerIcon };
 /** ScorePulse marks a score that just changed due to a check correction. */
 export type ScorePulse = "up" | "down";
 
-/** PlayerScoreBox contains a player icon and their score. */
+/** PlayerScoreBox is a player's tile: their avatar as a large square, with
+ * their name (children) and score next to it. */
 export function PlayerScoreBox({
   player,
   hasBoardControl,
@@ -71,18 +72,20 @@ export function PlayerScoreBox({
   );
   return (
     <div
-      className={clsx("flex gap-2 rounded-xl p-2 sm:p-3", {
-        "bg-white/5": !hasBoardControl,
-        "bg-blue-700": hasBoardControl,
-        "animate-score-pulse-green": pulse === "up",
-        "animate-score-pulse-red": pulse === "down",
-      })}
+      className={clsx(
+        "flex min-w-0 items-center gap-2 rounded-2xl p-2 sm:gap-3 sm:p-3",
+        {
+          "bg-white/5": !hasBoardControl,
+          "bg-blue-700": hasBoardControl,
+          "animate-score-pulse-green": pulse === "up",
+          "animate-score-pulse-red": pulse === "down",
+        },
+      )}
     >
-      {icon ?? <PlayerIcon player={player} />}
-      <div className="w-full">
+      {icon ?? <PlayerIcon player={player} size="tile" />}
+      <div className="flex min-w-0 grow flex-col justify-center gap-1">
         {children}
-        <div className="flex w-1/3 grow items-center justify-end gap-2 text-xl sm:w-auto">
-          {winning && <span>👑</span>}
+        <div className="flex items-center gap-2 text-lg sm:text-xl">
           {scorePopover ? (
             <Popover
               content={scorePopover}
@@ -99,6 +102,7 @@ export function PlayerScoreBox({
           ) : (
             score
           )}
+          {winning && <span>👑</span>}
         </div>
       </div>
     </div>
@@ -138,14 +142,16 @@ export function PlayerScore({
       scorePopoverAutoOpen={scorePopoverAutoOpen}
       pulse={pulse}
     >
-      <div className="flex w-full gap-2 text-2xl">
-        <p className="font-handwriting font-bold text-slate-300">
-          {player.name}
-        </p>
-      </div>
+      <p className="truncate font-handwriting text-xl font-bold text-slate-300 sm:text-2xl">
+        {player.name}
+      </p>
     </PlayerScoreBox>
   );
 }
+
+/** PLAYER_TILE_GRID lays out player tiles: two per row on phones and
+ * tablets, three on wide screens. */
+export const PLAYER_TILE_GRID = "grid grid-cols-2 gap-2 lg:grid-cols-3";
 
 function getMaxScore(others: Player[], you?: Player) {
   const bestOther = others.at(0);
@@ -301,31 +307,35 @@ export function PlayerScores({ roomId, userId }: RoomProps) {
   ) : undefined;
 
   return (
-    <div className="flex flex-col gap-2 sm:grid sm:grid-cols-3">
+    <div className={PLAYER_TILE_GRID}>
       {yourPlayer ? (
-        editable ? (
-          <EditPlayerForm
-            roomId={roomId}
-            userId={userId}
-            winning={yourPlayer.score === maxScore}
-            icon={kickIcon(yourPlayer, true)}
-            scorePopover={scorePopover}
-            scorePopoverKey={correction?.correct}
-            scorePopoverAutoOpen={pickUpArmedUndo}
-            pulse={pulses.get(yourPlayer.userId)}
-          />
-        ) : (
-          <PlayerScore
-            player={yourPlayer}
-            hasBoardControl={yourPlayer.userId === boardControl}
-            winning={yourPlayer.score === maxScore}
-            icon={kickIcon(yourPlayer, true)}
-            scorePopover={scorePopover}
-            scorePopoverKey={correction?.correct}
-            scorePopoverAutoOpen={pickUpArmedUndo}
-            pulse={pulses.get(yourPlayer.userId)}
-          />
-        )
+        // Your own tile has the name input and buttons, so it gets a wider
+        // slot.
+        <div className="col-span-2 min-w-0">
+          {editable ? (
+            <EditPlayerForm
+              roomId={roomId}
+              userId={userId}
+              winning={yourPlayer.score === maxScore}
+              icon={kickIcon(yourPlayer, true)}
+              scorePopover={scorePopover}
+              scorePopoverKey={correction?.correct}
+              scorePopoverAutoOpen={pickUpArmedUndo}
+              pulse={pulses.get(yourPlayer.userId)}
+            />
+          ) : (
+            <PlayerScore
+              player={yourPlayer}
+              hasBoardControl={yourPlayer.userId === boardControl}
+              winning={yourPlayer.score === maxScore}
+              icon={kickIcon(yourPlayer, true)}
+              scorePopover={scorePopover}
+              scorePopoverKey={correction?.correct}
+              scorePopoverAutoOpen={pickUpArmedUndo}
+              pulse={pulses.get(yourPlayer.userId)}
+            />
+          )}
+        </div>
       ) : null}
       {sortedOtherPlayers.map((p) => (
         <PlayerScore

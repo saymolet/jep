@@ -215,7 +215,7 @@ function PlayerDefaultsControl({
       <h1 className="text-3xl font-semibold text-slate-900">{email}</h1>
 
       {/* Rough ripoff of PlayerScoreBox */}
-      <div className="flex gap-2 rounded-xl bg-blue-700 p-2 pb-12 sm:p-3">
+      <div className="flex items-center gap-2 rounded-2xl bg-blue-700 p-2 sm:gap-3 sm:p-3">
         <label
           htmlFor="defaultPlayerColor"
           className="inline-flex cursor-pointer"
@@ -228,6 +228,7 @@ function PlayerDefaultsControl({
               color: effectiveColor,
               avatar: playerAvatar,
             }}
+            size="tile"
           />
         </label>
         <div className="flex w-full items-center gap-2 rounded-xl text-white">
