@@ -16,13 +16,8 @@ import {
   Trash,
 } from "~/components/icons";
 import StyledLink from "~/components/link";
+import LocalDate from "~/components/local-date";
 import type { DbGame, GameVisibility } from "~/models/game.server";
-
-const formatter = new Intl.DateTimeFormat("en-US", {
-  year: "numeric",
-  month: "long",
-  day: "numeric",
-});
 
 function ChangeVisibilityItem({
   fetcher,
@@ -98,14 +93,16 @@ export function GameInfo({
   fetcher: FetcherWithComponents<never>;
 }) {
   const url = BASE_URL + "/game/" + game.id + "/play";
-  const createdAt = formatter.format(new Date(game.created_at));
 
   const [showModal, setShowModal] = React.useState(false);
 
   return (
     <li>
       <StyledLink to={`/game/${game.id}/play`}>{game.title}</StyledLink> by{" "}
-      {game.author} <span className="text-sm text-slate-500">{createdAt}</span>
+      {game.author}{" "}
+      <span className="text-sm text-slate-500">
+        <LocalDate date={game.created_at} />
+      </span>
       <DeleteGameModal
         isOpen={showModal}
         fetcher={fetcher}
