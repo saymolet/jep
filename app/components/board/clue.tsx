@@ -5,7 +5,7 @@ import Popover from "~/components/popover";
 import { clueIsPlayable } from "~/engine";
 import type { Clue } from "~/models/convert.server";
 
-import { getClueButtonClassName } from "./layout";
+import { ClueValue, getClueButtonClassName, useIsWideBoard } from "./layout";
 
 type ButtonProps = React.ComponentProps<"button">;
 
@@ -34,6 +34,7 @@ const ClueButton = React.forwardRef<HTMLButtonElement, ButtonProps & Props>(
     ref,
   ) => {
     const [loading, setLoading] = React.useState(false);
+    const wide = useIsWideBoard();
 
     const playable = clueIsPlayable(clue);
 
@@ -70,7 +71,7 @@ const ClueButton = React.forwardRef<HTMLButtonElement, ButtonProps & Props>(
           }
           onKeyDown(event);
         }}
-        className={getClueButtonClassName({ loading, playable })}
+        className={getClueButtonClassName({ loading, playable, wide })}
         ref={ref}
         {...rest}
       >
@@ -84,8 +85,7 @@ const ClueButton = React.forwardRef<HTMLButtonElement, ButtonProps & Props>(
             },
           )}
         >
-          <span className="text-sm sm:text-3xl lg:text-4xl">$</span>
-          <span className="text-md sm:text-4xl lg:text-5xl">{clue.value}</span>
+          <ClueValue value={clue.value} />
         </p>
       </button>
     );

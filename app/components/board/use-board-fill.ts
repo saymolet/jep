@@ -15,6 +15,13 @@ export interface BoardFillState {
 }
 
 const FRAME_INTERVAL_MS = 400;
+/** One frame per category: boards with more than 5 categories speed up so
+ * the fill still takes about as long as a 5-category board's. */
+const MAX_FILL_MS = 5 * FRAME_INTERVAL_MS;
+
+export function getFrameIntervalMs(numCategories: number) {
+  return Math.min(FRAME_INTERVAL_MS, MAX_FILL_MS / Math.max(1, numCategories));
+}
 
 /** Fisher-Yates shuffle (in-place). */
 function shuffleArray<T>(arr: T[]): void {
@@ -158,12 +165,15 @@ export function useBoardFill(
 
     for (let f = 1; f < frames.length; f++) {
       timeouts.push(
-        setTimeout(() => {
-          applyFrame(frames[f]);
-          if (f === frames.length - 1 && !cancelled) {
-            setAnimating(false);
-          }
-        }, f * FRAME_INTERVAL_MS),
+        setTimeout(
+          () => {
+            applyFrame(frames[f]);
+            if (f === frames.length - 1 && !cancelled) {
+              setAnimating(false);
+            }
+          },
+          f * getFrameIntervalMs(numCategories),
+        ),
       );
     }
 

@@ -2,6 +2,12 @@ import clsx from "clsx";
 import * as React from "react";
 
 import { Category } from "~/components/board/category";
+import {
+  BoardScroller,
+  ClueValue,
+  getCellPaddingClassName,
+  useIsWideBoard,
+} from "~/components/board/layout";
 import CluePopoverContent from "~/components/clue-popover-content";
 import { Dollars } from "~/components/dollars";
 import Popover from "~/components/popover";
@@ -85,13 +91,16 @@ function ReplayClue({
   allPlayers,
   resolvedState,
 }: ReplayClueProps) {
+  const wide = useIsWideBoard();
   const playable = clueIsPlayable(clue);
 
   // Unplayable clues are always greyed out
   if (!playable) {
     return (
       <td className="h-full sm:p-1">
-        <div className="h-full w-full bg-slate-800 px-4 py-3" />
+        <div
+          className={`h-full w-full bg-slate-800 ${getCellPaddingClassName(wide)}`}
+        />
       </td>
     );
   }
@@ -103,12 +112,11 @@ function ReplayClue({
   if (notReached) {
     return (
       <td className="h-full sm:p-1">
-        <div className="h-full w-full border-2 border-transparent bg-blue-bright px-4 py-3">
+        <div
+          className={`h-full w-full border-2 border-transparent bg-blue-bright ${getCellPaddingClassName(wide)}`}
+        >
           <p className="flex items-center justify-center font-inter font-bold text-yellow-1000 text-shadow-md sm:text-shadow-lg">
-            <span className="text-sm sm:text-3xl lg:text-4xl">$</span>
-            <span className="text-md sm:text-4xl lg:text-5xl">
-              {clue.value}
-            </span>
+            <ClueValue value={clue.value} />
           </p>
         </div>
       </td>
@@ -148,7 +156,8 @@ function ReplayClue({
   const cellContent = (
     <div
       className={clsx(
-        "relative h-full w-full border-2 border-transparent px-4 py-3 transition-all duration-300",
+        "relative h-full w-full border-2 border-transparent transition-all duration-300",
+        getCellPaddingClassName(wide),
         {
           "bg-blue-bright": !isResolved,
           "animate-border-pulse": isChosen || isBuzzed,
@@ -165,10 +174,7 @@ function ReplayClue({
           },
         )}
       >
-        {clue.wagerable ? null : (
-          <span className="text-sm sm:text-3xl lg:text-4xl">$</span>
-        )}
-        <span className="text-md sm:text-4xl lg:text-5xl">{clueValue}</span>
+        <ClueValue value={clueValue} showDollar={!clue.wagerable} />
       </p>
       {showParticipants && (
         <BuzzDots
@@ -245,42 +251,44 @@ export function ReplayBoard({
   }
 
   return (
-    <table className="h-1 w-full table-fixed border-spacing-3 text-white">
-      <thead>
-        <tr className="h-1">
-          {board.categories.map((category) => (
-            <Category
-              key={category.name}
-              name={category.name}
-              note={category.note}
-            />
-          ))}
-        </tr>
-      </thead>
-      <tbody>
-        {rows.map((row, i) => (
-          <tr key={i}>
-            {row.map((clue, j) => {
-              if (!clue) return <td key={`clue-${i}-${j}`} />;
-              const key = `${round},${i},${j}`;
-              return (
-                <ReplayClue
-                  key={`clue-${i}-${j}`}
-                  clue={clue}
-                  round={round}
-                  i={i}
-                  j={j}
-                  currentFrameIndex={currentFrameIndex}
-                  clueLookup={clueLookupMap.get(key)}
-                  allPlayers={allPlayers}
-                  resolvedState={resolvedStateMap.get(key)}
-                />
-              );
-            })}
+    <BoardScroller columns={numCols}>
+      <table className="h-1 w-full table-fixed border-spacing-3 text-white">
+        <thead>
+          <tr className="h-1">
+            {board.categories.map((category) => (
+              <Category
+                key={category.name}
+                name={category.name}
+                note={category.note}
+              />
+            ))}
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {rows.map((row, i) => (
+            <tr key={i}>
+              {row.map((clue, j) => {
+                if (!clue) return <td key={`clue-${i}-${j}`} />;
+                const key = `${round},${i},${j}`;
+                return (
+                  <ReplayClue
+                    key={`clue-${i}-${j}`}
+                    clue={clue}
+                    round={round}
+                    i={i}
+                    j={j}
+                    currentFrameIndex={currentFrameIndex}
+                    clueLookup={clueLookupMap.get(key)}
+                    allPlayers={allPlayers}
+                    resolvedState={resolvedStateMap.get(key)}
+                  />
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </BoardScroller>
   );
 }
 
