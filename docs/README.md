@@ -39,6 +39,14 @@ Difficulty estimates from the original planning discussion.
 - [x] Pause game (`isPaused` state) — ⭐ very easy — see [features/01-pause-game.md](./features/01-pause-game.md)
 - [ ] More than 5 categories (dynamic grid) — ⭐⭐ medium
 
+### Found while playtesting
+
+- [ ] Join race: tapping "Join game" before the realtime channel subscribes can lose the
+      player's own join (it is saved, but the client never sees it). Re-fetch room events
+      after the player's own action. — ⭐ easy
+- [ ] "Rooms in progress" list on a game's page, so friends can join without a shared link
+      (today opening a game always creates a new room). — ⭐ easy
+
 ### Nice-to-haves (while touching the code)
 
 Import/export JSON · import SIQ packs · random board generator · question search ·
@@ -52,4 +60,5 @@ per-question timer · soundboard · themes (Classic / Своя Игра / Dark).
 - **2026-07-10** — Dev environment brought up (Docker, Supabase, dev server).
 - **2026-07-11** — Feature 01 (Pause) implemented & tested.
 - **2026-10-25** — Fork synced to upstream (28 commits: pnpm, Varlock env, undo); Pause re-applied
-  on `feat/pause-and-public-hosting`. Next: public hosting of the dev server.
+  on `feat/pause-and-public-hosting`. Self-hosted: production build behind nginx/TLS with
+  hosted Supabase; first multiplayer playtest (phone + desktop) works.
