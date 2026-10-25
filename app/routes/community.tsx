@@ -1,73 +1,77 @@
 import { ButtonLink } from "~/components/button";
 import { Anchor } from "~/components/link";
 import Main from "~/components/main";
+import { useTranslation } from "~/i18n";
+import { metaT } from "~/i18n/meta";
 import { getPageMetadata } from "~/utils/seo";
 
 import type { Route } from "./+types/community";
 
-export const meta: Route.MetaFunction = () =>
-  getPageMetadata(
-    "Jep! Community Guidelines",
-    "Read the community standards and moderation policy for public games shared on Jep!.",
+export const meta: Route.MetaFunction = ({ matches }) => {
+  const t = metaT(matches);
+  return getPageMetadata(
+    t("community.metaTitle"),
+    t("community.metaDescription"),
   );
+};
 
 const SPORCLE = "https://www.sporcle.com/community/";
 
+const INAPPROPRIATE_ITEMS = [
+  "community.item.nsfw",
+  "community.item.discrimination",
+  "community.item.misinformation",
+  "community.item.spam",
+  "community.item.attacks",
+  "community.item.reportAbuse",
+  "community.item.selfHarm",
+  "community.item.violence",
+  "community.item.children",
+] as const;
+
 export default function Login() {
+  const { t, rich } = useTranslation();
   return (
     <div className="max-w-full grow">
       <Main>
-        <h1 className="mb-4 text-2xl font-semibold">Community Guidelines</h1>
-        <h2 className="mt-8 mb-4 text-xl font-semibold">Summary</h2>
+        <h1 className="mb-4 text-2xl font-semibold">{t("community.title")}</h1>
+        <h2 className="mt-8 mb-4 text-xl font-semibold">
+          {t("community.summary")}
+        </h2>
         <p className="mb-4">
-          Be polite; don't post anything inappropriate.
+          {t("community.bePolite")}
           <br className="mb-1" />
-          Report inappropriate game content using the form below or by clicking
-          the "Report" button in the game.
+          {t("community.reportHow")}
         </p>
         <ButtonLink to="/report" variant="primary">
-          Report a game
+          {t("community.reportGame")}
         </ButtonLink>
         <h2 className="mt-8 mb-4 text-xl font-semibold">
-          Moderation policy for uploaded games
+          {t("community.moderationTitle")}
         </h2>
-        <p className="mb-2">
-          "Game content" refers to any part of a game you uploaded, e.g.
-          categories, clues, and answers.
-        </p>
+        <p className="mb-2">{t("community.gameContent")}</p>
         <ul className="list-inside list-disc">
           <li>
-            Game content must not contain any <em>inappropriate content</em>{" "}
-            (see below).
+            {rich("community.rule.noInappropriate", {
+              em: (c) => <em>{c}</em>,
+            })}
           </li>
-          <li>
-            We have the right to remove any game content that violates the
-            moderation policy.
-          </li>
-          <li>
-            Accounts that violate the policy will be banned from the website.
-          </li>
+          <li>{t("community.rule.remove")}</li>
+          <li>{t("community.rule.ban")}</li>
         </ul>
         <h3 className="mt-8 mb-4 text-lg font-semibold">
-          Inappropriate content
+          {t("community.inappropriateTitle")}
         </h3>
-        <p className="mb-2">
-          Inappropriate content includes, but is not limited to:
-        </p>
+        <p className="mb-2">{t("community.inappropriateIntro")}</p>
         <ul className="mb-4 list-inside list-disc">
-          <li>NSFW material (OK for unlisted or private games)</li>
-          <li>Racism, sexism, and other discrimination</li>
-          <li>Spreading misinformation</li>
-          <li>Spam</li>
-          <li>Personal attacks</li>
-          <li>Abuse of the reporting system</li>
-          <li>Suicide and self-harm</li>
-          <li>Threats of violence</li>
-          <li>Child endangerment</li>
+          {INAPPROPRIATE_ITEMS.map((key) => (
+            <li key={key}>{t(key)}</li>
+          ))}
         </ul>
         <p className="text-sm text-slate-500">
-          These guidelines are based on the{" "}
-          <Anchor href={SPORCLE}>Sporcle community guidelines</Anchor>.
+          {rich("community.basedOn", {
+            link: (c) => <Anchor href={SPORCLE}>{c}</Anchor>,
+          })}
         </p>
       </Main>
     </div>
