@@ -40,6 +40,10 @@ const CorrectCheckPayload = CluePayload.extend({
   correct: z.boolean(),
   round: z.number(),
 });
+const PassCluePayload = CluePayload.extend({
+  /** The player who gets the secret clue. */
+  toUserId: z.string(),
+});
 const TransferPlayerPayload = z.object({
   oldUserId: z.string(),
   newUserId: z.string(),
@@ -160,6 +164,17 @@ export function isCorrectCheckAction(action: Action): action is {
   return (
     action.type === ActionType.CorrectCheck &&
     CorrectCheckPayload.safeParse(action.payload).success
+  );
+}
+
+export function isPassClueAction(action: Action): action is {
+  type: ActionType.PassClue;
+  payload: { userId: string; i: number; j: number; toUserId: string };
+  ts: number;
+} {
+  return (
+    action.type === ActionType.PassClue &&
+    PassCluePayload.safeParse(action.payload).success
   );
 }
 

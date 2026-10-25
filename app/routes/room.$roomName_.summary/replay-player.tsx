@@ -1,7 +1,7 @@
 import * as React from "react";
 
 import type { Action, Player } from "~/engine";
-import { stateFromGame } from "~/engine/state";
+import { isSecretClue, stateFromGame } from "~/engine/state";
 import type { Game } from "~/models/convert.server";
 import { formatDollars } from "~/utils";
 
@@ -69,7 +69,9 @@ export default function ReplayPlayer({
       ? clue.longForm
         ? "Final"
         : "DD"
-      : formatDollars(clue.value);
+      : formatDollars(
+          isSecretClue(clue) ? (clue.secretValue ?? clue.value) : clue.value,
+        );
     return `${category.name} for ${value}`;
   }, [currentFrame, currentFrameIndex, frames.length, game.boards]);
 

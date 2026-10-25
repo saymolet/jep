@@ -1,6 +1,6 @@
 import type { Action } from "~/engine";
 import { ActionType, CLUE_TIMEOUT_MS } from "~/engine";
-import { MOCK_GAME } from "~/models/mock.server";
+import { MOCK_GAME, getMockGame } from "~/models/mock.server";
 
 import { CluePhase, buildReplayFrames } from "./replay";
 
@@ -172,5 +172,46 @@ describe("buildReplayFrames", () => {
     expect(resolved[0].correctUserId).toBeNull();
     // ...but the frame's roster stays historical: no late joiner.
     expect(resolved[0].state.players.has(latecomer.userId)).toBe(false);
+  });
+
+  it("replays a secret question given to another player", async () => {
+    const game = await getMockGame("secret");
+    const frames = buildReplayFrames(
+      game,
+      withTs([
+        { type: ActionType.Join, payload: PLAYER1 },
+        { type: ActionType.Join, payload: PLAYER2 },
+        {
+          type: ActionType.StartRound,
+          payload: { round: 0, userId: PLAYER1.userId },
+        },
+        {
+          type: ActionType.ChooseClue,
+          payload: { userId: PLAYER1.userId, i: 1, j: 0 },
+        },
+        {
+          type: ActionType.PassClue,
+          payload: {
+            userId: PLAYER1.userId,
+            i: 1,
+            j: 0,
+            toUserId: PLAYER2.userId,
+          },
+        },
+        {
+          type: ActionType.Check,
+          payload: { userId: PLAYER2.userId, i: 1, j: 0, correct: true },
+        },
+      ]),
+    );
+
+    expect(frames.map((f) => f.phase)).toEqual([
+      CluePhase.Chosen,
+      CluePhase.Buzzed,
+      CluePhase.Resolved,
+    ]);
+    expect(frames[1].participantIds).toEqual([PLAYER2.userId]);
+    expect(frames[2].correctUserId).toBe(PLAYER2.userId);
+    expect(frames[2].state.players.get(PLAYER2.userId)?.score).toBe(500);
   });
 });

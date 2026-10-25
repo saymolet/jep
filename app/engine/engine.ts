@@ -12,6 +12,7 @@ import {
   isClueAction,
   isCorrectCheckAction,
   isClueWagerAction,
+  isPassClueAction,
   isPlayerAction,
   isRoundAction,
   isRestoreAction,
@@ -29,6 +30,7 @@ import {
   getCountedChecks,
   getNumCluesInBoard,
   isAutoCheckedClue,
+  isSecretClue,
 } from "./state";
 
 enableMapSet();
@@ -73,6 +75,9 @@ export enum ActionType {
   StartRound = "start_round",
   ChooseClue = "choose_clue",
   SetClueWager = "set_clue_wager",
+  /** PassClue gives a secret clue to another player, who answers it alone
+   * (no buzzing). Only the board-control player (the chooser) may pass. */
+  PassClue = "pass_clue",
   Buzz = "buzz",
   Answer = "answer",
   /** Check marks the player's answer as correct or incorrect and adds/subtracts
@@ -217,6 +222,51 @@ function transferCheckCorrectionBoardControl(
   const nextBoardControl = getNextBoardControl(draft, userId);
   if (nextBoardControl) {
     correction.boardControlBefore = nextBoardControl;
+  }
+}
+
+/** giveSecretClue hands the active secret clue to receiverId: they are the
+ * only one who can answer (as if they had won the buzz) and everyone else is
+ * locked out, so the regular reveal/check flow applies. */
+function giveSecretClue(draft: Draft<State>, receiverId: string) {
+  draft.buzzes = new Map(
+    Array.from(draft.players.keys()).map((id) => [
+      id,
+      id === receiverId ? 0 : CANT_BUZZ_FLAG,
+    ]),
+  );
+  draft.type = GameState.RevealAnswerToBuzzer;
+}
+
+function getActiveClue(draft: Draft<State>) {
+  if (!draft.activeClue) return undefined;
+  const [i, j] = draft.activeClue;
+  return draft.game.boards.at(draft.round)?.categories.at(j)?.clues.at(i);
+}
+
+/** retireFromSecretClue keeps a secret clue playable when oldUserId's guest
+ * entry is retired into newUserId's (the same person, see TransferPlayer):
+ * their pending answer moves to newUserId, and if only one player is left
+ * while the clue is being passed, it goes to them. */
+function retireFromSecretClue(
+  draft: Draft<State>,
+  oldUserId: string,
+  newUserId: string,
+) {
+  const clue = getActiveClue(draft);
+  if (!clue || !isSecretClue(clue)) return;
+  if (draft.type === GameState.PassClue) {
+    const [onlyPlayer] = draft.players.keys();
+    if (draft.players.size === 1 && onlyPlayer) {
+      giveSecretClue(draft, onlyPlayer);
+    }
+    return;
+  }
+  if (
+    draft.type === GameState.RevealAnswerToBuzzer &&
+    draft.buzzes.get(oldUserId) === 0
+  ) {
+    giveSecretClue(draft, newUserId);
   }
 }
 
@@ -535,6 +585,18 @@ export function gameEngine(state: State, action: Action): State {
         draft.checkCorrection = null;
         resumeClock(draft, action.ts);
 
+        if (isSecretClue(clue)) {
+          draft.activeClue = [i, j];
+          draft.buzzes = new Map();
+          // With nobody to pass it to, the chooser answers it themselves.
+          if (draft.players.size === 1 && draft.players.has(userId)) {
+            giveSecretClue(draft, userId);
+            return;
+          }
+          draft.type = GameState.PassClue;
+          return;
+        }
+
         if (clue.wagerable) {
           // If long-form, anyone with a positive score can buzz. If not, only the
           // player with board control can buzz.
@@ -630,6 +692,26 @@ export function gameEngine(state: State, action: Action): State {
             draft.type = GameState.ReadWagerableClue;
           }
         }
+      });
+    case ActionType.PassClue:
+      if (!isPassClueAction(action)) {
+        throw new Error("PassClue action must have an index and a receiver");
+      }
+      return produce(state, (draft) => {
+        const { userId, i, j, toUserId } = action.payload;
+        if (
+          draft.type !== GameState.PassClue ||
+          draft.activeClue?.[0] !== i ||
+          draft.activeClue?.[1] !== j ||
+          draft.boardControl !== userId ||
+          !draft.players.has(toUserId) ||
+          // The chooser must give it away unless nobody else is playing.
+          (toUserId === userId && draft.players.size > 1)
+        ) {
+          return;
+        }
+        resumeClock(draft, action.ts);
+        giveSecretClue(draft, toUserId);
       });
     case ActionType.Buzz:
       if (!isBuzzAction(action)) {
@@ -824,11 +906,15 @@ export function gameEngine(state: State, action: Action): State {
         }
 
         // Reveal the answer to everyone and give the winning buzzer board
-        // control.
-        if (correct) {
+        // control. Only the receiver answers a secret clue, so it is over
+        // after one check either way (and on a wrong answer board control
+        // stays with the chooser).
+        if (correct || (clue && isSecretClue(clue))) {
           draft.type = GameState.RevealAnswerToAll;
           player.score = newScore;
-          draft.boardControl = userId;
+          if (correct) {
+            draft.boardControl = userId;
+          }
 
           draft.numAnswered += 1;
           const clueAnswer = draft.isAnswered[draft.round][i][j];
@@ -1081,6 +1167,7 @@ export function gameEngine(state: State, action: Action): State {
           transferCheckCorrectionBoardControl(draft, oldUserId);
           draft.players.delete(oldUserId);
           draft.leftPlayers.set(oldUserId, oldPlayer);
+          retireFromSecretClue(draft, oldUserId, newUserId);
           return;
         }
 
