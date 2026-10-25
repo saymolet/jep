@@ -14,13 +14,31 @@ import {
 } from "~/components/icons";
 import Link from "~/components/link";
 
-const UPLOAD_TEXT = "Upload new game";
+const UPLOAD_TEXT = "Upload or import a game";
+
+/** Files the upload accepts: Jep! games and SIGame packs. Browsers report
+ * .siq files as zip, octet-stream or nothing; the server checks the name. */
+const ACCEPT_INPUT = [
+  ".jep.json",
+  ".json",
+  "application/json",
+  ".siq",
+  "application/zip",
+  "application/x-zip-compressed",
+  "application/octet-stream",
+].join(",");
+
+export function isSiqFile(file?: { name: string }) {
+  return file?.name.toLowerCase().endsWith(".siq") ?? false;
+}
 
 function UploadBox({
   loading,
+  loadingText,
   onChange,
 }: {
   loading: boolean;
+  loadingText: string;
   onChange: (file?: File) => void;
 }) {
   const inputRef = React.useRef<HTMLInputElement>(null);
@@ -42,13 +60,16 @@ function UploadBox({
 
   const { getRootProps, isDragActive, isDragReject } = useDropzone({
     onDrop,
-    accept: { "application/json": [".jep.json", ".json"] },
+    accept: {
+      "application/json": [".jep.json", ".json"],
+      "application/zip": [".siq"],
+    },
     multiple: false,
     disabled: loading,
     noClick: true,
   });
 
-  let label = UPLOAD_TEXT;
+  let label = loading ? loadingText : UPLOAD_TEXT;
   if (isDragActive) {
     label = isDragReject ? "Invalid file type" : "Drop file here";
   }
@@ -94,7 +115,7 @@ function UploadBox({
           id="upload"
           type="file"
           disabled={loading}
-          accept=".jep.json,application/json"
+          accept={ACCEPT_INPUT}
           name="upload"
           aria-describedby="upload_help"
           className="hidden"
@@ -102,10 +123,11 @@ function UploadBox({
           onChange={(e) => onChange(e.target.files?.[0])}
         />
       </button>
+      <p id="upload_help" className="mt-1 text-center text-xs text-slate-500">
+        Jep! game (.jep.json) or SIGame pack (.siq, up to 100 MB)
+      </p>
       <Link to="/upload-help">
-        <p id="upload_help" className="mt-1 text-sm">
-          Upload help
-        </p>
+        <span className="text-sm">Upload help</span>
       </Link>
     </div>
   );
@@ -128,12 +150,12 @@ export default function Upload({
   const location = useLocation();
 
   function handleChangeUpload(newFile?: File) {
+    setFile(newFile);
     if (loggedIn) {
       submit(formRef.current);
       return;
     }
     setShowModal(true);
-    setFile(newFile);
   }
 
   return (
@@ -190,6 +212,7 @@ export default function Upload({
       </Dialog>
       <UploadBox
         loading={fetcher.state === "submitting"}
+        loadingText={isSiqFile(file) ? "Importing SIGame pack…" : "Uploading…"}
         onChange={handleChangeUpload}
       />
     </fetcher.Form>
