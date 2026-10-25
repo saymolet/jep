@@ -14,6 +14,8 @@ type StatusHandler = (status: string, err?: Error) => void;
 interface MockState {
   insertHandler: InsertHandler;
   presenceHandler: () => void;
+  broadcastHandlers: Map<string, (message: { payload: unknown }) => void>;
+  sent: unknown[];
   presenceState: Record<string, { role: string }[]>;
   tracked: ({ role: string } | null)[];
   statusHandler: StatusHandler;
@@ -27,6 +29,8 @@ const mocks = vi.hoisted(() => {
   const state: MockState = {
     insertHandler: () => {},
     presenceHandler: () => {},
+    broadcastHandlers: new Map(),
+    sent: [],
     presenceState: {},
     tracked: [],
     statusHandler: () => {},
@@ -38,10 +42,12 @@ const mocks = vi.hoisted(() => {
     on: vi.fn(
       (
         event: string,
-        _filter: unknown,
+        filter: { event?: string },
         handler: InsertHandler & (() => void),
       ) => {
-        if (event === "presence") {
+        if (event === "broadcast") {
+          state.broadcastHandlers.set(filter.event ?? "", handler);
+        } else if (event === "presence") {
           state.presenceHandler = handler;
         } else {
           state.insertHandler = handler;
@@ -50,6 +56,10 @@ const mocks = vi.hoisted(() => {
       },
     ),
     presenceState: () => state.presenceState,
+    send: vi.fn((message: unknown) => {
+      state.sent.push(message);
+      return Promise.resolve("ok");
+    }),
     track: vi.fn((meta: { role: string }) => {
       state.tracked.push(meta);
       return Promise.resolve("ok");
@@ -142,6 +152,8 @@ describe("useGameEngine", () => {
     mocks.channel.state = "joining";
     mocks.state.presenceState = {};
     mocks.state.tracked = [];
+    mocks.state.sent = [];
+    mocks.state.broadcastHandlers = new Map();
     root = createRoot(document.createElement("div"));
   });
 
@@ -277,5 +289,40 @@ describe("useGameEngine", () => {
     act(() => mocks.state.presenceHandler());
     expect(engine.watchers).toBe(2);
     await flush();
+  });
+
+  it("sends soundboard broadcasts only while the channel is joined", () => {
+    act(() => root.render(<TestHook events={[]} />));
+    expect(engine.soundboard.available).toBe(true);
+    const message = { sound: "ding", userId: "u1", name: "Ann" };
+    expect(engine.soundboard.send(message)).toBe(false);
+    expect(mocks.state.sent).toEqual([]);
+
+    mocks.channel.state = "joined";
+    act(() => mocks.state.statusHandler("SUBSCRIBED"));
+    expect(engine.soundboard.send(message)).toBe(true);
+    expect(mocks.state.sent).toEqual([
+      { type: "broadcast", event: "soundboard", payload: message },
+    ]);
+  });
+
+  it("delivers soundboard broadcasts to listeners, also after a reconnect", () => {
+    act(() => root.render(<TestHook events={[JOIN_U1]} />));
+    const received: unknown[] = [];
+    const stop = engine.soundboard.subscribe((p) => received.push(p));
+    const deliver = (payload: unknown) =>
+      act(() => mocks.state.broadcastHandlers.get("soundboard")?.({ payload }));
+    deliver({ sound: "tada" });
+
+    // A reconnect makes a new channel; the listener keeps working.
+    act(() => engine.reconnect?.());
+    deliver({ sound: "ding" });
+    stop();
+    deliver({ sound: "wrong" });
+    expect(received).toEqual([{ sound: "tada" }, { sound: "ding" }]);
+
+    // Room events still arrive over postgres_changes.
+    act(() => mocks.state.insertHandler({ new: JOIN_U2 }));
+    expect(playerNames()).toEqual(["Ann", "Bob"]);
   });
 });

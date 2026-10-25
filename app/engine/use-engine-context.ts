@@ -1,5 +1,6 @@
 import * as React from "react";
 
+import { NO_BROADCAST } from "./room-broadcast";
 import { GameState } from "./state";
 import { ConnectionState, type useGameEngine } from "./use-game-engine";
 
@@ -40,6 +41,7 @@ export const GameEngineContext = React.createContext<
   answerStartedAt: null,
   answerTimedOut: null,
   watchers: 0,
+  soundboard: NO_BROADCAST,
 });
 
 export function useEngineContext() {
