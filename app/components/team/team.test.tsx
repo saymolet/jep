@@ -67,7 +67,7 @@ afterEach(() => {
 function render(
   state: State,
   ui: React.ReactNode,
-  { locale = "en" as Locale } = {},
+  { locale = "en" }: { locale?: Locale } = {},
 ) {
   const engine = engineFor(state);
   const Stub = createRoutesStub([
