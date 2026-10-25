@@ -52,6 +52,22 @@ export const ClueSchema = z
     choices: z.array(z.string().trim()).optional(),
     wagerable: z.boolean().optional(),
     longForm: z.boolean().optional(),
+    /** A secret ("cat in the bag") clue: whoever chooses it must give it to
+     * another player, who answers it alone. */
+    secret: z.boolean().optional(),
+    /** Topic shown when the secret clue is handed over (default: the
+     * category name). */
+    secretTopic: z
+      .string()
+      .trim()
+      .min(1, "secretTopic must not be empty; remove the field instead")
+      .optional(),
+    /** Value of the secret clue for scoring (default: the cell value). */
+    secretValue: z
+      .number()
+      .int("secretValue must be a whole number")
+      .positive("secretValue must be positive")
+      .optional(),
   })
   .refine(
     (clue) =>
@@ -66,6 +82,19 @@ export const ClueSchema = z
   .refine((clue) => !clue.longForm || clue.wagerable, {
     message: "long-form clues must also be wagerable",
   })
+  .refine((clue) => !clue.secret || (!clue.wagerable && !clue.longForm), {
+    message: "secret clues cannot be wagerable or long-form",
+    path: ["secret"],
+  })
+  .refine(
+    (clue) =>
+      clue.secret ||
+      (clue.secretTopic === undefined && clue.secretValue === undefined),
+    {
+      message: "secretTopic and secretValue need secret: true",
+      path: ["secret"],
+    },
+  )
   .superRefine((clue, ctx) => {
     if (clue.choices === undefined) return;
     if (clue.longForm) {

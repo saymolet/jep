@@ -38,6 +38,9 @@ function insertedRow(clue: Clue): DbClue {
     media: JSON.parse(JSON.stringify(insert.media ?? null)),
     answer_media: JSON.parse(JSON.stringify(insert.answer_media ?? null)),
     choices: JSON.parse(JSON.stringify(insert.choices ?? null)),
+    secret: insert.secret ?? null,
+    secret_topic: insert.secret_topic ?? null,
+    secret_value: insert.secret_value ?? null,
   };
 }
 
@@ -126,6 +129,66 @@ describe("clue choices DB mapping", () => {
     ]) {
       expect(dbClueToClue({ ...row, choices }).choices).toBeUndefined();
     }
+  });
+});
+
+describe("clue secret DB mapping", () => {
+  const clue: Clue = {
+    clue: "The author of The Cat in the Hat",
+    answer: "Dr. Seuss",
+    value: 400,
+    secret: true,
+    secretTopic: "Famous cats",
+    secretValue: 500,
+  };
+
+  it("round-trips a secret clue", () => {
+    const insert = clueToDbClue(clue, 7);
+    expect(insert).toMatchObject({
+      secret: true,
+      secret_topic: "Famous cats",
+      secret_value: 500,
+    });
+    expect(dbClueToClue(insertedRow(clue))).toMatchObject({
+      secret: true,
+      secretTopic: "Famous cats",
+      secretValue: 500,
+    });
+  });
+
+  it("stores a normal clue as nulls and reads them back as undefined", () => {
+    const plain: Clue = { clue: "Text", answer: "Answer", value: 200 };
+    expect(clueToDbClue(plain, 7)).toMatchObject({
+      secret: null,
+      secret_topic: null,
+      secret_value: null,
+    });
+    const back = dbClueToClue(insertedRow(plain));
+    expect(back.secret).toBeUndefined();
+    expect(back.secretTopic).toBeUndefined();
+    expect(back.secretValue).toBeUndefined();
+  });
+
+  it("drops the topic and value of a secret clue without secret", () => {
+    const back = dbClueToClue({
+      ...insertedRow(clue),
+      secret: false,
+    });
+    expect(back.secret).toBeUndefined();
+    expect(back.secretTopic).toBeUndefined();
+    expect(back.secretValue).toBeUndefined();
+  });
+
+  it("ignores secret on wagerable rows (not allowed by the schema)", () => {
+    const back = dbClueToClue({ ...insertedRow(clue), wagerable: true });
+    expect(back.secret).toBeUndefined();
+    expect(back.secretValue).toBeUndefined();
+  });
+
+  it("ignores an invalid secret value", () => {
+    const back = dbClueToClue({ ...insertedRow(clue), secret_value: -5 });
+    expect(back.secret).toBe(true);
+    expect(back.secretValue).toBeUndefined();
   });
 });
 

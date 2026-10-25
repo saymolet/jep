@@ -32,7 +32,10 @@ Difficulty estimates from the original planning discussion.
 
 ### Core requested features
 
-- [ ] Secret question (Daily Double / "Кот в мешке") — ⭐ easy
+- [x] Secret question ("Кот в мешке" / cat in the bag) — `secret` on a question; the chooser
+      must hand it to another player, who answers it alone (right → +value and board control,
+      wrong → −value) — see [features/05-secret-question.md](./features/05-secret-question.md)
+      — ⭐ easy
 - [ ] Upload avatar — ⭐ easy
 - [x] Audio/video questions — pictures, audio, video and YouTube clips with the question
       (`media`) and with the answer (`answerMedia`); additive, no full `blocks[]` redesign —
@@ -78,3 +81,7 @@ per-question timer · soundboard · themes (Classic / Своя Игра / Dark).
   auto-checked picks decided server-side and re-derived by the engine, sample game
   `/mock?game=choice`. Migration `20261025131747_clues_choices.sql` (additive jsonb column on
   `clues`).
+- **2026-10-25** — Feature 05 on `feat/secret-question`: secret questions ("cat in the bag",
+  `secret` / `secretTopic` / `secretValue`), handed over with the new `pass_clue` action and
+  answered by the receiver alone; sample game `/mock?game=secret`. Migration
+  `20261025135101_clues_secret.sql` (additive nullable columns on `clues`).

@@ -1,4 +1,4 @@
-import type { Clue, Game } from "~/models/convert.server";
+import type { Board, Clue, Game } from "~/models/convert.server";
 import type { PlayerColor } from "~/models/player-color";
 import { generateGrid } from "~/utils";
 import { hasChoices } from "~/utils/choices";
@@ -14,6 +14,9 @@ export enum GameState {
   PreviewRound = "PreviewRound",
   ShowBoard = "ShowBoard",
   WagerClue = "WagerClue",
+  /** A secret clue was chosen: the board-control player must give it to
+   * another player (see ActionType.PassClue). */
+  PassClue = "PassClue",
   ReadClue = "ReadClue",
   ReadWagerableClue = "ReadWagerableClue",
   ReadLongFormClue = "ReadLongFormClue",
@@ -173,6 +176,21 @@ export function isAutoCheckedClue(clue: Clue) {
   return hasChoices(clue) && !clue.longForm;
 }
 
+/** isSecretClue is true for secret ("cat in the bag") clues, which the
+ * chooser hands to another player instead of opening the buzzers. Secret
+ * clues are never wagerable or long-form (rejected by the game schema); such
+ * clues play as their wagerable kind. */
+export function isSecretClue(clue: Clue) {
+  return Boolean(clue.secret) && !clue.wagerable && !clue.longForm;
+}
+
+/** getSecretTopic is the topic shown when a secret clue is handed over: its
+ * own secretTopic or else the category name. */
+export function getSecretTopic(board: Board, [i, j]: [number, number]) {
+  const clue = board.categories.at(j)?.clues.at(i);
+  return clue?.secretTopic ?? board.categoryNames.at(j) ?? "";
+}
+
 /** Corrections are allowed in any state where the answer is public and the
  * next clue hasn't been chosen: the reveal screens, the board, and the
  * round preview (the last clue of a round transitions straight to the next
@@ -243,6 +261,9 @@ export function getClueValueForRound(
     const key = `${round},${i},${j}`;
     const wagers = state.wagers.get(key);
     return wagers?.get(userId) ?? 0;
+  }
+  if (isSecretClue(clue)) {
+    return clue.secretValue ?? clue.value;
   }
   return clue.value;
 }

@@ -78,6 +78,33 @@ function dbChoicesToChoices(
   return value;
 }
 
+/** dbSecretToSecret reads the `secret`, `secret_topic` and `secret_value`
+ * columns. Values the schema would reject (which createGame never writes)
+ * are dropped, so the JSON export never fails and a bad row plays as a
+ * normal clue. */
+function dbSecretToSecret(
+  clue: Pick<
+    DbClue,
+    "secret" | "secret_topic" | "secret_value" | "wagerable" | "long_form"
+  >,
+): Pick<Clue, "secret" | "secretTopic" | "secretValue"> {
+  if (!clue.secret) return {};
+  if (clue.wagerable || clue.long_form) {
+    console.warn("ignoring secret on a wagerable clue");
+    return {};
+  }
+  const topic = clue.secret_topic?.trim();
+  const value = clue.secret_value;
+  return {
+    secret: true,
+    secretTopic: topic ? topic : undefined,
+    secretValue:
+      value !== null && Number.isInteger(value) && value > 0
+        ? value
+        : undefined,
+  };
+}
+
 /** dbClueToClue maps a clues row to the game representation. */
 export function dbClueToClue(clue: DbClue): Clue {
   return {
@@ -87,6 +114,9 @@ export function dbClueToClue(clue: DbClue): Clue {
     media: dbMediaToMedia(clue.media),
     answerMedia: dbMediaToMedia(clue.answer_media),
     choices: dbChoicesToChoices(clue.choices, clue),
+    // Overwrite the raw columns spread in above.
+    secret: undefined,
+    ...dbSecretToSecret(clue),
   };
 }
 
@@ -106,6 +136,9 @@ export function clueToDbClue(
     media: mediaToDbMedia(clue.media),
     answer_media: mediaToDbMedia(clue.answerMedia),
     choices: clue.choices && clue.choices.length > 0 ? clue.choices : null,
+    secret: clue.secret ? true : null,
+    secret_topic: clue.secret ? (clue.secretTopic ?? null) : null,
+    secret_value: clue.secret ? (clue.secretValue ?? null) : null,
   };
 }
 

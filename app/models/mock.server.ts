@@ -6,6 +6,7 @@ import dataChoice from "~/static/mock-choice.jep.json";
 import defaultData from "~/static/mock-default.jep.json";
 import dataLongForm from "~/static/mock-long-form.jep.json";
 import dataMedia from "~/static/mock-media.jep.json";
+import dataSecret from "~/static/mock-secret.jep.json";
 import dataWager from "~/static/mock-wager.jep.json";
 
 function loadMockGame(data: unknown, id: string): Game {
@@ -25,6 +26,7 @@ const MOCK_GAMES: Record<string, Game> = {
   longForm: loadMockGame(dataLongForm, "mock-longForm"),
   media: loadMockGame(dataMedia, "mock-media"),
   choice: loadMockGame(dataChoice, "mock-choice"),
+  secret: loadMockGame(dataSecret, "mock-secret"),
 };
 
 export async function getMockGame(name?: string): Promise<Game> {

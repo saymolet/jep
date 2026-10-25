@@ -2,7 +2,7 @@ import { produce } from "immer";
 
 import type { Action } from "~/engine";
 import { ActionType, gameEngine } from "~/engine";
-import { isCorrectCheckAction } from "~/engine/actions";
+import { isCorrectCheckAction, isPassClueAction } from "~/engine/actions";
 import type { State } from "~/engine/state";
 import { stateFromGame } from "~/engine/state";
 import type { Game } from "~/models/convert.server";
@@ -89,7 +89,8 @@ export function buildReplayFrames(
       });
     }
 
-    // Accumulate participant info (Buzz and Answer events)
+    // Accumulate participant info (Buzz and Answer events, and the player
+    // who received a secret clue)
     if (
       (action.type === ActionType.Buzz || action.type === ActionType.Answer) &&
       currentClue &&
@@ -98,6 +99,14 @@ export function buildReplayFrames(
       if (!participantIds.includes(action.payload.userId)) {
         participantIds.push(action.payload.userId);
       }
+    }
+    if (
+      isPassClueAction(action) &&
+      currentClue &&
+      state !== prevState &&
+      !participantIds.includes(action.payload.toUserId)
+    ) {
+      participantIds.push(action.payload.toUserId);
     }
 
     // Frame 2 & 3: When numAnswered increases (clue resolved)

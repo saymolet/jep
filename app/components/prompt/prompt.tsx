@@ -12,6 +12,7 @@ import {
   QUANTIZATION_FACTOR_MS,
   useEngineContext,
 } from "~/engine";
+import { getSecretTopic, isSecretClue } from "~/engine/state";
 import type { Clue } from "~/models/convert.server";
 import { hasChoices } from "~/utils/choices";
 import type { MediaBlock } from "~/utils/media";
@@ -32,6 +33,7 @@ import { Fade } from "./fade";
 import { Kbd } from "./kbd";
 import { Lockout } from "./lockout";
 import { ConnectedNextClueForm as NextClueForm } from "./next-clue-form";
+import { ConnectedPassCluePrompt } from "./pass-clue";
 import { ReadClueTimer } from "./read-clue-timer";
 import ShinyText from "./shiny-text";
 import { ConnectedWagerForm as WagerForm } from "./wager-form";
@@ -129,6 +131,23 @@ export function ClueText({
           not buzz in, and interactive content can't be nested in a button. */}
       <PlayableMedia blocks={media} autoPlay={autoPlayMedia} />
     </div>
+  );
+}
+
+/** BuzzHint is the top-right hint on the clue prompt. Secret questions are
+ * answered without buzzing, so they are labelled instead. */
+function BuzzHint({ secret }: { secret: boolean }) {
+  if (secret) {
+    return (
+      <span className="text-right text-sm text-slate-300">
+        <span aria-hidden>🐱</span> Secret question
+      </span>
+    );
+  }
+  return (
+    <span className="text-sm text-slate-300">
+      Click or press <Kbd>Enter</Kbd> to buzz in
+    </span>
   );
 }
 
@@ -623,8 +642,15 @@ function ReadLongFormCluePrompt({ roomId, userId }: RoomProps) {
  * is GameState.RevealAnswerToBuzzer.
  */
 function RevealAnswerToBuzzerPrompt({ roomId, userId }: RoomProps) {
-  const { activeClue, category, clue, getClueValue, players, winningBuzzer } =
-    useEngineContext();
+  const {
+    activeClue,
+    board,
+    category,
+    clue,
+    getClueValue,
+    players,
+    winningBuzzer,
+  } = useEngineContext();
   if (!clue) throw new Error("clue is undefined");
   if (!activeClue) throw new Error("activeClue is undefined");
   if (!winningBuzzer) throw new Error("winningBuzzer is undefined");
@@ -638,16 +664,19 @@ function RevealAnswerToBuzzerPrompt({ roomId, userId }: RoomProps) {
   // Multiple choice: the winner picks an option instead of revealing the
   // answer and checking themselves.
   const isMultipleChoice = hasChoices(clue);
+  // Secret question: the receiver answers it alone, with no buzzing first,
+  // so they get time to read it (no 5-second countdown).
+  const isSecret = isSecretClue(clue);
 
   // Play the "time's up" sound after 5 seconds if the contestant can reveal the
   // answer but hasn't yet.
   const [playTimesUpSfx] = useGameSound(TIMES_UP_SFX);
   useTimeout(
     playTimesUpSfx,
-    canShowAnswer && !showAnswer ? CLUE_TIMEOUT_MS : null,
+    canShowAnswer && !showAnswer && !isSecret ? CLUE_TIMEOUT_MS : null,
   );
   const [countdownStartedAt] = React.useState(
-    canShowAnswer && !showAnswer ? Date.now() : undefined,
+    canShowAnswer && !showAnswer && !isSecret ? Date.now() : undefined,
   );
 
   const winningPlayerName = winningBuzzer
@@ -661,22 +690,36 @@ function RevealAnswerToBuzzerPrompt({ roomId, userId }: RoomProps) {
         shouldAnimate={false}
         wonBuzz={canShowAnswer}
       />
-      <div className="flex justify-between p-4">
+      <div className="flex justify-between gap-2 p-4">
         <div className="text-white">
-          <span className="font-bold">{category}</span> for{" "}
-          <span className="font-bold">${clueValue}</span>
+          <span className="font-bold">
+            {isSecret && board ? getSecretTopic(board, activeClue) : category}
+          </span>{" "}
+          for <span className="font-bold">${clueValue}</span>
         </div>
-        <span className="text-sm text-slate-300">
-          Click or press <Kbd>Enter</Kbd> to buzz in
-        </span>
+        <BuzzHint secret={isSecret} />
       </div>
+      {isSecret ? (
+        <p
+          className="px-4 text-center text-lg font-bold text-yellow-300"
+          data-testid="secret-receiver"
+        >
+          {canShowAnswer
+            ? "Your secret question! Only you answer it."
+            : `Secret question for ${winningPlayerName}`}
+        </p>
+      ) : null}
       <ClueText
         answer={clue.answer}
         canBuzz={false}
         clue={clue.clue}
         focusOnBuzz={false}
         media={revealMedia(clue, canShowAnswer && showAnswer)}
-        autoPlayMedia={hasAnswerMedia(clue) && canShowAnswer && showAnswer}
+        autoPlayMedia={
+          isSecret
+            ? !(canShowAnswer && showAnswer) || hasAnswerMedia(clue)
+            : hasAnswerMedia(clue) && canShowAnswer && showAnswer
+        }
         onBuzz={() => null}
         showAnswer={false}
       />
@@ -815,7 +858,7 @@ function RevealAnswerLongFormPrompt({ roomId, userId }: RoomProps) {
  * GameState.ReadAnswerToAll.
  */
 function RevealAnswerToAllPrompt({ roomId, userId }: RoomProps) {
-  const { activeClue, answeredBy, category, clue, getClueValue } =
+  const { activeClue, answeredBy, board, category, clue, getClueValue } =
     useEngineContext();
   if (!clue) throw new Error("clue is undefined");
 
@@ -833,12 +876,14 @@ function RevealAnswerToAllPrompt({ roomId, userId }: RoomProps) {
       />
       <div className="flex justify-between p-4">
         <div className="text-white">
-          <span className="font-bold">{category}</span> for{" "}
-          <span className="font-bold">${clueValue}</span>
+          <span className="font-bold">
+            {isSecretClue(clue) && board && activeClue
+              ? getSecretTopic(board, activeClue)
+              : category}
+          </span>{" "}
+          for <span className="font-bold">${clueValue}</span>
         </div>
-        <span className="text-sm text-slate-300">
-          Click or press <Kbd>Enter</Kbd> to buzz in
-        </span>
+        <BuzzHint secret={isSecretClue(clue)} />
       </div>
 
       <ClueText
@@ -871,6 +916,8 @@ export function ConnectedPrompt(props: RoomProps) {
     switch (type) {
       case GameState.WagerClue:
         return <WagerCluePrompt {...props} />;
+      case GameState.PassClue:
+        return <ConnectedPassCluePrompt {...props} />;
       case GameState.ReadClue:
         return (
           <ReadCluePrompt

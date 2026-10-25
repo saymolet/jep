@@ -148,6 +148,13 @@ export default function HowTo() {
           pick automatically, so there is nothing to check yourself.
         </p>
         <p className="mb-4">
+          Watch out for the cat in the bag! A secret question looks like any
+          other on the board. If you choose one, you must give it to another
+          player, who answers it alone without buzzing. If they are right they
+          win its value and choose next; if they are wrong they lose its value
+          and you keep choosing.
+        </p>
+        <p className="mb-4">
           If they say they were right, the answer is revealed to everyone. If
           they were lying about being right earlier, don't play with them again!
         </p>
