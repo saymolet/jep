@@ -23,9 +23,11 @@ import useKeyPress from "~/utils/use-key-press";
 import useSoloAction from "~/utils/use-solo-action";
 import useGameSound from "~/utils/use-sound";
 import useTimeout from "~/utils/use-timeout";
+import { useSoundSettings } from "~/utils/user-settings";
 
 import { ConnectedAnswerForm as AnswerForm } from "./answer-form";
 import { Buzzes } from "./buzz";
+import { BuzzButton, getBuzzButtonState, isBuzzBarShown } from "./buzz-button";
 import { ConnectedCheckForm as CheckForm } from "./check-form";
 import { ConnectedChoiceList, ConnectedChoicePicker } from "./choices";
 import { ClueImage, PlayableMedia } from "./clue-media";
@@ -132,6 +134,7 @@ export function ClueText({
   media = [],
   autoPlayMedia = false,
   variant = "screen",
+  touchBuzz = true,
 }: {
   answer: string;
   canBuzz: boolean;
@@ -146,10 +149,15 @@ export function ClueText({
   /** "screen" fills the full-screen prompt; "tv" fills its container (the
    * presenter screen) and lets the text grow on big screens. */
   variant?: "screen" | "tv";
+  /** false: taps with a finger or pen don't buzz while the big BUZZ button
+   * is on screen (no accidental buzzes while scrolling or reading). Mouse
+   * clicks and the keyboard still buzz. */
+  touchBuzz?: boolean;
 }) {
   const { fontSize, ref } = useFitText<HTMLParagraphElement>({
     maxFontSize: 200,
   });
+  const pointerType = React.useRef("");
   const images = media.filter((b) => b.type === "image");
   const hasMedia = media.length > 0;
 
@@ -157,13 +165,30 @@ export function ClueText({
     <div
       className={clsx(
         "flex min-h-0 grow flex-col items-center justify-center gap-2 pb-2",
-        variant === "tv" ? "w-full" : "w-screen",
+        // On phones (short landscape screens especially) the prompt scrolls
+        // instead of squeezing the media under the controls below.
+        variant === "tv" ? "w-full" : "w-screen buzzbar:shrink-0",
       )}
     >
       <button
         type="button"
         disabled={!canBuzz}
-        onClick={() => onBuzz(Date.now())}
+        data-testid="clue-buzz-area"
+        onPointerDown={(e) => {
+          pointerType.current = e.pointerType;
+        }}
+        onClick={() => {
+          const type = pointerType.current;
+          pointerType.current = "";
+          if (
+            !touchBuzz &&
+            (type === "touch" || type === "pen") &&
+            isBuzzBarShown()
+          ) {
+            return;
+          }
+          onBuzz(Date.now());
+        }}
         className={clsx(
           "flex w-full grow flex-col items-center justify-center gap-2 p-4",
           { "min-h-24": hasMedia },
@@ -218,8 +243,9 @@ function BuzzHint({ secret }: { secret: boolean }) {
       </span>
     );
   }
+  // Nothing to click once someone buzzed in; phones show no keyboard hint.
   return (
-    <span className="text-sm text-slate-300">
+    <span className="text-sm text-slate-300 buzzbar:hidden">
       {rich("play.buzzHint", { kbd })}
     </span>
   );
@@ -419,11 +445,19 @@ function ReadCluePrompt({
   lockout,
   onLockout,
 }: RoomProps & { lockout: boolean; onLockout: () => void }) {
-  const { activeClue, buzzes, category, clue, getClueValue, soloDispatch } =
-    useEngineContext();
+  const {
+    activeClue,
+    buzzes,
+    category,
+    clue,
+    getClueValue,
+    players,
+    soloDispatch,
+  } = useEngineContext();
 
   const clueMedia = useClueMedia();
-  const { rich } = useTranslation();
+  const { t, rich } = useTranslation();
+  const { mute } = useSoundSettings();
   if (!clue) throw new Error("No clue found");
 
   // Compute clueDurationMs once at mount so the ReadClueTimer CSS animation
@@ -587,10 +621,13 @@ function ReadCluePrompt({
           myBuzzDurationMs <= CLUE_TIMEOUT_MS
         }
       />
-      <div className="flex justify-between p-4">
+      <div className="flex justify-between gap-2 p-4">
         <CategoryFor category={category} value={clueValue} />
-        <span className="text-sm text-slate-300">
+        <span className="text-sm text-slate-300 buzzbar:hidden">
           {rich("play.buzzHint", { kbd })}
+        </span>
+        <span className="hidden text-right text-sm text-slate-300 buzzbar:inline">
+          {t("play.tapHint")}
         </span>
       </div>
       <ClueText
@@ -602,12 +639,15 @@ function ReadCluePrompt({
         autoPlayMedia={!isReRead}
         showAnswer={false}
         answer={clue.answer}
+        touchBuzz={false}
       />
       {hasChoices(clue) ? (
         // Options stay in the same place when the buzz winner picks one.
         <ConnectedChoiceList />
       ) : (
-        <div className="invisible">
+        // Keeps the layout from jumping when the check form appears. On
+        // phones the BUZZ button takes that place instead.
+        <div className="invisible buzzbar:hidden">
           <CheckForm
             roomId={roomId}
             userId={userId}
@@ -618,6 +658,18 @@ function ReadCluePrompt({
       )}
       <Countdown startTime={undefined} />
       <Buzzes buzzes={optimisticBuzzes} />
+      <BuzzButton
+        state={getBuzzButtonState({
+          lockout,
+          buzzerOpen: buzzerOpenAt !== undefined,
+          buzzes: optimisticBuzzes,
+          userId,
+          players,
+        })}
+        clueDurationMs={clueDurationMs}
+        onBuzz={() => handleClick(Date.now())}
+        mute={mute}
+      />
     </>
   );
 }
