@@ -5,6 +5,7 @@ import type { Page } from "@playwright/test";
 
 import { expect, test } from "./fixtures";
 import {
+  goto,
   openClue,
   stubExternalMedia,
   uploadGame,
@@ -42,7 +43,7 @@ test.describe("multiple choice questions in a room", () => {
     browser,
   }) => {
     await stubExternalMedia(host);
-    await host.goto("/profile");
+    await goto(host, "/profile");
     const gameId = await uploadGame(host, CHOICE_GAME_PATH);
 
     // The JSON export round-trips the options through the DB.
@@ -54,7 +55,7 @@ test.describe("multiple choice questions in a room", () => {
     );
     expect(allChoices(exported)).toEqual(allChoices(original));
 
-    await host.goto(`/game/${gameId}/play`);
+    await goto(host, `/game/${gameId}/play`);
     await expect(host).toHaveURL(/\/room\/\d+-\w+$/);
     const roomUrl = host.url();
     await waitForConnected(host);
@@ -67,7 +68,7 @@ test.describe("multiple choice questions in a room", () => {
     const context = await browser.newContext();
     const guest = await context.newPage();
     await stubExternalMedia(guest);
-    await guest.goto(roomUrl);
+    await goto(guest, roomUrl);
     await waitForConnected(guest);
     await guest.getByRole("button", { name: /join game/i }).click();
     await expect(guest.getByRole("button", { name: /join game/i })).toBeHidden({

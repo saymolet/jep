@@ -1,12 +1,12 @@
 import { expect, test } from "@playwright/test";
 
-import { playOneClue } from "./helpers";
+import { goto, playOneClue, reload } from "./helpers";
 
 test.describe("solo game persistence", () => {
   test("persists game state and shows resume prompt on reload", async ({
     page,
   }) => {
-    await page.goto("/mockPersistent");
+    await goto(page, "/mockPersistent");
 
     await page.getByRole("button", { name: /join game/i }).click();
     await page.getByRole("button", { name: /start round/i }).click();
@@ -16,7 +16,7 @@ test.describe("solo game persistence", () => {
     // Wait for debounced save (300ms debounce + margin)
     await page.waitForTimeout(500);
 
-    await page.reload();
+    await reload(page);
 
     // Resume prompt should appear
     await expect(
@@ -38,7 +38,7 @@ test.describe("solo game persistence", () => {
   });
 
   test("new game clears saved state", async ({ page }) => {
-    await page.goto("/mockPersistent");
+    await goto(page, "/mockPersistent");
 
     await page.getByRole("button", { name: /join game/i }).click();
     await page.getByRole("button", { name: /start round/i }).click();
@@ -48,7 +48,7 @@ test.describe("solo game persistence", () => {
     // Wait for debounced save
     await page.waitForTimeout(500);
 
-    await page.reload();
+    await reload(page);
 
     // Resume prompt appears
     await expect(
@@ -66,7 +66,7 @@ test.describe("solo game persistence", () => {
     });
 
     // Reload again — no resume prompt this time
-    await page.reload();
+    await reload(page);
     await expect(page.getByRole("button", { name: /join game/i })).toBeVisible({
       timeout: 5_000,
     });

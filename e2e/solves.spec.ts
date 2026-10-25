@@ -1,16 +1,22 @@
 import { test, expect } from "./fixtures";
-import { playOneClue, uploadGame, waitForConnected } from "./helpers";
+import {
+  goto,
+  playOneClue,
+  reload,
+  uploadGame,
+  waitForConnected,
+} from "./helpers";
 
 test.describe("solves tracking", () => {
   test("playing a game records a solve on profile", async ({
     authedPage: page,
   }) => {
     // Upload a 1x1 game (1 round, 1 category, 1 clue)
-    await page.goto("/profile");
+    await goto(page, "/profile");
     const gameId = await uploadGame(page);
 
     // Navigate to the play route, which creates a real room and redirects
-    await page.goto(`/game/${gameId}/play`);
+    await goto(page, `/game/${gameId}/play`);
 
     // Wait for the room page to load and the realtime subscription to be
     // established, then join.
@@ -29,7 +35,7 @@ test.describe("solves tracking", () => {
     // This test covers persisted solve tracking, not realtime delivery. Reload
     // after the join action so the room starts from its persisted event state
     // instead of depending on subscription timing in the local stack.
-    await page.reload();
+    await reload(page);
     await waitForConnected(page);
 
     // Start round 1
@@ -54,7 +60,7 @@ test.describe("solves tracking", () => {
     await expect(summaryDetailsLink).toHaveAttribute("target", "_blank");
 
     // Navigate to profile and check the solve appears
-    await page.goto("/profile");
+    await goto(page, "/profile");
     await expect(
       page.getByRole("heading", { name: /my attempts/i }),
     ).toBeVisible();

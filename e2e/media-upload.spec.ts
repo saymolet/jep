@@ -3,6 +3,7 @@ import path from "path";
 
 import { expect, test } from "./fixtures";
 import {
+  goto,
   openClue,
   stubExternalMedia,
   uploadGame,
@@ -37,7 +38,7 @@ test.describe("uploaded media questions", () => {
     authedPage: page,
   }) => {
     await stubExternalMedia(page);
-    await page.goto("/profile");
+    await goto(page, "/profile");
     const gameId = await uploadGame(page, MEDIA_GAME_PATH);
 
     // The JSON export round-trips media and answer media through the DB.
@@ -50,7 +51,7 @@ test.describe("uploaded media questions", () => {
     expect(clueMedia(exported)).toEqual(clueMedia(original));
 
     // Open the audio question in a real room.
-    await page.goto(`/game/${gameId}/play`);
+    await goto(page, `/game/${gameId}/play`);
     await expect(page).toHaveURL(/\/room\/\d+-\w+$/);
     await waitForConnected(page);
     await page.getByRole("button", { name: /join game/i }).click();

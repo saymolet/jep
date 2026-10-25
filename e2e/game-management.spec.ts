@@ -3,7 +3,7 @@ import path from "path";
 import { expect } from "@playwright/test";
 
 import { test } from "./fixtures";
-import { uploadGame } from "./helpers";
+import { goto, uploadGame } from "./helpers";
 
 const MOCK_1x1_PATH = path.resolve("app/static/mock-1x1.jep.json");
 
@@ -32,7 +32,7 @@ test.describe("game management", () => {
   test("authed upload skips confirmation dialog", async ({
     authedPage: page,
   }) => {
-    await page.goto("/profile");
+    await goto(page, "/profile");
     gameId = await uploadGame(page);
 
     // No confirmation dialog should have appeared — success message shows directly
@@ -42,7 +42,7 @@ test.describe("game management", () => {
   test("guest upload shows confirmation dialog", async ({ browser }) => {
     const guestContext = await browser.newContext();
     const guestPage = await guestContext.newPage();
-    await guestPage.goto("/");
+    await goto(guestPage, "/");
 
     // Use the filechooser pattern so we wait for React hydration before
     // the file change event fires (the hidden input's onChange handler
@@ -70,7 +70,7 @@ test.describe("game management", () => {
   });
 
   test("change game visibility on profile", async ({ authedPage: page }) => {
-    await page.goto("/profile");
+    await goto(page, "/profile");
     const gameRow = page.locator(`li:has(a[href="/game/${gameId}/play"])`);
 
     // Game starts as UNLISTED (from the upload test)
@@ -90,7 +90,7 @@ test.describe("game management", () => {
     // Try to access as a guest (new unauthenticated context).
     const guestContext = await browser.newContext();
     const guestPage = await guestContext.newPage();
-    const response = await guestPage.goto(`/game/${gameId}`);
+    const response = await goto(guestPage, `/game/${gameId}`);
 
     expect(response?.status()).toBe(404);
 
@@ -100,7 +100,7 @@ test.describe("game management", () => {
   test("public game has a preview and separate JSON download", async ({
     authedPage: page,
   }) => {
-    await page.goto("/profile");
+    await goto(page, "/profile");
     const gameRow = page.locator(`li:has(a[href="/game/${gameId}/play"])`);
     await changeVisibility(page, gameRow, "Make public");
 
@@ -134,7 +134,7 @@ test.describe("game management", () => {
     browser,
   }) => {
     // As authed user on /, find the game card and verify "More actions" is visible.
-    await page.goto("/");
+    await goto(page, "/");
     const authedCard = page.locator(`a[href="/game/${gameId}/play"]`).first();
     await expect(authedCard).toBeVisible({ timeout: 5_000 });
     await expect(
@@ -144,7 +144,7 @@ test.describe("game management", () => {
     // As a guest, the same game card should NOT have the "More actions" menu
     const guestContext = await browser.newContext();
     const guestPage = await guestContext.newPage();
-    await guestPage.goto("/");
+    await goto(guestPage, "/");
     const guestCard = guestPage
       .locator(`a[href="/game/${gameId}/play"]`)
       .first();
@@ -157,7 +157,7 @@ test.describe("game management", () => {
   });
 
   test("delete game from profile", async ({ authedPage: page }) => {
-    await page.goto("/profile");
+    await goto(page, "/profile");
     const gameRow = page.locator(`li:has(a[href="/game/${gameId}/play"])`);
     await expect(gameRow).toBeVisible();
 

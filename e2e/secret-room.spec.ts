@@ -4,7 +4,12 @@ import path from "path";
 import type { Page } from "@playwright/test";
 
 import { expect, test } from "./fixtures";
-import { stubExternalMedia, uploadGame, waitForConnected } from "./helpers";
+import {
+  goto,
+  stubExternalMedia,
+  uploadGame,
+  waitForConnected,
+} from "./helpers";
 
 const SECRET_GAME_PATH = path.resolve("app/static/mock-secret.jep.json");
 
@@ -44,7 +49,7 @@ test.describe("secret questions in a room", () => {
     browser,
   }) => {
     await stubExternalMedia(host);
-    await host.goto("/profile");
+    await goto(host, "/profile");
     const gameId = await uploadGame(host, SECRET_GAME_PATH);
 
     // The JSON export round-trips the secret fields through the DB.
@@ -56,7 +61,7 @@ test.describe("secret questions in a room", () => {
     );
     expect(allSecrets(exported)).toEqual(allSecrets(original));
 
-    await host.goto(`/game/${gameId}/play`);
+    await goto(host, `/game/${gameId}/play`);
     await expect(host).toHaveURL(/\/room\/\d+-\w+$/);
     const roomUrl = host.url();
     await waitForConnected(host);
@@ -69,7 +74,7 @@ test.describe("secret questions in a room", () => {
     const context = await browser.newContext();
     const guest = await context.newPage();
     await stubExternalMedia(guest);
-    await guest.goto(roomUrl);
+    await goto(guest, roomUrl);
     await waitForConnected(guest);
     await guest.getByRole("button", { name: /join game/i }).click();
     await expect(guest.getByRole("button", { name: /join game/i })).toBeHidden({

@@ -32,7 +32,12 @@ const formatter = new Intl.DateTimeFormat("en-US", {
 });
 
 export default function HowTo() {
-  const [clueShownAt, setClueShownAt] = React.useState(Date.now());
+  // Set after mount: reading Date.now() during render would make the server
+  // and client render different "Clue shown at" times (a hydration mismatch).
+  const [clueShownAt, setClueShownAt] = React.useState<number | undefined>();
+  React.useEffect(() => {
+    setClueShownAt(Date.now());
+  }, []);
   const [buzzedAt, setBuzzedAt] = React.useState<number | undefined>();
   const [buzzerOpenAt, setBuzzerOpenAt] = React.useState<number | undefined>();
   const [lockout, setLockout] = React.useState(false);
@@ -69,8 +74,10 @@ export default function HowTo() {
       return;
     }
 
-    const lockoutDeltaMs = clickedAtMs - clueShownAt;
-    if (lockoutDeltaMs < CLUE_DURATION_MS) {
+    if (
+      clueShownAt === undefined ||
+      clickedAtMs - clueShownAt < CLUE_DURATION_MS
+    ) {
       setHadLockout(true);
       return setLockout(true);
     }

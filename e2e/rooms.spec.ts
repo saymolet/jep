@@ -1,5 +1,5 @@
 import { test, expect } from "./fixtures";
-import { uploadGame } from "./helpers";
+import { goto, uploadGame } from "./helpers";
 
 test.describe("joining rooms", () => {
   // Both tests share one uploaded game and the room created in the first.
@@ -11,14 +11,14 @@ test.describe("joining rooms", () => {
   test("joining before the realtime channel connects still joins", async ({
     authedPage: page,
   }) => {
-    await page.goto("/profile");
+    await goto(page, "/profile");
     gameId = await uploadGame(page);
 
     // Never let the realtime websocket connect, so the channel can't reach
     // SUBSCRIBED: the join must converge without realtime delivery.
     await page.context().routeWebSocket(/\/realtime\//, () => {});
 
-    await page.goto(`/game/${gameId}/play`);
+    await goto(page, `/game/${gameId}/play`);
     await expect(page).toHaveURL(/\/room\/\d+-\w+$/);
     roomPath = new URL(page.url()).pathname;
 
@@ -40,7 +40,7 @@ test.describe("joining rooms", () => {
     const page = await context.newPage();
 
     // The game page lists the room in progress.
-    await page.goto(`/game/${gameId}`);
+    await goto(page, `/game/${gameId}`);
     await expect(
       page.getByRole("heading", { name: "Rooms in progress" }),
     ).toBeVisible();
@@ -51,7 +51,7 @@ test.describe("joining rooms", () => {
 
     // "Play with friends" offers the room in progress instead of silently
     // creating a new one.
-    await page.goto(`/game/${gameId}/play`);
+    await goto(page, `/game/${gameId}/play`);
     await expect(page).toHaveURL(`/game/${gameId}/play`);
     await page.getByRole("link", { name: new RegExp(roomName) }).click();
     await expect(page).toHaveURL(roomPath);
@@ -62,7 +62,7 @@ test.describe("joining rooms", () => {
     });
 
     // Starting a new room is still one click away.
-    await page.goto(`/game/${gameId}/play`);
+    await goto(page, `/game/${gameId}/play`);
     await page.getByRole("link", { name: /start a new room/i }).click();
     await expect(page).toHaveURL(/\/room\/\d+-\w+$/);
     expect(new URL(page.url()).pathname).not.toBe(roomPath);

@@ -1,4 +1,5 @@
 import { test, expect } from "./fixtures";
+import { goto, reload } from "./helpers";
 
 /** Wait for a debounced settings POST to complete. */
 function waitForSettingsSave(page: import("@playwright/test").Page) {
@@ -12,7 +13,7 @@ test.describe("settings persistence", () => {
   test("wager hints setting persists across reload", async ({
     authedPage: page,
   }) => {
-    await page.goto("/profile");
+    await goto(page, "/profile");
 
     const alwaysTab = page.getByRole("tab", { name: "Always" });
     const onTapTab = page.getByRole("tab", { name: "On tap" });
@@ -30,14 +31,14 @@ test.describe("settings persistence", () => {
     await saveResponse;
 
     // Reload and verify it persisted
-    await page.reload();
+    await reload(page);
     await expect(targetTab).toHaveAttribute("data-state", "active");
   });
 
   test("sound mute persists across reload without losing volume", async ({
     authedPage: page,
   }) => {
-    await page.goto("/profile");
+    await goto(page, "/profile");
 
     const muteButton = page.getByRole("button", { name: "Mute" });
     // Radix Slider puts role="slider" on the Thumb element, not the Root.
@@ -69,7 +70,7 @@ test.describe("settings persistence", () => {
       }
 
       await setupSave;
-      await page.reload();
+      await reload(page);
     }
 
     // Read the volume slider value — should be non-zero.
@@ -82,7 +83,7 @@ test.describe("settings persistence", () => {
     await muteSave;
 
     // Reload — mute should persist AND volume should be preserved
-    await page.reload();
+    await reload(page);
     await expect(muteButton).toHaveAttribute("data-state", "on");
 
     const volumeAfterReload = await volumeThumb.getAttribute("aria-valuenow");

@@ -45,8 +45,12 @@ test.describe("wager flow", () => {
     await revealButton.click();
     await page.getByRole("button", { name: /correct!/i }).click();
 
-    // Score should reflect the wager ($0 + $100 = $100).
-    await expect(page.getByText("$100")).toBeVisible({ timeout: 5_000 });
+    // Score should reflect the wager ($0 + $100 = $100). Check the score
+    // button itself: "$100" also shows up in the reveal screen and in the
+    // floating "+$100".
+    await expect(
+      page.getByRole("button", { name: "$100", exact: true }),
+    ).toBeVisible({ timeout: 5_000 });
 
     // Back to board leads to game over (only clue).
     await expect(

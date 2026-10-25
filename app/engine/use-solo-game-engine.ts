@@ -24,15 +24,13 @@ export function useSoloGameEngine(
   const [state, rawDispatch] = React.useReducer(gameEngine, game, (arg) =>
     stateFromGame(arg),
   );
+  // Start CONNECTED on both server and client so hydration matches, then
+  // sync with navigator.onLine after mount. (Node 21+ defines a global
+  // `navigator` without `onLine`, so reading it during render made the server
+  // render "Offline" while the browser rendered "Connected" — a hydration
+  // mismatch that made React discard the server HTML.)
   const [connectionState, setConnectionState] = React.useState<ConnectionState>(
-    () => {
-      if (typeof navigator === "undefined") {
-        return ConnectionState.CONNECTED;
-      }
-      return navigator.onLine
-        ? ConnectionState.CONNECTED
-        : ConnectionState.DISCONNECTED;
-    },
+    ConnectionState.CONNECTED,
   );
 
   const stateRef = React.useRef(state);
@@ -70,7 +68,9 @@ export function useSoloGameEngine(
   }, []);
 
   React.useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (!navigator.onLine) {
+      setConnectionState(ConnectionState.DISCONNECTED);
+    }
 
     function handleOnline() {
       setConnectionState(ConnectionState.CONNECTED);

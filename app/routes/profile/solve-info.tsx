@@ -1,13 +1,8 @@
 import { ArrowTopRightOnSquare } from "~/components/icons";
 import Link from "~/components/link";
+import LocalDate from "~/components/local-date";
 import SolveIcon from "~/components/solve-icon";
 import { Solve } from "~/models/solves.server";
-
-const formatter = new Intl.DateTimeFormat("en-US", {
-  year: "numeric",
-  month: "long",
-  day: "numeric",
-});
 
 export default function SolveInfo({ solve }: { solve: Solve }) {
   const roomName = solve.rooms?.name;
@@ -19,17 +14,15 @@ export default function SolveInfo({ solve }: { solve: Solve }) {
     ? `/room/${solve.room_id}-${roomName}/summary`
     : `/room/${solve.room_id}-${roomName}`;
 
-  const solveDate = solve.solved_at
-    ? formatter.format(new Date(solve.solved_at))
-    : solve.started_at
-      ? formatter.format(new Date(solve.started_at))
-      : undefined;
+  const solveDate = solve.solved_at ?? solve.started_at;
 
   return (
     <div className="flex items-center gap-2">
       <SolveIcon solved={solved} />
       <Link to={roomLink}>{title}</Link>{" "}
-      <span className="text-sm text-slate-500">{solveDate}</span>
+      <span className="text-sm text-slate-500">
+        {solveDate ? <LocalDate date={solveDate} /> : null}
+      </span>
       {gameId ? (
         <span className="text-sm">
           &middot;{" "}

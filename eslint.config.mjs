@@ -6,7 +6,17 @@ import tseslint from "typescript-eslint";
 
 export default defineConfig(
   {
-    ignores: ["node_modules/", "build/", "api/", ".react-router/", "env.d.ts"],
+    ignores: [
+      "node_modules/",
+      "build/",
+      "api/",
+      ".react-router/",
+      "env.d.ts",
+      // Rewritten by vitest while lint runs in parallel under `pnpm validate`.
+      "coverage/",
+      "playwright-report/",
+      "test-results/",
+    ],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,

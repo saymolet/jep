@@ -1,6 +1,8 @@
 import { expect, test } from "@playwright/test";
 import type { Page } from "@playwright/test";
 
+import { goto } from "./helpers";
+
 /** Optional directory for step-by-step screenshots (set UNDO_SHOTS_DIR). */
 const shotsDir = process.env.UNDO_SHOTS_DIR;
 let shotIndex = 0;
@@ -15,7 +17,7 @@ async function shot(page: Page, name: string) {
 
 /** Plays the first $200 clue of the mock game and self-checks "correct!". */
 async function playClueAndCheckCorrect(page: Page) {
-  await page.goto("/mock");
+  await goto(page, "/mock");
 
   await page.getByRole("button", { name: /join game/i }).click();
   await page.getByRole("button", { name: /start round/i }).click();
