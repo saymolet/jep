@@ -1,0 +1,94 @@
+{
+  "title": "Media Sample Game",
+  "author": "Jep!",
+  "copyright": "Media from Wikimedia Commons (public domain / CC BY) and the Blender Foundation (CC BY 3.0)",
+  "note": "Questions with pictures, sound and video.",
+  "boards": [
+    {
+      "categoryNames": ["Pictures", "Music & Film"],
+      "categories": [
+        {
+          "name": "Pictures",
+          "clues": [
+            {
+              "clue": "Who painted this portrait?",
+              "answer": "Leonardo da Vinci",
+              "value": 200,
+              "media": [
+                {
+                  "type": "image",
+                  "src": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Mona_Lisa%2C_by_Leonardo_da_Vinci%2C_from_C2RMF_retouched.jpg/500px-Mona_Lisa%2C_by_Leonardo_da_Vinci%2C_from_C2RMF_retouched.jpg",
+                  "alt": "A portrait of a woman with a faint smile"
+                }
+              ]
+            },
+            {
+              "clue": "This Leonardo da Vinci portrait has hung in the Louvre since the French Revolution",
+              "answer": "Mona Lisa",
+              "value": 400,
+              "answerMedia": [
+                {
+                  "type": "image",
+                  "src": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Mona_Lisa%2C_by_Leonardo_da_Vinci%2C_from_C2RMF_retouched.jpg/500px-Mona_Lisa%2C_by_Leonardo_da_Vinci%2C_from_C2RMF_retouched.jpg",
+                  "alt": "The Mona Lisa"
+                }
+              ]
+            },
+            {
+              "clue": "",
+              "answer": "The Great Wave off Kanagawa (Hokusai)",
+              "value": 600,
+              "media": [
+                {
+                  "type": "image",
+                  "src": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0a/The_Great_Wave_off_Kanagawa.jpg/500px-The_Great_Wave_off_Kanagawa.jpg",
+                  "alt": "A woodblock print of a huge wave towering over boats"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Music & Film",
+          "clues": [
+            {
+              "clue": "",
+              "answer": "Moonlight Sonata (Beethoven)",
+              "value": 200,
+              "media": [
+                {
+                  "type": "audio",
+                  "src": "https://upload.wikimedia.org/wikipedia/commons/transcoded/e/eb/Beethoven_Moonlight_1st_movement.ogg/Beethoven_Moonlight_1st_movement.ogg.mp3",
+                  "alt": "A slow piano piece"
+                }
+              ]
+            },
+            {
+              "clue": "Name this Blender Foundation short film",
+              "answer": "Big Buck Bunny",
+              "value": 400,
+              "media": [
+                {
+                  "type": "video",
+                  "src": "https://upload.wikimedia.org/wikipedia/commons/transcoded/c/c0/Big_Buck_Bunny_4K.webm/Big_Buck_Bunny_4K.webm.240p.vp9.webm",
+                  "alt": "A clip from an animated short film"
+                }
+              ]
+            },
+            {
+              "clue": "This open-source 3D program made the film you are watching",
+              "answer": "Blender",
+              "value": 600,
+              "media": [
+                {
+                  "type": "video",
+                  "src": "https://www.youtube.com/watch?v=aqz-KE-bpKQ&t=60s"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
