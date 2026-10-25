@@ -93,8 +93,13 @@ Difficulty estimates from the original planning discussion.
       faster / your turn), `pointerdown` with tap guards, haptics, touch taps on the question
       no longer buzz — see [features/12-mobile-buzzer.md](./features/12-mobile-buzzer.md) — ⭐ small
 
+- [x] Team mode — optional teams (Red / Blue / Green / Yellow, renamable by members) picked in
+      the join dialog or from your tile; scoreboard grouped by team with totals, team totals
+      on the TV, winning team on the summary; scoring stays per player — see
+      [features/13-teams.md](./features/13-teams.md) — ⭐⭐ medium
+
 Question search ·
-team mode · admin panel · Discord login · keyboard shortcuts ·
+admin panel · Discord login · keyboard shortcuts ·
 OBS/browser-source mode ·
 auto-reconnect · host controls from phone · game save/resume · live scoreboard ·
 per-question timer · soundboard · themes (Classic / Своя Игра / Dark).
@@ -158,3 +163,7 @@ per-question timer · soundboard · themes (Classic / Своя Игра / Dark).
   on touch/narrow screens via a `buzzbar` CSS variant, `pointerdown` buzz with arm/double-fire
   guards, Vibration API haptics following the mute setting, question taps by finger no longer
   buzz while the button is shown). Buzz timing unchanged. No migration.
+- **2026-10-26** — Feature 13 on `feat/teams`: team mode (`set_team` / `rename_team` room
+  events, team in the Join payload, `Player.team`, `State.teamNames`); grouped scoreboard,
+  team picker in the join dialog and your tile, team totals on the TV, team standings and
+  winning team on the summary and in the rooms list. No migration, no new dependencies.
