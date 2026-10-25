@@ -3,6 +3,12 @@ import clsx from "clsx";
 import * as React from "react";
 
 import { Category } from "~/components/board/category";
+import {
+  BoardScroller,
+  ClueValue,
+  getCellPaddingClassName,
+  useIsWideBoard,
+} from "~/components/board/layout";
 import Button from "~/components/button";
 import CluePopoverContent from "~/components/clue-popover-content";
 import Popover from "~/components/popover";
@@ -23,6 +29,7 @@ interface Props {
 }
 
 function PostGameClue({ clue, state, round, i, j }: Props) {
+  const wide = useIsWideBoard();
   const clueAnswer = state.isAnswered[round][i][j];
   const clueValue =
     clue.wagerable && clueAnswer.isAnswered
@@ -34,14 +41,16 @@ function PostGameClue({ clue, state, round, i, j }: Props) {
   if (!clueAnswer.isAnswered) {
     return (
       <td className="h-full sm:p-1">
-        <div className="h-full w-full bg-slate-800 px-4 py-3">
+        <div
+          className={`h-full w-full bg-slate-800 ${getCellPaddingClassName(wide)}`}
+        >
           <p
             className={`flex items-center justify-center font-inter font-bold text-white opacity-75 transition-opacity text-shadow-md group-hover:opacity-100 sm:text-shadow-lg`}
           >
-            {clue.wagerable && clueAnswer.isAnswered ? null : (
-              <span className="text-sm sm:text-3xl lg:text-4xl">$</span>
-            )}
-            <span className="text-md sm:text-4xl lg:text-5xl">{clueValue}</span>
+            <ClueValue
+              value={clueValue}
+              showDollar={!(clue.wagerable && clueAnswer.isAnswered)}
+            />
           </p>
         </div>
       </td>
@@ -78,7 +87,8 @@ function PostGameClue({ clue, state, round, i, j }: Props) {
         <button
           disabled={!playable}
           className={clsx(
-            `group h-full w-full bg-blue-1000 px-4 py-3 transition-colors hover:bg-blue-700`,
+            "group h-full w-full bg-blue-1000 transition-colors hover:bg-blue-700",
+            getCellPaddingClassName(wide),
             {
               "bg-slate-800": !playable,
             },
@@ -88,10 +98,7 @@ function PostGameClue({ clue, state, round, i, j }: Props) {
           <p
             className={`flex items-center justify-center font-inter font-bold text-white opacity-75 transition-opacity text-shadow-md group-hover:opacity-100 sm:text-shadow-lg`}
           >
-            {clue.wagerable ? null : (
-              <span className="text-sm sm:text-3xl lg:text-4xl">$</span>
-            )}
-            <span className="text-md sm:text-4xl lg:text-5xl">{clueValue}</span>
+            <ClueValue value={clueValue} showDollar={!clue.wagerable} />
           </p>
         </button>
       </Popover>
@@ -126,39 +133,41 @@ function PostGameBoard({
   const roundRevealed = state.round >= round;
 
   return (
-    <table className="h-1 w-full table-fixed border-spacing-3 text-white">
-      <thead>
-        <tr className="h-1">
-          {board.categories.map((category) => (
-            <Category
-              key={category.name}
-              name={roundRevealed ? category.name : "?"}
-              note={category.note}
-            />
-          ))}
-        </tr>
-      </thead>
-      <tbody>
-        {rows.map((category, i) => (
-          <tr key={i}>
-            {category.map((clue, j) =>
-              clue ? (
-                <PostGameClue
-                  round={round}
-                  i={i}
-                  j={j}
-                  key={`clue-${i}-${j}`}
-                  clue={clue}
-                  state={state}
-                />
-              ) : (
-                <td key={`clue-${i}-${j}`} />
-              ),
-            )}
+    <BoardScroller columns={numCols}>
+      <table className="h-1 w-full table-fixed border-spacing-3 text-white">
+        <thead>
+          <tr className="h-1">
+            {board.categories.map((category) => (
+              <Category
+                key={category.name}
+                name={roundRevealed ? category.name : "?"}
+                note={category.note}
+              />
+            ))}
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {rows.map((category, i) => (
+            <tr key={i}>
+              {category.map((clue, j) =>
+                clue ? (
+                  <PostGameClue
+                    round={round}
+                    i={i}
+                    j={j}
+                    key={`clue-${i}-${j}`}
+                    clue={clue}
+                    state={state}
+                  />
+                ) : (
+                  <td key={`clue-${i}-${j}`} />
+                ),
+              )}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </BoardScroller>
   );
 }
 

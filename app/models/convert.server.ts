@@ -116,14 +116,26 @@ export const CategorySchema = z.object({
   note: z.string().optional(),
 });
 
+/** MAX_CATEGORIES is the most categories a board can have. More columns don't
+ * fit on a phone or TV screen in a readable way. */
+export const MAX_CATEGORIES = 12;
+
 export const BoardSchema = z
   .object({
     categoryNames: z
       .array(z.string())
-      .min(1, "board must have at least one category name"),
+      .min(1, "board must have at least one category name")
+      .max(
+        MAX_CATEGORIES,
+        `a board can have at most ${MAX_CATEGORIES} categories`,
+      ),
     categories: z
       .array(CategorySchema)
-      .min(1, "board must have at least one category"),
+      .min(1, "board must have at least one category")
+      .max(
+        MAX_CATEGORIES,
+        `a board can have at most ${MAX_CATEGORIES} categories`,
+      ),
   })
   .refine((board) => board.categoryNames.length === board.categories.length, {
     message: "categoryNames and categories must have the same length",

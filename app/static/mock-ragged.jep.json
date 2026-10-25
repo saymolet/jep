@@ -1,0 +1,118 @@
+{
+  "title": "Mock Uneven Board",
+  "author": "Test",
+  "copyright": "",
+  "note": "Categories with different numbers of questions.",
+  "boards": [
+    {
+      "categoryNames": ["Short", "Full", "Middle"],
+      "categories": [
+        {
+          "name": "Short",
+          "clues": [
+            {
+              "clue": "Short question 1",
+              "answer": "Short answer 1",
+              "value": 200
+            },
+            {
+              "clue": "Short question 2",
+              "answer": "Short answer 2",
+              "value": 400
+            },
+            {
+              "clue": "Short question 3",
+              "answer": "Short answer 3",
+              "value": 600
+            }
+          ]
+        },
+        {
+          "name": "Full",
+          "clues": [
+            {
+              "clue": "Full question 1",
+              "answer": "Full answer 1",
+              "value": 200
+            },
+            {
+              "clue": "Full question 2",
+              "answer": "Full answer 2",
+              "value": 400
+            },
+            {
+              "clue": "Full question 3",
+              "answer": "Full answer 3",
+              "value": 600
+            },
+            {
+              "clue": "Full question 4",
+              "answer": "Full answer 4",
+              "value": 800
+            },
+            {
+              "clue": "Full question 5",
+              "answer": "Full answer 5",
+              "value": 1000
+            }
+          ]
+        },
+        {
+          "name": "Middle",
+          "clues": [
+            {
+              "clue": "Middle question 1",
+              "answer": "Middle answer 1",
+              "value": 200
+            },
+            {
+              "clue": "Middle question 2",
+              "answer": "Middle answer 2",
+              "value": 400
+            },
+            {
+              "clue": "Middle question 3",
+              "answer": "Middle answer 3",
+              "value": 600
+            },
+            {
+              "clue": "Middle question 4",
+              "answer": "Middle answer 4",
+              "value": 800
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "categoryNames": ["Pair", "Single"],
+      "categories": [
+        {
+          "name": "Pair",
+          "clues": [
+            {
+              "clue": "Pair question 1",
+              "answer": "Pair answer 1",
+              "value": 400
+            },
+            {
+              "clue": "Pair question 2",
+              "answer": "Pair answer 2",
+              "value": 800
+            }
+          ]
+        },
+        {
+          "name": "Single",
+          "clues": [
+            {
+              "clue": "Single question 1",
+              "answer": "Single answer 1",
+              "value": 400
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

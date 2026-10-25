@@ -54,12 +54,18 @@ const SCHEMA = {
         properties: {
           categoryNames: {
             type: "array",
+            minItems: 1,
+            maxItems: 12,
             items: {
               type: "string",
             },
           },
           categories: {
             type: "array",
+            description:
+              "1 to 12 categories (columns). Categories may have different numbers of clues.",
+            minItems: 1,
+            maxItems: 12,
             items: {
               type: "object",
               properties: {
@@ -71,6 +77,7 @@ const SCHEMA = {
                 },
                 clues: {
                   type: "array",
+                  minItems: 1,
                   items: {
                     type: "object",
                     properties: {

@@ -234,8 +234,12 @@ export async function getGame(
     .from("categories")
     .select<"*, clues ( * )", CategoryAndClues>("*, clues ( * )")
     .eq("game_id", gameId)
+    // Categories inserted together share created_at and clues can share a
+    // value, so the ids break ties: every player must get the same grid.
     .order("created_at")
-    .order("value", { foreignTable: "clues" });
+    .order("id")
+    .order("value", { foreignTable: "clues" })
+    .order("id", { foreignTable: "clues" });
 
   if (categoryErr !== null) {
     throw new Error(categoryErr.message);

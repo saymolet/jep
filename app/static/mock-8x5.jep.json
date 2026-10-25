@@ -1,0 +1,262 @@
+{
+  "title": "Mock 8x5 Game",
+  "author": "Test",
+  "copyright": "",
+  "note": "Eight categories with five questions each.",
+  "boards": [
+    {
+      "categoryNames": [
+        "Geography",
+        "World History",
+        "Science & Nature",
+        "Literature",
+        "Movies",
+        "Music",
+        "Sports",
+        "Food & Drink"
+      ],
+      "categories": [
+        {
+          "name": "Geography",
+          "clues": [
+            {
+              "clue": "Geography question 1",
+              "answer": "Geography answer 1",
+              "value": 200
+            },
+            {
+              "clue": "Geography question 2",
+              "answer": "Geography answer 2",
+              "value": 400
+            },
+            {
+              "clue": "Geography question 3",
+              "answer": "Geography answer 3",
+              "value": 600
+            },
+            {
+              "clue": "Geography question 4",
+              "answer": "Geography answer 4",
+              "value": 800
+            },
+            {
+              "clue": "Geography question 5",
+              "answer": "Geography answer 5",
+              "value": 1000
+            }
+          ]
+        },
+        {
+          "name": "World History",
+          "clues": [
+            {
+              "clue": "World History question 1",
+              "answer": "World History answer 1",
+              "value": 200
+            },
+            {
+              "clue": "World History question 2",
+              "answer": "World History answer 2",
+              "value": 400
+            },
+            {
+              "clue": "World History question 3",
+              "answer": "World History answer 3",
+              "value": 600
+            },
+            {
+              "clue": "World History question 4",
+              "answer": "World History answer 4",
+              "value": 800
+            },
+            {
+              "clue": "World History question 5",
+              "answer": "World History answer 5",
+              "value": 1000
+            }
+          ]
+        },
+        {
+          "name": "Science & Nature",
+          "clues": [
+            {
+              "clue": "Science & Nature question 1",
+              "answer": "Science & Nature answer 1",
+              "value": 200
+            },
+            {
+              "clue": "Science & Nature question 2",
+              "answer": "Science & Nature answer 2",
+              "value": 400
+            },
+            {
+              "clue": "Science & Nature question 3",
+              "answer": "Science & Nature answer 3",
+              "value": 600
+            },
+            {
+              "clue": "Science & Nature question 4",
+              "answer": "Science & Nature answer 4",
+              "value": 800
+            },
+            {
+              "clue": "Science & Nature question 5",
+              "answer": "Science & Nature answer 5",
+              "value": 1000
+            }
+          ]
+        },
+        {
+          "name": "Literature",
+          "clues": [
+            {
+              "clue": "Literature question 1",
+              "answer": "Literature answer 1",
+              "value": 200
+            },
+            {
+              "clue": "Literature question 2",
+              "answer": "Literature answer 2",
+              "value": 400
+            },
+            {
+              "clue": "Literature question 3",
+              "answer": "Literature answer 3",
+              "value": 600
+            },
+            {
+              "clue": "Literature question 4",
+              "answer": "Literature answer 4",
+              "value": 800
+            },
+            {
+              "clue": "Literature question 5",
+              "answer": "Literature answer 5",
+              "value": 1000
+            }
+          ]
+        },
+        {
+          "name": "Movies",
+          "clues": [
+            {
+              "clue": "Movies question 1",
+              "answer": "Movies answer 1",
+              "value": 200
+            },
+            {
+              "clue": "Movies question 2",
+              "answer": "Movies answer 2",
+              "value": 400
+            },
+            {
+              "clue": "Movies question 3",
+              "answer": "Movies answer 3",
+              "value": 600
+            },
+            {
+              "clue": "Movies question 4",
+              "answer": "Movies answer 4",
+              "value": 800
+            },
+            {
+              "clue": "Movies question 5",
+              "answer": "Movies answer 5",
+              "value": 1000
+            }
+          ]
+        },
+        {
+          "name": "Music",
+          "clues": [
+            {
+              "clue": "Music question 1",
+              "answer": "Music answer 1",
+              "value": 200
+            },
+            {
+              "clue": "Music question 2",
+              "answer": "Music answer 2",
+              "value": 400
+            },
+            {
+              "clue": "Music question 3",
+              "answer": "Music answer 3",
+              "value": 600
+            },
+            {
+              "clue": "Music question 4",
+              "answer": "Music answer 4",
+              "value": 800
+            },
+            {
+              "clue": "Music question 5",
+              "answer": "Music answer 5",
+              "value": 1000
+            }
+          ]
+        },
+        {
+          "name": "Sports",
+          "clues": [
+            {
+              "clue": "Sports question 1",
+              "answer": "Sports answer 1",
+              "value": 200
+            },
+            {
+              "clue": "Sports question 2",
+              "answer": "Sports answer 2",
+              "value": 400
+            },
+            {
+              "clue": "Sports question 3",
+              "answer": "Sports answer 3",
+              "value": 600
+            },
+            {
+              "clue": "Sports question 4",
+              "answer": "Sports answer 4",
+              "value": 800
+            },
+            {
+              "clue": "Sports question 5",
+              "answer": "Sports answer 5",
+              "value": 1000
+            }
+          ]
+        },
+        {
+          "name": "Food & Drink",
+          "clues": [
+            {
+              "clue": "Food & Drink question 1",
+              "answer": "Food & Drink answer 1",
+              "value": 200
+            },
+            {
+              "clue": "Food & Drink question 2",
+              "answer": "Food & Drink answer 2",
+              "value": 400
+            },
+            {
+              "clue": "Food & Drink question 3",
+              "answer": "Food & Drink answer 3",
+              "value": 600
+            },
+            {
+              "clue": "Food & Drink question 4",
+              "answer": "Food & Drink answer 4",
+              "value": 800
+            },
+            {
+              "clue": "Food & Drink question 5",
+              "answer": "Food & Drink answer 5",
+              "value": 1000
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

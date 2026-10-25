@@ -1,4 +1,5 @@
 import type { ClueAnswer, GameState, Player, State } from "~/engine/state";
+import { newAnswerGrid } from "~/engine/state";
 import type { Game } from "~/models/convert.server";
 
 const DB_NAME = "jep-offline";
@@ -226,15 +227,20 @@ export function deserializeState(
     players: new Map(serialized.players),
     leftPlayers: new Map(serialized.leftPlayers),
     wagers: new Map(serialized.wagers.map(([k, v]) => [k, new Map(v)])),
-    isAnswered: serialized.isAnswered.map((round) =>
-      round.map((row) =>
-        row.map(
-          (cell): ClueAnswer => ({
-            isAnswered: cell.isAnswered,
-            answeredBy: new Map(cell.answeredBy),
-            answerOrder: cell.answerOrder,
-          }),
-        ),
+    // Saves from before uneven boards were supported sized the grid from the
+    // first category; lay the saved cells over a grid of the game's shape.
+    isAnswered: game.boards.map((board, round) =>
+      newAnswerGrid(board).map((row, i) =>
+        row.map((empty, j): ClueAnswer => {
+          const cell = serialized.isAnswered.at(round)?.at(i)?.at(j);
+          return cell
+            ? {
+                isAnswered: cell.isAnswered,
+                answeredBy: new Map(cell.answeredBy),
+                answerOrder: cell.answerOrder,
+              }
+            : empty;
+        }),
       ),
     ),
     checkCorrection: serialized.checkCorrection

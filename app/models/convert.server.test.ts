@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 
+import game8x5 from "~/static/mock-8x5.jep.json";
 import choiceGame from "~/static/mock-choice.jep.json";
 import mediaGame from "~/static/mock-media.jep.json";
+import raggedGame from "~/static/mock-ragged.jep.json";
 import secretGame from "~/static/mock-secret.jep.json";
 import mockGame from "~/static/mock.jep.json";
 
-import { ClueSchema, GameSchema } from "./convert.server";
+import { ClueSchema, GameSchema, MAX_CATEGORIES } from "./convert.server";
 
 const BASE = { clue: "Some clue", answer: "Some answer", value: 200 };
 
@@ -213,7 +215,71 @@ describe("ClueSchema secret", () => {
   });
 });
 
+function gameWithCategories(sizes: number[]) {
+  const names = sizes.map((_, j) => `Category ${j + 1}`);
+  return {
+    title: "Wide",
+    author: "Test",
+    copyright: "",
+    note: "",
+    boards: [
+      {
+        categoryNames: names,
+        categories: sizes.map((n, j) => ({
+          name: names[j],
+          clues: Array.from({ length: n }, (_, i) => ({
+            ...BASE,
+            value: 200 * (i + 1),
+          })),
+        })),
+      },
+    ],
+  };
+}
+
+describe("BoardSchema size", () => {
+  it.each([1, 5, 6, 8, 10, MAX_CATEGORIES])("accepts %i categories", (n) => {
+    expect(
+      GameSchema.safeParse(gameWithCategories(Array(n).fill(5))).success,
+    ).toBe(true);
+  });
+
+  it("rejects more than 12 categories with a clear error", () => {
+    const result = GameSchema.safeParse(
+      gameWithCategories(Array(MAX_CATEGORIES + 1).fill(5)),
+    );
+    expect(result.success).toBe(false);
+    expect(result.error?.issues.map((i) => i.message)).toContain(
+      "a board can have at most 12 categories",
+    );
+  });
+
+  it("accepts categories with different numbers of questions", () => {
+    expect(GameSchema.safeParse(gameWithCategories([3, 5, 4])).success).toBe(
+      true,
+    );
+  });
+
+  it("still rejects a category without questions", () => {
+    expect(GameSchema.safeParse(gameWithCategories([3, 0, 4])).success).toBe(
+      false,
+    );
+  });
+});
+
 describe("sample games", () => {
+  it("parses the 8-category sample game", () => {
+    const game = GameSchema.parse(game8x5);
+    expect(game.boards[0].categories).toHaveLength(8);
+  });
+
+  it("parses the uneven sample game", () => {
+    const game = GameSchema.parse(raggedGame);
+    expect(game.boards[0].categories.map((c) => c.clues.length)).toEqual([
+      3, 5, 4,
+    ]);
+  });
+
   it("parses the secret question sample game", () => {
     const game = GameSchema.parse(secretGame);
     const clues = game.boards.flatMap((b) =>

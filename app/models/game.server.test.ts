@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { getSupabase } = vi.hoisted(() => ({
+const { getSupabase, getSupabaseAdmin } = vi.hoisted(() => ({
   getSupabase: vi.fn(),
+  getSupabaseAdmin: vi.fn(),
 }));
 
 vi.mock("~/supabase", () => ({
@@ -9,7 +10,7 @@ vi.mock("~/supabase", () => ({
 }));
 
 vi.mock("~/supabase/admin.server", () => ({
-  getSupabaseAdmin: vi.fn(),
+  getSupabaseAdmin,
 }));
 
 import type { Clue } from "./convert.server";
@@ -17,6 +18,7 @@ import type { Database } from "./database.types";
 import {
   clueToDbClue,
   dbClueToClue,
+  getGame,
   getPublicGameSitemapEntries,
 } from "./game.server";
 
@@ -223,5 +225,66 @@ describe("getPublicGameSitemapEntries", () => {
     ]);
     expect(range).toHaveBeenNthCalledWith(1, 0, 999);
     expect(range).toHaveBeenNthCalledWith(2, 1000, 1999);
+  });
+});
+
+describe("getGame", () => {
+  /** A query builder whose calls are recorded and which resolves to data. */
+  function query(data: unknown) {
+    const calls: unknown[][] = [];
+    const q = {
+      calls,
+      then: (resolve: (v: unknown) => void) => resolve({ data, error: null }),
+      select: (...args: unknown[]) => record("select", args),
+      eq: (...args: unknown[]) => record("eq", args),
+      order: (...args: unknown[]) => record("order", args),
+    };
+    function record(method: string, args: unknown[]) {
+      calls.push([method, ...args]);
+      return q;
+    }
+    return q;
+  }
+
+  function row(categoryId: number, id: number, value: number): DbClue {
+    return {
+      ...insertedRow({ clue: `q${id}`, answer: `a${id}`, value }),
+      id,
+      category_id: categoryId,
+    };
+  }
+
+  it("builds a board with uneven categories in a stable order", async () => {
+    const games = query([
+      { id: "g", title: "T", author: "A", visibility: "PUBLIC" },
+    ]);
+    const categories = query([
+      { id: 1, name: "Short", round: 0, note: null, clues: [row(1, 1, 200)] },
+      {
+        id: 2,
+        name: "Long",
+        round: 0,
+        note: null,
+        clues: [row(2, 2, 200), row(2, 3, 400), row(2, 4, 400)],
+      },
+    ]);
+    getSupabaseAdmin.mockReturnValue({
+      from: (table: string) => (table === "games" ? games : categories),
+    });
+
+    const game = await getGame("g");
+
+    expect(game?.boards[0].categoryNames).toEqual(["Short", "Long"]);
+    expect(game?.boards[0].categories.map((c) => c.clues.length)).toEqual([
+      1, 3,
+    ]);
+    // Rows inserted in one statement share created_at and clues may share a
+    // value, so ids break ties: every player must see the same grid.
+    expect(categories.calls.filter(([m]) => m === "order")).toEqual([
+      ["order", "created_at"],
+      ["order", "id"],
+      ["order", "value", { foreignTable: "clues" }],
+      ["order", "id", { foreignTable: "clues" }],
+    ]);
   });
 });

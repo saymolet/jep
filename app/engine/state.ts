@@ -1,6 +1,5 @@
 import type { Board, Clue, Game } from "~/models/convert.server";
 import type { PlayerColor } from "~/models/player-color";
-import { generateGrid } from "~/utils";
 import { hasChoices } from "~/utils/choices";
 
 /** UNREVEALED_PLACEHOLDER is used when a field was not revealed in the game
@@ -133,17 +132,35 @@ export function stateFromGame(game: Game) {
   };
 
   for (let round = 0; round < game.boards.length; round++) {
-    const board = game.boards[round];
-    const n = board.categories[0].clues.length;
-    const m = board.categories.length;
-    state.isAnswered[round] = generateGrid(n, m, {
-      isAnswered: false,
-      answeredBy: new Map(),
-      answerOrder: 0,
-    });
+    state.isAnswered[round] = newAnswerGrid(game.boards[round]);
   }
 
   return state;
+}
+
+/** getBoardSize is the [rows, columns] of a board's grid. Categories may have
+ * different numbers of clues, so there are as many rows as the longest
+ * category has clues; shorter categories leave empty cells at the bottom. */
+export function getBoardSize(board: Board): [number, number] {
+  const numRows = Math.max(0, ...board.categories.map((c) => c.clues.length));
+  return [numRows, board.categories.length];
+}
+
+/** newAnswerGrid creates the unanswered isAnswered grid for a board, with a
+ * cell for every (row, column) of the grid, including empty cells of shorter
+ * categories (which are never answered). */
+export function newAnswerGrid(board: Board): ClueAnswer[][] {
+  const [numRows, numCols] = getBoardSize(board);
+  return Array.from({ length: numRows }, () =>
+    Array.from(
+      { length: numCols },
+      (): ClueAnswer => ({
+        isAnswered: false,
+        answeredBy: new Map(),
+        answerOrder: 0,
+      }),
+    ),
+  );
 }
 
 /** getPlayer looks up a player in both active and left player maps. */

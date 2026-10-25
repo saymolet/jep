@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { GameState, type Player, stateFromGame } from "~/engine/state";
-import { MOCK_GAME } from "~/models/mock.server";
+import { MOCK_GAME, getMockGame } from "~/models/mock.server";
 
 import { deserializeState, serializeState } from "./offline-storage";
 
@@ -160,5 +160,24 @@ describe("serializeState / deserializeState", () => {
 
     expect(result.game).toBe(otherGame);
     expect(result.game.title).toBe("Other");
+  });
+
+  it("fills out a grid saved before uneven boards were supported", async () => {
+    // Short (3) / Full (5) / Middle (4): old saves sized the grid from the
+    // first category, so rows 3 and 4 were missing.
+    const game = await getMockGame("ragged");
+    const state = stateFromGame(game);
+    state.isAnswered[0][2][0].isAnswered = true;
+    state.isAnswered[0][2][0].answerOrder = 1;
+    const old = serializeState(state);
+    old.isAnswered[0] = old.isAnswered[0].slice(0, 3);
+
+    const result = deserializeState(old, game);
+
+    expect(result.isAnswered[0]).toHaveLength(5);
+    expect(result.isAnswered[0][4][1].isAnswered).toBe(false);
+    expect(result.isAnswered[0][2][0].isAnswered).toBe(true);
+    expect(result.isAnswered[0][2][0].answerOrder).toBe(1);
+    expect(result.isAnswered[1]).toHaveLength(2);
   });
 });

@@ -71,6 +71,13 @@ export default function Help() {
 }`}
         />
         <p className="mb-4">
+          A board has 1 to 12 categories (5 or 6 is classic; boards with more
+          categories use more of the screen and still fit a phone). Categories
+          don't need the same number of questions: a category with fewer
+          questions leaves empty cells at the bottom of its column, and the
+          round ends when every question on the board has been played.
+        </p>
+        <p className="mb-4">
           A clue can be <em>wagerable</em> or not. Wagerable clues allow players
           to wager on the answer and win or lose that value instead of the
           clue's value. The "wagerable" field is not required.
@@ -227,13 +234,13 @@ export default function Help() {
 }
 
 interface Board {
-  categoryNames: string[];
-  categories: Category[];
+  categoryNames: string[]; // 1 to 12, same names as categories
+  categories: Category[]; // 1 to 12
 }
 
 interface Category {
   name: string;
-  clues: Clue[];
+  clues: Clue[]; // at least 1; categories may differ in length
   note?: string;
 }
 

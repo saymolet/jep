@@ -12,13 +12,13 @@ import useGameSound from "~/utils/use-sound";
 import { Category } from "./category";
 import { ClueComponent } from "./clue";
 import { FinalClue } from "./final-clue";
-import { BoardLayout } from "./layout";
+import { BoardLayout, EmptyCell } from "./layout";
 import { useBoardFill } from "./use-board-fill";
 
 const WAGER_SFX = "/sounds/wager.mp3";
 
 /** BoardComponent is purely presentational and renders the board. */
-function BoardComponent({
+export function BoardComponent({
   board,
   hasBoardControl,
   isAnswered,
@@ -90,7 +90,7 @@ function BoardComponent({
                   onKeyDown={(e) => onKeyDownClue(e, i, j)}
                 />
               ) : (
-                <td key={`clue-${i}-${j}`} />
+                <EmptyCell key={`clue-${i}-${j}`} />
               ),
             )}
           </tr>
@@ -151,15 +151,34 @@ export function ConnectedBoardComponent({ roomId, userId }: RoomProps) {
 
   const hasBoardControl = boardControl === userId || isSingleLongFormClue;
 
+  /** focusCell focuses the clue at (i, j) and returns whether there is one
+   * (shorter categories leave empty cells at the bottom of the board). */
   function focusCell(i: number, j: number) {
     const row = tbodyRef.current?.children.item(i);
     if (!row) {
-      return;
+      return false;
     }
     const tdElement = row?.children.item(j);
     const cellButton = tdElement?.children.item(0);
     if (cellButton instanceof HTMLElement) {
       cellButton.focus();
+      return true;
+    }
+    return false;
+  }
+
+  /** focusNext moves the focus from (i, j) in steps of (di, dj), skipping
+   * empty cells. */
+  function focusNext(i: number, j: number, di: number, dj: number) {
+    const numCols = board?.categories.length ?? 0;
+    for (
+      let ni = i + di, nj = j + dj;
+      ni >= 0 && ni < numRows && nj >= 0 && nj < numCols;
+      ni += di, nj += dj
+    ) {
+      if (focusCell(ni, nj)) {
+        return;
+      }
     }
   }
 
@@ -182,32 +201,19 @@ export function ConnectedBoardComponent({ roomId, userId }: RoomProps) {
       return handleClickClue(i, j);
     }
 
-    const currentRow = tbodyRef.current?.children.item(i);
     switch (event.key) {
       case "w":
-      case "ArrowUp": {
-        const upTd = currentRow?.previousElementSibling?.children.item(j);
-        const cellButton = upTd?.children.item(0);
-        if (cellButton instanceof HTMLElement) {
-          return cellButton.focus();
-        }
-        break;
-      }
+      case "ArrowUp":
+        return focusNext(i, j, -1, 0);
       case "s":
-      case "ArrowDown": {
-        const downTd = currentRow?.nextElementSibling?.children.item(j);
-        const cellButton = downTd?.children.item(0);
-        if (cellButton instanceof HTMLElement) {
-          cellButton.focus();
-        }
-        break;
-      }
+      case "ArrowDown":
+        return focusNext(i, j, 1, 0);
       case "a":
       case "ArrowLeft":
-        return focusCell(i, j - 1);
+        return focusNext(i, j, 0, -1);
       case "d":
       case "ArrowRight":
-        return focusCell(i, j + 1);
+        return focusNext(i, j, 0, 1);
     }
   };
 
