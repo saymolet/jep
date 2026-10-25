@@ -47,7 +47,10 @@ export async function reload(
 export async function startMockGame(page: Page, route = "/mock") {
   await goto(page, route);
   await page.getByRole("button", { name: /join game/i }).click();
-  await page.getByRole("button", { name: /start round/i }).click();
+  const startRound = page.getByRole("button", { name: /start round/i });
+  await startRound.click();
+  // Until the round starts, the preview dialog still covers the board.
+  await expect(startRound).toBeHidden();
 }
 
 /** Play through a clue using only keyboard inputs.

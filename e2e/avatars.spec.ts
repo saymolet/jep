@@ -14,6 +14,11 @@ test.describe("avatars", () => {
     await expect(icons.filter({ hasText: "🦊" }).first()).toBeVisible();
 
     await page.getByRole("button", { name: /start round/i }).click();
+    // The round preview dialog has its own "Change avatar" button; wait for
+    // it to close so the click below hits the one next to the board.
+    await expect(
+      page.getByRole("button", { name: /start round/i }),
+    ).toBeHidden();
 
     // Change it from the score box next to the name.
     await page.getByRole("button", { name: "Change avatar" }).click();
