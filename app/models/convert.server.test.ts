@@ -3,8 +3,8 @@ import { describe, expect, it } from "vitest";
 import game8x5 from "~/static/mock-8x5.jep.json";
 import choiceGame from "~/static/mock-choice.jep.json";
 import mediaGame from "~/static/mock-media.jep.json";
-import secretGame from "~/static/mock-secret.jep.json";
 import raggedGame from "~/static/mock-ragged.jep.json";
+import secretGame from "~/static/mock-secret.jep.json";
 import mockGame from "~/static/mock.jep.json";
 
 import { ClueSchema, GameSchema, MAX_CATEGORIES } from "./convert.server";

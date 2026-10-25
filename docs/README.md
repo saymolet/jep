@@ -44,7 +44,9 @@ Difficulty estimates from the original planning discussion.
       sees them while it's read, the buzz winner taps one and it's checked automatically on the
       server — see [features/04-multiple-choice.md](./features/04-multiple-choice.md) — ⭐ easy
 - [x] Pause game (`isPaused` state) — ⭐ very easy — see [features/01-pause-game.md](./features/01-pause-game.md)
-- [ ] More than 5 categories (dynamic grid) — ⭐⭐ medium
+- [x] More than 5 categories (dynamic grid) — 1 to 12 categories, categories with different
+      numbers of questions; wide boards use big screens and still fit a phone — see
+      [features/06-dynamic-board.md](./features/06-dynamic-board.md) — ⭐⭐ medium
 
 ### Found while playtesting
 
@@ -85,3 +87,7 @@ per-question timer · soundboard · themes (Classic / Своя Игра / Dark).
   `secret` / `secretTopic` / `secretValue`), handed over with the new `pass_clue` action and
   answered by the receiver alone; sample game `/mock?game=secret`. Migration
   `20261025135101_clues_secret.sql` (additive nullable columns on `clues`).
+- **2026-10-25** — Feature 06 on `feat/dynamic-board`: boards with 1–12 categories and uneven
+  categories (engine grid sized by the longest category — fixes the crash), wide-board layout for
+  phones and TVs, stable category/clue order from the DB, sample games `/mock?game=8x5` and
+  `/mock?game=ragged`. No migration.
