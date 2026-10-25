@@ -50,6 +50,12 @@ random candidates from PUBLIC games for the random board generator
   realtime INSERTs, catch-up fetches (on SUBSCRIBED, +3 s, visibility/online) and the
   room loader's snapshot after every own action (fetcher revalidation); all are merged
   by id via `mergeRoomEvents`, rebuilding state if one arrives out of order.
+- Presence: the same room channel carries Realtime presence. Each client may announce a role
+  (`player` / `spectator` / `presenter`, never names); `watchers` in the engine context is the
+  number of spectators (see [features/11-spectator-presenter.md](./features/11-spectator-presenter.md)).
+- Read-only viewers (spectators, the TV page `/room/:roomName/present`) render the same engine
+  context through `components/watch/` (`getViewerStatus`, `ViewerPromptContent`); they never
+  submit room actions.
 
 ## Hydration (server render → client)
 
