@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { type Avatar, AvatarInput, normalizeAvatar } from "~/models/avatar";
 import {
   coercePlayerColor,
   PLAYER_COLOR_HEX_REGEX,
@@ -26,6 +27,19 @@ export const PlayerPayload = z.object({
       z.string().regex(PLAYER_COLOR_HEX_REGEX),
     )
     .optional(),
+  /** The player's avatar (see models/avatar.ts), or "" to remove it. Older
+   * events have none. Invalid avatars (events can be inserted directly) are
+   * dropped here rather than failing the whole action. */
+  avatar: z.preprocess(
+    (value) => (value === "" ? "" : normalizeAvatar(value)),
+    z.string().optional(),
+  ),
+});
+/** PlayerFormPayload validates a Join/ChangeName request from a client.
+ * Unlike PlayerPayload (used on replay, where bad avatars are ignored), an
+ * invalid avatar is rejected so the client hears about it. */
+export const PlayerFormPayload = PlayerPayload.extend({
+  avatar: AvatarInput.optional(),
 });
 const RoundPayload = z.object({ round: z.number(), userId: z.string() });
 const BuzzPayload = CluePayload.extend({ deltaMs: z.number() });
@@ -84,7 +98,12 @@ export function isPlayerAction(action: Action): action is {
     | ActionType.ChangeName
     | ActionType.Kick
     | ActionType.Leave;
-  payload: { userId: string; name: string; color?: PlayerColor };
+  payload: {
+    userId: string;
+    name: string;
+    color?: PlayerColor;
+    avatar?: Avatar | "";
+  };
   ts: number;
 } {
   const parsed = PlayerPayload.safeParse(action.payload);

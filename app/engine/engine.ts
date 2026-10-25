@@ -448,8 +448,10 @@ export function gameEngine(state: State, action: Action): State {
         if (draft.type === GameState.GameOver) {
           return;
         }
+        const { avatar, ...player } = action.payload;
         draft.players.set(action.payload.userId, {
-          ...action.payload,
+          ...player,
+          ...(avatar ? { avatar } : {}),
           score: 0,
         });
         // If this is the first player joining, give them board control.
@@ -515,6 +517,13 @@ export function gameEngine(state: State, action: Action): State {
         // Player must already exist to change name
         if (player) {
           player.name = action.payload.name;
+          // No avatar in the payload keeps the current one; "" removes it.
+          const { avatar } = action.payload;
+          if (avatar) {
+            player.avatar = avatar;
+          } else if (avatar === "") {
+            delete player.avatar;
+          }
         }
       });
     case ActionType.StartRound:
