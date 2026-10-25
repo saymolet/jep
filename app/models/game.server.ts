@@ -339,14 +339,21 @@ export async function getPublicGameSitemapEntries() {
 
 /* Writes */
 
+/** createGame inserts a game with its categories and clues. Row-level
+ * security applies with the caller's access token — except with `asAdmin`,
+ * for games the server itself builds (random boards made by guests: the
+ * anonymous role cannot read back an UNLISTED game it inserts). */
 export async function createGame(
   inputGame: ConvertedGame,
   visibility: GameVisibility,
   uploadedByUserId?: string,
   accessToken?: AuthSession["accessToken"],
+  options: { asAdmin?: boolean } = {},
 ) {
   GameSchema.parse(inputGame);
-  const client = getSupabase(accessToken);
+  const client = options.asAdmin
+    ? getSupabaseAdmin()
+    : getSupabase(accessToken);
 
   const { data: gameData, error: gameErr } = await client
     .from<"games", GameTable>("games")

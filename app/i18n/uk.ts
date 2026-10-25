@@ -11,6 +11,7 @@ import { home } from "./uk/home";
 import { howto } from "./uk/howto";
 import { play } from "./uk/play";
 import { profile } from "./uk/profile";
+import { random } from "./uk/random";
 import { report } from "./uk/report";
 import { room } from "./uk/room";
 import { settings } from "./uk/settings";
@@ -41,4 +42,5 @@ export const uk: Dictionary<typeof en> = {
   ...errors,
   ...siq,
   ...settings,
+  ...random,
 };

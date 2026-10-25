@@ -8,6 +8,7 @@ import {
   useSubmit,
 } from "react-router";
 
+import { ButtonLink } from "~/components/button";
 import { DefaultErrorBoundary } from "~/components/error";
 import { FormStateMessage, hasDetails } from "~/components/form-state-message";
 import { LoadingSpinner } from "~/components/icons";
@@ -131,6 +132,9 @@ export default function Index({ loaderData }: Route.ComponentProps) {
         loggedIn={loaderData.authSession !== null}
         redirectTo="/"
       />
+      <div className="mb-4 flex justify-center">
+        <ButtonLink to="/random-board">{t("random.homeButton")}</ButtonLink>
+      </div>
       {formState ? <FormStateMessage formState={formState} /> : null}
       {games.length === 0 && (
         <p className="text-sm text-slate-500">

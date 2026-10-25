@@ -341,7 +341,25 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
-      [_ in never]: never;
+      random_board_categories: {
+        Args: { max_count: number };
+        Returns: {
+          clue_count: number;
+          game_id: string;
+          game_title: string;
+          id: number;
+          name: string;
+        }[];
+      };
+      random_final_clues: {
+        Args: { max_count: number };
+        Returns: {
+          category_name: string;
+          game_id: string;
+          game_title: string;
+          id: number;
+        }[];
+      };
     };
     Enums: {
       game_visibility: "PUBLIC" | "PRIVATE" | "UNLISTED";

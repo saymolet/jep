@@ -77,7 +77,12 @@ Difficulty estimates from the original planning discussion.
       account setting + Accept-Language, typed dictionaries, plurals); game content is never
       translated — see [features/09-ukrainian.md](./features/09-ukrainian.md) — ⭐⭐ medium
 
-Random board generator · question search ·
+- [x] Random board generator — mix random categories (≥ 3 questions, unique names) of
+      **public** games into a new unlisted game, 3–8 categories × 1–2 rounds, optional final;
+      straight into a new room or solo — see
+      [features/10-random-board.md](./features/10-random-board.md) — ⭐⭐ medium
+
+Question search ·
 team mode · spectator mode · admin panel · Discord login · keyboard shortcuts ·
 fullscreen presenter mode · OBS/browser-source mode · mobile-first buzzer ·
 auto-reconnect · host controls from phone · game save/resume · live scoreboard ·
@@ -130,3 +135,7 @@ per-question timer · soundboard · themes (Classic / Своя Игра / Dark).
   dictionaries, `Intl.PluralRules`), language from the `lang` cookie → account setting
   (`accounts.settings.language`) → Accept-Language, EN / УКР switcher in the header and
   settings. No migration, no new dependencies.
+- **2026-10-25** — Feature 10 on `feat/random-board`: random board generator (`/random-board`,
+  button on the home page) — categories of PUBLIC games only, sampled in SQL; new unlisted game
+  opens in a new room or solo. Migration `20261025194229_random_board_candidates.sql` (two new
+  read-only SQL functions). No new dependencies.
