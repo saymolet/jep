@@ -1,3 +1,4 @@
+import type { RealtimeChannel } from "@supabase/supabase-js";
 import * as React from "react";
 
 import type { AuthSession } from "~/models/auth";
@@ -7,6 +8,7 @@ import { getSupabase } from "~/supabase";
 
 import type { Action } from "./engine";
 import { gameEngine, getTiebreakerSeed, getWinningBuzzer } from "./engine";
+import { countWatchers, type PresenceRole } from "./presence";
 import {
   applyRoomEventsToState,
   compareRoomEvents,
@@ -67,10 +69,12 @@ export function stateToGameEngine(
     connectionState,
     lastMessageAt,
     reconnect,
+    watchers = 0,
   }: {
     connectionState: ConnectionState;
     lastMessageAt?: number;
     reconnect?: () => void;
+    watchers?: number;
   },
 ) {
   // Board may be undefined
@@ -140,6 +144,9 @@ export function stateToGameEngine(
     clockAccumulatedMs: state.clockAccumulatedMs,
     clockLastResumedAt: state.clockLastResumedAt,
     isPaused: state.isPaused,
+    /** How many people are watching the room without playing (spectators,
+     * counted with Realtime presence; 0 in solo play). */
+    watchers,
   };
 }
 
@@ -153,12 +160,16 @@ export function stateToGameEngine(
  * To modify the state, submit a POST request to the proper endpoint to insert a
  * room event. The event will then be propagated to all clients via websockets
  * and the engine will apply it to the state.
+ *
+ * `presence` announces this client on the room channel (Realtime presence)
+ * so others can see how many people are watching; null announces nothing.
  */
 export function useGameEngine(
   game: Game,
   serverRoomEvents: DbRoomEvent[],
   roomId: number,
   accessToken?: AuthSession["accessToken"],
+  presence: PresenceRole | null = null,
 ) {
   // Every room event applied to `state`, sorted by (ts, id). Used to dedupe
   // events by id and to rebuild state if an event arrives out of order.
@@ -234,9 +245,30 @@ export function useGameEngine(
 
   const client = React.useMemo(() => getSupabase(accessToken), [accessToken]);
 
+  // Realtime presence: who is on the room channel, and in which role. Only a
+  // count of spectators is shown (no names). The role can change without
+  // re-subscribing (e.g. a spectator joins the game), so it is kept in a ref
+  // and re-announced on the live channel.
+  const [watchers, setWatchers] = React.useState(0);
+  const presenceRef = React.useRef(presence);
+  const channelRef = React.useRef<RealtimeChannel | null>(null);
+  React.useEffect(() => {
+    presenceRef.current = presence;
+    const channel = channelRef.current;
+    if (channel?.state === "joined") {
+      announcePresence(channel, presence);
+    }
+  }, [presence]);
+
   React.useEffect(() => {
     let disposed = false;
-    const channel = client.channel(`realtime:roomId:${roomId}`);
+    const channel = client.channel(`realtime:roomId:${roomId}`, {
+      // A random key per connection: the same browser in two tabs (or a
+      // player's phone and the TV) counts twice. Created in the effect, never
+      // during render, so it can't cause a hydration mismatch.
+      config: { presence: { key: crypto.randomUUID() } },
+    });
+    channelRef.current = channel;
 
     /** Fetch events from the DB that we haven't seen yet. */
     async function fetchMissedEvents() {
@@ -310,6 +342,10 @@ export function useGameEngine(
           ingestEvents([newEvent], { complete: false });
         },
       )
+      .on("presence", { event: "sync" }, () => {
+        if (disposed) return;
+        setWatchers(countWatchers(channel.presenceState()));
+      })
       .subscribe((status, err) => {
         if (disposed) return;
 
@@ -318,6 +354,7 @@ export function useGameEngine(
             hasConnectedOnce.current = true;
             clearReconnectingTimer();
             setConnectionState(ConnectionState.CONNECTED);
+            announcePresence(channel, presenceRef.current);
             fetchMissedEvents();
             clearTimeout(catchUpTimer);
             catchUpTimer = setTimeout(fetchMissedEvents, CATCH_UP_DELAY_MS);
@@ -397,6 +434,7 @@ export function useGameEngine(
       document.removeEventListener("visibilitychange", resync);
       window.removeEventListener("online", resync);
       window.removeEventListener("pageshow", handlePageShow);
+      if (channelRef.current === channel) channelRef.current = null;
       client.removeChannel(channel);
     };
   }, [client, roomId, reconnectTrigger, ingestEvents]);
@@ -405,5 +443,15 @@ export function useGameEngine(
     connectionState,
     lastMessageAt,
     reconnect,
+    watchers,
   });
+}
+
+/** announcePresence tracks this client's role on the channel, or stops
+ * tracking it. Presence is best-effort: failures only affect the count. */
+function announcePresence(channel: RealtimeChannel, role: PresenceRole | null) {
+  const request = role ? channel.track({ role }) : channel.untrack();
+  request.catch((err: unknown) =>
+    console.warn("Realtime presence update failed:", err),
+  );
 }

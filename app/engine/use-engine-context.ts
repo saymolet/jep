@@ -33,6 +33,7 @@ export const GameEngineContext = React.createContext<
   clockAccumulatedMs: 0,
   clockLastResumedAt: null,
   isPaused: false,
+  watchers: 0,
 });
 
 export function useEngineContext() {

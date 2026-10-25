@@ -6,12 +6,16 @@ import { MOCK_GAME } from "~/models/mock.server";
 import type { DbRoomEvent } from "~/models/room-event.server";
 
 import { ActionType } from "./engine";
+import type { PresenceRole } from "./presence";
 import { ConnectionState, useGameEngine } from "./use-game-engine";
 
 type InsertHandler = (payload: { new: DbRoomEvent }) => void;
 type StatusHandler = (status: string, err?: Error) => void;
 interface MockState {
   insertHandler: InsertHandler;
+  presenceHandler: () => void;
+  presenceState: Record<string, { role: string }[]>;
+  tracked: ({ role: string } | null)[];
   statusHandler: StatusHandler;
   /** Rows returned by the next catch-up fetches. */
   fetchRows: DbRoomEvent[];
@@ -22,15 +26,37 @@ interface MockState {
 const mocks = vi.hoisted(() => {
   const state: MockState = {
     insertHandler: () => {},
+    presenceHandler: () => {},
+    presenceState: {},
+    tracked: [],
     statusHandler: () => {},
     fetchRows: [],
     fetchLowerBounds: [],
   };
   const channel = {
     state: "joining",
-    on: vi.fn((_event: string, _filter: unknown, handler: InsertHandler) => {
-      state.insertHandler = handler;
-      return channel;
+    on: vi.fn(
+      (
+        event: string,
+        _filter: unknown,
+        handler: InsertHandler & (() => void),
+      ) => {
+        if (event === "presence") {
+          state.presenceHandler = handler;
+        } else {
+          state.insertHandler = handler;
+        }
+        return channel;
+      },
+    ),
+    presenceState: () => state.presenceState,
+    track: vi.fn((meta: { role: string }) => {
+      state.tracked.push(meta);
+      return Promise.resolve("ok");
+    }),
+    untrack: vi.fn(() => {
+      state.tracked.push(null);
+      return Promise.resolve("ok");
     }),
     subscribe: vi.fn((handler: StatusHandler) => {
       state.statusHandler = handler;
@@ -88,8 +114,14 @@ const RENAME_U2 = event(3, ActionType.ChangeName, {
 const LEAVE_U2 = event(4, ActionType.Leave, { userId: "u2", name: "Bobby" });
 
 let engine: ReturnType<typeof useGameEngine>;
-function TestHook({ events }: { events: DbRoomEvent[] }) {
-  engine = useGameEngine(MOCK_GAME, events, 7);
+function TestHook({
+  events,
+  presence = null,
+}: {
+  events: DbRoomEvent[];
+  presence?: PresenceRole | null;
+}) {
+  engine = useGameEngine(MOCK_GAME, events, 7, undefined, presence);
   return null;
 }
 
@@ -108,6 +140,8 @@ describe("useGameEngine", () => {
     mocks.state.fetchRows = [];
     mocks.state.fetchLowerBounds = [];
     mocks.channel.state = "joining";
+    mocks.state.presenceState = {};
+    mocks.state.tracked = [];
     root = createRoot(document.createElement("div"));
   });
 
@@ -218,5 +252,30 @@ describe("useGameEngine", () => {
     // ...but a successful rejoin recovers.
     act(() => mocks.state.statusHandler("SUBSCRIBED"));
     expect(engine.connectionState).toBe(ConnectionState.CONNECTED);
+  });
+
+  it("announces its presence role once subscribed and counts spectators", async () => {
+    act(() => root.render(<TestHook events={[]} presence="spectator" />));
+    expect(mocks.state.tracked).toEqual([]);
+    mocks.channel.state = "joined";
+    act(() => mocks.state.statusHandler("SUBSCRIBED"));
+    expect(mocks.state.tracked).toEqual([{ role: "spectator" }]);
+
+    // The role changes on the live channel without re-subscribing.
+    act(() => root.render(<TestHook events={[]} presence="player" />));
+    expect(mocks.state.tracked.at(-1)).toEqual({ role: "player" });
+    act(() => root.render(<TestHook events={[]} presence={null} />));
+    expect(mocks.state.tracked.at(-1)).toBeNull();
+
+    expect(engine.watchers).toBe(0);
+    mocks.state.presenceState = {
+      a: [{ role: "spectator" }],
+      b: [{ role: "spectator" }],
+      c: [{ role: "presenter" }],
+      d: [{ role: "player" }],
+    };
+    act(() => mocks.state.presenceHandler());
+    expect(engine.watchers).toBe(2);
+    await flush();
   });
 });
