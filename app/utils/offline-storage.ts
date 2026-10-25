@@ -145,6 +145,7 @@ interface SerializedState {
   clockAccumulatedMs: number;
   clockLastResumedAt: number | null;
   gameOverAt?: number | null;
+  isPaused: boolean;
 }
 
 interface SerializedClueAnswer {
@@ -200,6 +201,7 @@ export function serializeState(state: State): SerializedState {
     clockAccumulatedMs: state.clockAccumulatedMs,
     clockLastResumedAt: state.clockLastResumedAt,
     gameOverAt: state.gameOverAt,
+    isPaused: state.isPaused,
   };
 }
 
@@ -242,6 +244,8 @@ export function deserializeState(
     clockAccumulatedMs: serialized.clockAccumulatedMs,
     clockLastResumedAt: null,
     gameOverAt: serialized.gameOverAt ?? null,
+    // Never restore into a paused state — resume fresh on reload.
+    isPaused: false,
   };
 }
 

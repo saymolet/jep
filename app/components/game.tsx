@@ -5,6 +5,7 @@ import BoardComponent from "~/components/board";
 import Connection from "~/components/connection";
 import GameClock from "~/components/game-clock";
 import Link from "~/components/link";
+import { PauseControl, PausedOverlay } from "~/components/pause";
 import { PlayerScores } from "~/components/player";
 import Preview from "~/components/preview";
 import Prompt from "~/components/prompt";
@@ -144,7 +145,10 @@ export default function GameComponent({
               roomName={roomName}
               userId={userId}
             />
-            <GameClock roomId={roomId} />
+            <div className="flex items-center gap-1">
+              <PauseControl roomId={roomId} />
+              <GameClock roomId={roomId} />
+            </div>
           </div>
           <PlayerScores roomId={roomId} userId={userId} />
           <Connection
@@ -155,6 +159,7 @@ export default function GameComponent({
         </div>
         <Prompt roomId={roomId} userId={userId} />
       </div>
+      <PausedOverlay roomId={roomId} />
     </UndoArmingProvider>
   );
 }

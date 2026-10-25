@@ -114,6 +114,7 @@ export function stateToGameEngine(
     clockRunning: state.clockRunning,
     clockAccumulatedMs: state.clockAccumulatedMs,
     clockLastResumedAt: state.clockLastResumedAt,
+    isPaused: state.isPaused,
   };
 }
 

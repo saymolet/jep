@@ -80,6 +80,9 @@ export enum ActionType {
   CorrectCheck = "correct_check",
   NextClue = "next_clue",
   ToggleClock = "toggle_clock",
+  /** TogglePause pauses or resumes the game. While paused, buzzers and clue
+   * selection are disabled. Pausing is only allowed when no clue is open. */
+  TogglePause = "toggle_pause",
   TransferPlayer = "transfer_player",
   /** Restore replaces the entire state (used for restoring saved solo games). */
   Restore = "restore",
@@ -461,6 +464,10 @@ export function gameEngine(state: State, action: Action): State {
         );
       }
       return produce(state, (draft) => {
+        // Can't start a round while paused.
+        if (draft.isPaused) {
+          return;
+        }
         // Game cannot start without any players
         if (draft.type !== GameState.PreviewRound || draft.players.size === 0) {
           return;
@@ -488,6 +495,10 @@ export function gameEngine(state: State, action: Action): State {
       }
       return produce(state, (draft) => {
         const { userId, i, j } = action.payload;
+        // Can't choose a clue while paused.
+        if (draft.isPaused) {
+          return;
+        }
         if (
           draft.type !== GameState.ShowBoard ||
           draft.isAnswered.at(draft.round)?.at(i)?.at(j)?.isAnswered
@@ -991,6 +1002,26 @@ export function gameEngine(state: State, action: Action): State {
         } else {
           resumeClock(draft, action.ts);
         }
+      });
+    case ActionType.TogglePause:
+      return produce(state, (draft) => {
+        // Can't pause or resume once the game is over.
+        if (draft.type === GameState.GameOver) {
+          return;
+        }
+        if (draft.isPaused) {
+          // Resume: unpause and restart the clock.
+          draft.isPaused = false;
+          resumeClock(draft, action.ts);
+          return;
+        }
+        // Pause is only allowed when no clue is open, so no live buzz window can
+        // desync. Ignore the request while a clue is active.
+        if (draft.activeClue !== null) {
+          return;
+        }
+        draft.isPaused = true;
+        pauseClock(draft, action.ts);
       });
     case ActionType.TransferPlayer:
       if (!isTransferPlayerAction(action)) {

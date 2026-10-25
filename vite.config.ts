@@ -5,11 +5,11 @@ import { ENV } from "varlock/env";
 import { defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 
-export default defineConfig(() => {
-  const port = parseInt(new URL(ENV.BASE_URL).port);
+import { devServerOptions } from "./app/utils/dev-server";
 
+export default defineConfig(() => {
   return {
-    server: { port },
+    server: devServerOptions({ baseUrl: ENV.BASE_URL, port: ENV.PORT }),
     optimizeDeps: {
       include: ["@vercel/analytics/react"],
     },

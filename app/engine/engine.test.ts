@@ -2700,6 +2700,134 @@ describe("gameEngine", () => {
       ];
     })(),
 
+    // TogglePause tests
+    ...(() => {
+      const T0 = 1_704_067_200_000; // 2024-01-01T00:00:00Z
+      const sec = (s: number) => T0 + s * 1000;
+
+      return [
+        {
+          name: "TogglePause pauses the game on the board and stops the clock",
+          state: initialState,
+          actions: [
+            { ...PLAYER1_JOIN_ACTION, ts: sec(0) },
+            {
+              type: ActionType.StartRound,
+              payload: { round: 0, userId: PLAYER1.userId },
+              ts: sec(5),
+            },
+            { type: ActionType.TogglePause, ts: sec(15) },
+          ],
+          expectedState: produce(clockStartedState, (draft) => {
+            draft.type = GameState.ShowBoard;
+            draft.boardControl = PLAYER1.userId;
+            draft.players.set(PLAYER1.userId, PLAYER1);
+            draft.clockRunning = false;
+            draft.clockAccumulatedMs = 10_000;
+            draft.clockLastResumedAt = null;
+            draft.isPaused = true;
+          }),
+        },
+        {
+          name: "TogglePause resumes a paused game and restarts the clock",
+          state: initialState,
+          actions: [
+            { ...PLAYER1_JOIN_ACTION, ts: sec(0) },
+            {
+              type: ActionType.StartRound,
+              payload: { round: 0, userId: PLAYER1.userId },
+              ts: sec(5),
+            },
+            { type: ActionType.TogglePause, ts: sec(15) },
+            { type: ActionType.TogglePause, ts: sec(20) },
+          ],
+          expectedState: produce(clockStartedState, (draft) => {
+            draft.type = GameState.ShowBoard;
+            draft.boardControl = PLAYER1.userId;
+            draft.players.set(PLAYER1.userId, PLAYER1);
+            draft.clockRunning = true;
+            draft.clockAccumulatedMs = 10_000;
+            draft.clockLastResumedAt = sec(20);
+            draft.isPaused = false;
+          }),
+        },
+        {
+          name: "TogglePause is ignored while a clue is open",
+          state: initialState,
+          actions: [
+            { ...PLAYER1_JOIN_ACTION, ts: sec(0) },
+            {
+              type: ActionType.StartRound,
+              payload: { round: 0, userId: PLAYER1.userId },
+              ts: sec(5),
+            },
+            {
+              type: ActionType.ChooseClue,
+              payload: { userId: PLAYER1.userId, i: 0, j: 0 },
+              ts: sec(10),
+            },
+            { type: ActionType.TogglePause, ts: sec(15) },
+          ],
+          expectedState: produce(clockStartedState, (draft) => {
+            draft.type = GameState.ReadClue;
+            draft.activeClue = [0, 0];
+            draft.boardControl = PLAYER1.userId;
+            draft.players.set(PLAYER1.userId, PLAYER1);
+            draft.clockRunning = true;
+            draft.clockAccumulatedMs = 0;
+            draft.clockLastResumedAt = sec(5);
+            draft.isPaused = false;
+          }),
+        },
+        {
+          name: "ChooseClue is ignored while paused",
+          state: initialState,
+          actions: [
+            { ...PLAYER1_JOIN_ACTION, ts: sec(0) },
+            {
+              type: ActionType.StartRound,
+              payload: { round: 0, userId: PLAYER1.userId },
+              ts: sec(5),
+            },
+            { type: ActionType.TogglePause, ts: sec(15) },
+            {
+              type: ActionType.ChooseClue,
+              payload: { userId: PLAYER1.userId, i: 0, j: 0 },
+              ts: sec(25),
+            },
+          ],
+          expectedState: produce(clockStartedState, (draft) => {
+            draft.type = GameState.ShowBoard;
+            draft.boardControl = PLAYER1.userId;
+            draft.players.set(PLAYER1.userId, PLAYER1);
+            draft.clockRunning = false;
+            draft.clockAccumulatedMs = 10_000;
+            draft.clockLastResumedAt = null;
+            draft.isPaused = true;
+          }),
+        },
+        {
+          name: "TogglePause pauses during round preview and StartRound is ignored",
+          state: initialState,
+          actions: [
+            { ...PLAYER1_JOIN_ACTION, ts: sec(0) },
+            { type: ActionType.TogglePause, ts: sec(5) },
+            {
+              type: ActionType.StartRound,
+              payload: { round: 0, userId: PLAYER1.userId },
+              ts: sec(10),
+            },
+          ],
+          expectedState: produce(initialState, (draft) => {
+            draft.type = GameState.PreviewRound;
+            draft.boardControl = PLAYER1.userId;
+            draft.players.set(PLAYER1.userId, PLAYER1);
+            draft.isPaused = true;
+          }),
+        },
+      ];
+    })(),
+
     // TransferPlayer tests
     {
       name: "TransferPlayer transfers player to new userId with score preserved",
@@ -2842,6 +2970,7 @@ describe("gameEngine", () => {
       expect(state.clockLastResumedAt).toBe(
         tc.expectedState.clockLastResumedAt,
       );
+      expect(state.isPaused).toBe(tc.expectedState.isPaused);
     });
   }
 
@@ -3610,6 +3739,24 @@ describe("gameEngine", () => {
     // Player should NOT have been transferred.
     expect(result.players.has(PLAYER1.userId)).toBe(true);
     expect(result.players.has("new-auth-id")).toBe(false);
+    expect(result.type).toBe(GameState.GameOver);
+  });
+
+  it("TogglePause is no-op after GameOver", () => {
+    const gameOverState = produce(stateFromGame(MOCK_GAME), (draft) => {
+      draft.type = GameState.GameOver;
+      draft.boardControl = null;
+      draft.players.set(PLAYER1.userId, { ...PLAYER1, score: 400 });
+      draft.players.set(PLAYER2.userId, PLAYER2);
+    });
+
+    const result = gameEngine(gameOverState, {
+      type: ActionType.TogglePause,
+      ts: 0,
+    });
+
+    // Game should not be pausable once it's over.
+    expect(result.isPaused).toBe(false);
     expect(result.type).toBe(GameState.GameOver);
   });
 

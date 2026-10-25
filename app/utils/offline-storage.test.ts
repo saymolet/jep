@@ -79,21 +79,25 @@ describe("serializeState / deserializeState", () => {
     expect(cell.answeredBy.get("user2")).toBe(false);
   });
 
-  it("resets clock state on deserialization", () => {
+  it("resets clock and paused state on deserialization", () => {
     const state = stateFromGame(MOCK_GAME);
     Object.assign(state, {
       clockRunning: true,
       clockAccumulatedMs: 5000,
       clockLastResumedAt: Date.now(),
+      isPaused: true,
     });
 
     const serialized = serializeState(state);
     expect(serialized.clockRunning).toBe(true);
+    expect(serialized.isPaused).toBe(true);
 
     const result = deserializeState(serialized, MOCK_GAME);
     expect(result.clockRunning).toBe(false);
     expect(result.clockLastResumedAt).toBeNull();
     expect(result.clockAccumulatedMs).toBe(5000);
+    // Never restore into a paused state — resume fresh on reload.
+    expect(result.isPaused).toBe(false);
   });
 
   it("preserves check-correction metadata", () => {
