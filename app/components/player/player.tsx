@@ -6,15 +6,13 @@ import Popover from "~/components/popover";
 import { UndoArmingContext, UndoCheckConfirm } from "~/components/undo-check";
 import type { Player } from "~/engine";
 import { GameState, useEngineContext } from "~/engine";
-import { getPlayerColor } from "~/utils";
 
 import { RoomProps } from "../game";
 import { EditPlayerForm } from "./edit-player";
 import { KickablePlayerIcon } from "./kick-player";
+import { PlayerIcon } from "./player-icon";
 
-// https://stackoverflow.com/questions/70524820/is-there-still-no-easy-way-to-split-strings-with-compound-emojis-into-an-array
-const COMPOUND_EMOJI_REGEX =
-  /\p{RI}\p{RI}|\p{Emoji}(\p{EMod}|\u{FE0F}\u{20E3}?|[\u{E0020}-\u{E007E}]+\u{E007F})?(\u{200D}\p{Emoji}(\p{EMod}|\u{FE0F}\u{20E3}?|[\u{E0020}-\u{E007E}]+\u{E007F})?)*|./gsu;
+export { PlayerIcon };
 
 /** ScorePulse marks a score that just changed due to a check correction. */
 export type ScorePulse = "up" | "down";
@@ -146,28 +144,6 @@ export function PlayerScore({
         </p>
       </div>
     </PlayerScoreBox>
-  );
-}
-
-/** PlayerIcon is a round bubble with the first character of the player's name in
- * it.
- */
-export function PlayerIcon({
-  player,
-}: {
-  player: Pick<Player, "name" | "userId" | "color">;
-}) {
-  const backgroundColor = getPlayerColor(player);
-  const matches = player.name.match(COMPOUND_EMOJI_REGEX);
-  const firstChar = matches ? matches[0] : player.name[0];
-  return (
-    <div
-      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
-      style={{ backgroundColor }}
-      title={player.name}
-    >
-      <div className="text-md font-mono font-bold text-white">{firstChar}</div>
-    </div>
   );
 }
 

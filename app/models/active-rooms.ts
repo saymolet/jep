@@ -1,6 +1,7 @@
 import { parseUtcMs } from "~/engine/engine";
 import { applyRoomEventsToState } from "~/engine/room-event";
 import { GameState, stateFromGame } from "~/engine/state";
+import { parseAvatar } from "~/models/avatar";
 import type { Game } from "~/models/convert.server";
 import type { DbRoomEvent } from "~/models/room-event.server";
 import { getPlayerColor } from "~/utils";
@@ -15,7 +16,9 @@ export interface ActiveRoom {
   id: number;
   /** URL slug for /room/:roomName, e.g. "42-apple". */
   roomName: string;
-  players: { name: string; color: string }[];
+  /** `emoji` is the player's emoji avatar. Photo avatars are left out: they
+   * are several KB each and the list is only a glance. */
+  players: { name: string; color: string; emoji?: string }[];
   /** Whole minutes since the room's last event. */
   minutesAgo: number;
 }
@@ -46,10 +49,14 @@ export function summarizeActiveRoom(
   return {
     id: room.id,
     roomName: `${room.id}-${room.name}`,
-    players: Array.from(state.players.values()).map((p) => ({
-      name: p.name,
-      color: getPlayerColor(p),
-    })),
+    players: Array.from(state.players.values()).map((p) => {
+      const avatar = parseAvatar(p.avatar);
+      return {
+        name: p.name,
+        color: getPlayerColor(p),
+        ...(avatar?.kind === "emoji" ? { emoji: avatar.emoji } : {}),
+      };
+    }),
     minutesAgo: Math.max(0, Math.floor((now - lastActivity) / 60_000)),
   };
 }

@@ -10,6 +10,7 @@ import Link from "~/components/link";
 import Main from "~/components/main";
 import OfflineIndicator from "~/components/offline-indicator";
 import { PlayerIcon } from "~/components/player";
+import { AvatarPicker } from "~/components/player/avatar-picker";
 import SoundControl from "~/components/sound";
 import Upload from "~/components/upload";
 import WagerHintsControl from "~/components/wager-hints-control";
@@ -163,8 +164,14 @@ function PlayerDefaultsControl({
   email: string;
   userId: string;
 }) {
-  const { playerName, playerColor, setPlayerName, setPlayerColor } =
-    useGameDefaults();
+  const {
+    playerName,
+    playerColor,
+    playerAvatar,
+    setPlayerName,
+    setPlayerColor,
+    setPlayerAvatar,
+  } = useGameDefaults();
   const [editing, setEditing] = React.useState(false);
   const [nameDraft, setNameDraft] = React.useState(playerName ?? "");
   const inputRef = React.useRef<HTMLInputElement | null>(null);
@@ -210,6 +217,7 @@ function PlayerDefaultsControl({
               name: playerName ?? "🔀",
               userId,
               color: effectiveColor,
+              avatar: playerAvatar,
             }}
           />
         </label>
@@ -262,6 +270,11 @@ function PlayerDefaultsControl({
           }
         }}
       />
+
+      <div className="rounded-xl bg-blue-700 p-3">
+        <h2 className="mb-2 text-sm font-medium text-white">Avatar</h2>
+        <AvatarPicker value={playerAvatar} onChange={setPlayerAvatar} />
+      </div>
 
       <div className="grid grid-cols-2 gap-3">
         <Button

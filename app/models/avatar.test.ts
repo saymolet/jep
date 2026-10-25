@@ -97,9 +97,8 @@ describe("AvatarInput", () => {
   it("rejects invalid avatars", () => {
     expect(AvatarInput.safeParse("emoji:hello").success).toBe(false);
     expect(
-      AvatarInput.safeParse(
-        dataUrlOfLength("image/png", MAX_AVATAR_LENGTH + 4),
-      ).success,
+      AvatarInput.safeParse(dataUrlOfLength("image/png", MAX_AVATAR_LENGTH + 4))
+        .success,
     ).toBe(false);
   });
 });

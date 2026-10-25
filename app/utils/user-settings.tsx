@@ -3,6 +3,7 @@ import { produce } from "immer";
 import * as React from "react";
 import { useFetcher } from "react-router";
 
+import type { Avatar } from "~/models/avatar";
 import type { PlayerColor } from "~/models/player-color";
 import { type UserSettings, WagerHintsMode } from "~/models/user-settings";
 
@@ -152,11 +153,22 @@ export function useGameDefaults() {
     [saveSettings],
   );
 
+  const setPlayerAvatar = React.useCallback(
+    (avatar: Avatar | undefined) =>
+      saveSettings((draft) => {
+        if (!draft.gameDefaults) draft.gameDefaults = {};
+        draft.gameDefaults.playerAvatar = avatar;
+      }),
+    [saveSettings],
+  );
+
   return {
     playerName: gameDefaults?.playerName,
     playerColor: gameDefaults?.playerColor,
+    playerAvatar: gameDefaults?.playerAvatar,
     setPlayerName,
     setPlayerColor,
+    setPlayerAvatar,
   };
 }
 

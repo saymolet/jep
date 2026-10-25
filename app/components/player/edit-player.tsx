@@ -1,8 +1,10 @@
 import * as React from "react";
 import { useFetcher } from "react-router";
 
+import Dialog from "~/components/dialog";
 import type { RoomProps } from "~/components/game";
 import {
+  FaceSmile,
   LoadingSpinner,
   PaperAirplane,
   PencilSquare,
@@ -10,9 +12,12 @@ import {
 import Input from "~/components/input";
 import type { Action, Player } from "~/engine";
 import { useEngineContext } from "~/engine";
+import type { Avatar } from "~/models/avatar";
+import { storeAvatar } from "~/utils/avatar-storage";
 import useDebounce, { useDebounceEnd } from "~/utils/use-debounce";
 import useSoloAction from "~/utils/use-solo-action";
 
+import { AvatarPicker } from "./avatar-picker";
 import { PlayerScoreBox, ScorePulse } from "./player";
 
 function EditPlayer({
@@ -22,6 +27,7 @@ function EditPlayer({
   editing,
   onBlur,
   onChangeName,
+  onEditAvatar,
   onFocus,
   winning,
   icon,
@@ -36,6 +42,7 @@ function EditPlayer({
   editing: boolean;
   onBlur: () => void;
   onChangeName: (name: string) => void;
+  onEditAvatar: () => void;
   onFocus: () => void;
   winning: boolean;
   icon?: React.ReactNode;
@@ -76,6 +83,13 @@ function EditPlayer({
           onBlur={onBlur}
           onFocus={handleFocus}
         />
+        <button
+          type="button"
+          onClick={onEditAvatar}
+          className="rounded-xl bg-white/10 px-3 py-2"
+        >
+          <FaceSmile className="h-5 w-5 opacity-50" title="Change avatar" />
+        </button>
         {debouncedLoading ? (
           <LoadingSpinner className="px-3 py-2 text-blue-600" />
         ) : editing ? (
@@ -123,6 +137,12 @@ export function EditPlayerForm({
   const loading = fetcher.state === "loading";
   useSoloAction(fetcher, soloDispatch);
 
+  // Avatar changes use their own fetcher so they don't cancel a name change
+  // in flight (and vice versa).
+  const avatarFetcher = useFetcher<Action>();
+  useSoloAction(avatarFetcher, soloDispatch);
+  const [avatarOpen, setAvatarOpen] = React.useState(false);
+
   const [editing, setEditing] = React.useState(false);
   const formRef = React.useRef<HTMLFormElement | null>(null);
 
@@ -159,33 +179,55 @@ export function EditPlayerForm({
     return null;
   }
 
+  function changeAvatar(avatar: Avatar | undefined) {
+    if (!optimisticPlayer) return;
+    setAvatarOpen(false);
+    storeAvatar(avatar);
+    avatarFetcher.submit(
+      { userId, name: optimisticPlayer.name, avatar: avatar ?? "" },
+      { method: "PATCH", action: `/room/${roomId}/player` },
+    );
+    setOptimisticPlayer({ ...optimisticPlayer, avatar });
+  }
+
   return (
-    <fetcher.Form
-      method="PATCH"
-      action={`/room/${roomId}/player`}
-      ref={formRef}
-    >
-      <input
-        type="hidden"
-        name="userId"
-        aria-describedby="upload_help"
-        value={userId}
-      />
-      <EditPlayer
-        player={optimisticPlayer}
-        hasBoardControl={userId === boardControl}
-        loading={loading}
-        editing={editing}
-        onBlur={() => setEditing(false)}
-        onChangeName={setName}
-        onFocus={() => setEditing(true)}
-        winning={winning}
-        icon={icon}
-        scorePopover={scorePopover}
-        scorePopoverKey={scorePopoverKey}
-        scorePopoverAutoOpen={scorePopoverAutoOpen}
-        pulse={pulse}
-      />
-    </fetcher.Form>
+    <>
+      <fetcher.Form
+        method="PATCH"
+        action={`/room/${roomId}/player`}
+        ref={formRef}
+      >
+        <input
+          type="hidden"
+          name="userId"
+          aria-describedby="upload_help"
+          value={userId}
+        />
+        <EditPlayer
+          player={optimisticPlayer}
+          hasBoardControl={userId === boardControl}
+          loading={loading}
+          editing={editing}
+          onBlur={() => setEditing(false)}
+          onChangeName={setName}
+          onEditAvatar={() => setAvatarOpen(true)}
+          onFocus={() => setEditing(true)}
+          winning={winning}
+          icon={icon}
+          scorePopover={scorePopover}
+          scorePopoverKey={scorePopoverKey}
+          scorePopoverAutoOpen={scorePopoverAutoOpen}
+          pulse={pulse}
+        />
+      </fetcher.Form>
+      <Dialog
+        isOpen={avatarOpen}
+        onClose={() => setAvatarOpen(false)}
+        title="Choose your avatar"
+        description="Pick an emoji or use a photo."
+      >
+        <AvatarPicker value={optimisticPlayer.avatar} onChange={changeAvatar} />
+      </Dialog>
+    </>
   );
 }

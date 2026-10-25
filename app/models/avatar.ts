@@ -52,7 +52,8 @@ export const AVATAR_EMOJI = [
 
 const EMOJI_CHARS_REGEX =
   /^(?:\p{Extended_Pictographic}|\p{Regional_Indicator}|\p{Emoji_Modifier}|\p{Emoji_Component}|\u{200D}|\u{FE0F})+$/u;
-const HAS_PICTOGRAPH_REGEX = /\p{Extended_Pictographic}|\p{Regional_Indicator}/u;
+const HAS_PICTOGRAPH_REGEX =
+  /\p{Extended_Pictographic}|\p{Regional_Indicator}/u;
 
 const DATA_URL_REGEX =
   /^data:image\/(?:webp|jpeg|png);base64,((?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{4}))$/;

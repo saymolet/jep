@@ -8,6 +8,7 @@ import type { RoomProps } from "~/components/game";
 import HowToPlay from "~/components/how-to-play";
 import Link from "~/components/link";
 import { EditPlayerForm, PlayerIcon } from "~/components/player";
+import { AvatarPicker } from "~/components/player/avatar-picker";
 import SoundControl from "~/components/sound";
 import {
   UndoArmingContext,
@@ -20,6 +21,7 @@ import { Action, GameState, useEngineContext } from "~/engine";
 import { Board } from "~/models/convert.server";
 import type { PlayerColor } from "~/models/player-color";
 import { getPlayerColor } from "~/utils";
+import { useJoinAvatar } from "~/utils/avatar-storage";
 import useSoloAction from "~/utils/use-solo-action";
 
 function JoinGameDialog({
@@ -39,6 +41,7 @@ function JoinGameDialog({
   players: Map<string, Player>;
   type: GameState;
 } & RoomProps) {
+  const [avatar, setAvatar] = useJoinAvatar();
   return (
     <Dialog
       isOpen={type !== GameState.GameOver}
@@ -47,13 +50,28 @@ function JoinGameDialog({
         players.size === 1 ? "" : "s"
       } so far`}
     >
-      <ul className="mb-4 list-inside list-disc font-handwriting text-xl font-bold">
+      <ul className="mb-4 flex flex-col gap-1 font-handwriting text-xl font-bold">
         {Array.from(players.values()).map((p, i) => (
-          <li key={i} style={{ color: getPlayerColor(p) }}>
+          <li
+            key={i}
+            className="flex items-center gap-2"
+            style={{ color: getPlayerColor(p) }}
+          >
+            <PlayerIcon player={p} size="sm" />
             {p.name}
           </li>
         ))}
       </ul>
+      <div className="mb-4 flex flex-col gap-3">
+        <div className="flex items-center gap-3">
+          <PlayerIcon
+            player={{ name, userId, color: playerColor, avatar }}
+            size="lg"
+          />
+          <p className="text-slate-300">Pick an avatar (optional)</p>
+        </div>
+        <AvatarPicker value={avatar} onChange={setAvatar} />
+      </div>
       <Dialog.Footer>
         <Form method="POST" action={`/room/${roomId}/player`}>
           <input type="hidden" name="userId" value={userId} />
@@ -61,6 +79,7 @@ function JoinGameDialog({
           {playerColor != null && (
             <input type="hidden" name="color" value={playerColor} />
           )}
+          {avatar ? <input type="hidden" name="avatar" value={avatar} /> : null}
           <Button variant="primary" type="submit">
             Join game
           </Button>

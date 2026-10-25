@@ -181,7 +181,11 @@ describe("gameEngine", () => {
       actions: [
         {
           type: ActionType.Join,
-          payload: { ...PLAYER1_JOIN_ACTION.payload, avatar: "emoji:🦊" },
+          payload: {
+            name: PLAYER1.name,
+            userId: PLAYER1.userId,
+            avatar: "emoji:🦊",
+          },
         },
       ],
       expectedState: produce(initialState, (draft) => {
@@ -195,7 +199,11 @@ describe("gameEngine", () => {
       actions: [
         {
           type: ActionType.Join,
-          payload: { ...PLAYER1_JOIN_ACTION.payload, avatar: PHOTO_AVATAR },
+          payload: {
+            name: PLAYER1.name,
+            userId: PLAYER1.userId,
+            avatar: PHOTO_AVATAR,
+          },
         },
       ],
       expectedState: produce(initialState, (draft) => {
@@ -213,7 +221,8 @@ describe("gameEngine", () => {
         {
           type: ActionType.Join,
           payload: {
-            ...PLAYER1_JOIN_ACTION.payload,
+            name: PLAYER1.name,
+            userId: PLAYER1.userId,
             avatar: "data:image/svg+xml;base64,PHN2Zz4=",
           },
         },
@@ -229,7 +238,7 @@ describe("gameEngine", () => {
       actions: [
         {
           type: ActionType.Join,
-          payload: { ...PLAYER1_JOIN_ACTION.payload, avatar: "" },
+          payload: { name: PLAYER1.name, userId: PLAYER1.userId, avatar: "" },
         },
       ],
       expectedState: produce(initialState, (draft) => {
@@ -244,7 +253,11 @@ describe("gameEngine", () => {
         PLAYER1_JOIN_ACTION,
         {
           type: ActionType.ChangeName,
-          payload: { ...PLAYER1_JOIN_ACTION.payload, avatar: PHOTO_AVATAR },
+          payload: {
+            name: PLAYER1.name,
+            userId: PLAYER1.userId,
+            avatar: PHOTO_AVATAR,
+          },
         },
       ],
       expectedState: produce(initialState, (draft) => {
@@ -261,7 +274,11 @@ describe("gameEngine", () => {
       actions: [
         {
           type: ActionType.Join,
-          payload: { ...PLAYER1_JOIN_ACTION.payload, avatar: "emoji:🦊" },
+          payload: {
+            name: PLAYER1.name,
+            userId: PLAYER1.userId,
+            avatar: "emoji:🦊",
+          },
         },
         {
           type: ActionType.ChangeName,
@@ -283,11 +300,15 @@ describe("gameEngine", () => {
       actions: [
         {
           type: ActionType.Join,
-          payload: { ...PLAYER1_JOIN_ACTION.payload, avatar: "emoji:🦊" },
+          payload: {
+            name: PLAYER1.name,
+            userId: PLAYER1.userId,
+            avatar: "emoji:🦊",
+          },
         },
         {
           type: ActionType.ChangeName,
-          payload: { ...PLAYER1_JOIN_ACTION.payload, avatar: "" },
+          payload: { name: PLAYER1.name, userId: PLAYER1.userId, avatar: "" },
         },
       ],
       expectedState: produce(initialState, (draft) => {
@@ -301,11 +322,19 @@ describe("gameEngine", () => {
       actions: [
         {
           type: ActionType.Join,
-          payload: { ...PLAYER1_JOIN_ACTION.payload, avatar: "emoji:🦊" },
+          payload: {
+            name: PLAYER1.name,
+            userId: PLAYER1.userId,
+            avatar: "emoji:🦊",
+          },
         },
         {
           type: ActionType.ChangeName,
-          payload: { ...PLAYER1_JOIN_ACTION.payload, avatar: "emoji:hello" },
+          payload: {
+            name: PLAYER1.name,
+            userId: PLAYER1.userId,
+            avatar: "emoji:hello",
+          },
         },
       ],
       expectedState: produce(initialState, (draft) => {
@@ -4090,7 +4119,11 @@ describe("avatars on replay", () => {
         PLAYER1_JOIN_ACTION,
         {
           type: ActionType.Join,
-          payload: { ...PLAYER2_JOIN_ACTION.payload, avatar: PHOTO_AVATAR },
+          payload: {
+            name: PLAYER2.name,
+            userId: PLAYER2.userId,
+            avatar: PHOTO_AVATAR,
+          },
         },
         {
           type: ActionType.Join,

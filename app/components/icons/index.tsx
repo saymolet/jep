@@ -10,6 +10,7 @@ export { EllipsisHorizontal } from "./ellipsis-horizontal";
 export { ExclamationTriangle } from "./exclamation-triangle";
 export { Eye } from "./eye";
 export { EyeSlash } from "./eye-slash";
+export { FaceSmile } from "./face-smile";
 export { GlobeAmericas } from "./globe-americas";
 export { Google } from "./google";
 export { InformationCircle } from "./information-circle";
