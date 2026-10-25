@@ -23,6 +23,21 @@ export const play = {
   "play.waitingForChecks": "Waiting for checks from {names}...",
   "play.noAnswer": "[no answer]",
   "play.lockout": "LOCKOUT",
+  "play.tapHint": "Tap the button below when it turns green",
+
+  // Big BUZZ button on phones
+  "play.buzzer.wait": "Wait…",
+  "play.buzzer.waitHint": "Tapping now locks you out",
+  "play.buzzer.open": "BUZZ!",
+  "play.buzzer.tooEarly": "Too early!",
+  "play.buzzer.tooEarlyHint": "Locked out for a moment",
+  "play.buzzer.alreadyAnswered": "Locked out",
+  "play.buzzer.alreadyAnsweredHint": "You already tried this question",
+  "play.buzzer.timedOut": "Time's up",
+  "play.buzzer.timedOutHint": "You didn't buzz in time",
+  "play.buzzer.otherWon": "{name} was faster",
+  "play.buzzer.otherWonHint": "Wait for their answer",
+  "play.buzzer.won": "Your turn — answer!",
 
   // Check form
   "play.check.dontSpoil": "(don't spoil the answer for others!)",

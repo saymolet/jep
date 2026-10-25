@@ -88,9 +88,14 @@ Difficulty estimates from the original planning discussion.
       what is happening, QR code to join, fullscreen + screen wake lock — see
       [features/11-spectator-presenter.md](./features/11-spectator-presenter.md) — ⭐⭐ medium
 
+- [x] Mobile-first buzzer — big BUZZ button pinned to the bottom on phones (CSS-only
+      detection), state by colour + text (wait / BUZZ! / too early / locked out / someone was
+      faster / your turn), `pointerdown` with tap guards, haptics, touch taps on the question
+      no longer buzz — see [features/12-mobile-buzzer.md](./features/12-mobile-buzzer.md) — ⭐ small
+
 Question search ·
 team mode · admin panel · Discord login · keyboard shortcuts ·
-OBS/browser-source mode · mobile-first buzzer ·
+OBS/browser-source mode ·
 auto-reconnect · host controls from phone · game save/resume · live scoreboard ·
 per-question timer · soundboard · themes (Classic / Своя Игра / Dark).
 
@@ -149,3 +154,7 @@ per-question timer · soundboard · themes (Classic / Своя Игра / Dark).
   room, Watching badge, watcher count via Realtime presence) and the TV / presenter page
   `/room/:roomName/present` (QR code to join, fullscreen, wake lock, every game state). No
   migration; new dependency `uqr`.
+- **2026-10-25** — Feature 12 on `feat/mobile-buzzer`: mobile-first buzzer (sticky BUZZ button
+  on touch/narrow screens via a `buzzbar` CSS variant, `pointerdown` buzz with arm/double-fire
+  guards, Vibration API haptics following the mute setting, question taps by finger no longer
+  buzz while the button is shown). Buzz timing unchanged. No migration.
