@@ -8,11 +8,8 @@ import {
   useSubmit,
 } from "react-router";
 
-import {
-  DefaultErrorBoundary,
-  ErrorMessage,
-  SuccessMessage,
-} from "~/components/error";
+import { DefaultErrorBoundary } from "~/components/error";
+import { FormStateMessage, hasDetails } from "~/components/form-state-message";
 import { LoadingSpinner } from "~/components/icons";
 import Main from "~/components/main";
 import Search from "~/components/search";
@@ -99,7 +96,7 @@ export default function Index({ loaderData }: Route.ComponentProps) {
   React.useEffect(() => {
     setFormState(loaderFormState);
 
-    if (loaderFormState?.success) {
+    if (loaderFormState?.success && !hasDetails(loaderFormState)) {
       // Use JavaScript to reset form
       uploadFormRef.current?.reset();
       const handler = window.setTimeout(() => {
@@ -132,13 +129,7 @@ export default function Index({ loaderData }: Route.ComponentProps) {
         loggedIn={loaderData.authSession !== null}
         redirectTo="/"
       />
-      {formState ? (
-        formState.success ? (
-          <SuccessMessage>{formState.message}</SuccessMessage>
-        ) : (
-          <ErrorMessage>{formState.message}</ErrorMessage>
-        )
-      ) : null}
+      {formState ? <FormStateMessage formState={formState} /> : null}
       {games.length === 0 && (
         <p className="text-sm text-slate-500">
           No games found{search ? ` for search "${debouncedSearch}"` : ""}

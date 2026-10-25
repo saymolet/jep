@@ -13,3 +13,4 @@ See the backlog in [../README.md](../README.md#feature-backlog).
 - [04 — Multiple choice questions](./04-multiple-choice.md)
 - [05 — Secret question (cat in the bag)](./05-secret-question.md)
 - [06 — More than 5 categories, uneven categories](./06-dynamic-board.md)
+- [08 — Import SIGame packs (.siq) and import/export JSON](./08-import-export.md)

@@ -4,7 +4,7 @@ import { ENV } from "varlock/env";
 
 import Button from "~/components/button";
 import Dialog from "~/components/dialog";
-import { ErrorMessage, SuccessMessage } from "~/components/error";
+import { FormStateMessage, hasDetails } from "~/components/form-state-message";
 import {
   Cog6Tooth,
   FaceSmile,
@@ -32,7 +32,9 @@ import { useGameDefaults } from "~/utils/user-settings";
 
 interface OnlineLoaderData {
   user: { created_at: string; email: string; id: string; settings: unknown };
-  formState: { success: boolean; message: string } | undefined;
+  formState:
+    | { success: boolean; message: string; details?: string[] }
+    | undefined;
   games: DbGame[];
   solves: Solve[];
   BASE_URL: string;
@@ -349,7 +351,7 @@ function OnlineProfile({
   React.useEffect(() => {
     setFormState(loaderFormState);
 
-    if (loaderFormState?.success) {
+    if (loaderFormState?.success && !hasDetails(loaderFormState)) {
       const handler = window.setTimeout(() => {
         setFormState(undefined);
       }, 5000);
@@ -406,13 +408,7 @@ function OnlineProfile({
             />
           ))}
         </ul>
-        {formState ? (
-          formState.success ? (
-            <SuccessMessage>{formState.message}</SuccessMessage>
-          ) : (
-            <ErrorMessage>{formState.message}</ErrorMessage>
-          )
-        ) : null}
+        {formState ? <FormStateMessage formState={formState} /> : null}
         <h2 className="mb-4 text-2xl font-semibold">My Attempts / Solves</h2>
         <div>
           {loaderData.solves.map((solve) => (

@@ -1,11 +1,11 @@
-import { redirect } from "react-router";
+import { Link, redirect } from "react-router";
 import { z } from "zod";
 
 import { ActiveRoomsList } from "~/components/active-rooms";
 import { EmptyBoard } from "~/components/board/layout";
 import { ButtonLink } from "~/components/button";
 import { GameVisibilityTag } from "~/components/game-visibility-icon";
-import { Play, User } from "~/components/icons";
+import { ArrowDownTray, Play, User } from "~/components/icons";
 import type { ActiveRoom } from "~/models/active-rooms";
 import { getValidAuthSession } from "~/models/auth";
 import {
@@ -216,6 +216,21 @@ function GameInvitation({
         <PlayLinks gameId={game.id} hasActiveRooms={activeRooms.length > 0} />
 
         <ActiveRoomsList rooms={activeRooms} />
+
+        <div>
+          {/* A plain document request so the browser downloads the file. */}
+          <Link
+            to={`/game/${game.id}/json`}
+            reloadDocument
+            className="inline-flex min-h-11 items-center gap-1.5 text-sm text-slate-300 underline decoration-slate-500 underline-offset-4 hover:text-white"
+          >
+            <ArrowDownTray className="h-4 w-4" />
+            Download JSON
+          </Link>
+          <p className="text-xs text-slate-400">
+            Edit the file and upload it again as a new game.
+          </p>
+        </div>
 
         {game.copyright ? (
           <p className="text-xs text-slate-400">{game.copyright}</p>

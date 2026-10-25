@@ -7,6 +7,8 @@ import { z } from "zod";
 const FormStateSchema = z.object({
   success: z.boolean(),
   message: z.string(),
+  /** Extra lines, e.g. what a SIGame import skipped. */
+  details: z.array(z.string()).optional(),
 });
 type FormState = z.infer<typeof FormStateSchema>;
 

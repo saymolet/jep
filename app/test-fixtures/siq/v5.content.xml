@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package name="Test pack v5" version="5" id="test-v5" date="2026" difficulty="5" xmlns="https://github.com/VladimirKhil/SI/blob/master/assets/siq_5.xsd">
+  <info>
+    <authors>
+      <author>Jep tester</author>
+      <author>Second author</author>
+    </authors>
+    <comments>A tiny synthetic pack for tests.</comments>
+  </info>
+  <rounds>
+    <round name="Round 1">
+      <themes>
+        <theme name="Pictures">
+          <questions>
+            <question price="100">
+              <params>
+                <param name="question" type="content">
+                  <item>What color is this dot?</item>
+                  <item type="image" isRef="True">red dot.png</item>
+                </param>
+              </params>
+              <right>
+                <answer>Red</answer>
+              </right>
+            </question>
+            <question price="200">
+              <params>
+                <param name="question" type="content">
+                  <item type="image" isRef="True">кот.png</item>
+                </param>
+                <param name="answer" type="content">
+                  <item type="image" isRef="True">blue.png</item>
+                </param>
+              </params>
+              <right>
+                <answer>Cat</answer>
+                <answer>Kitten</answer>
+              </right>
+            </question>
+            <question price="300" type="secret">
+              <params>
+                <param name="theme">Famous cats</param>
+                <param name="price" type="numberSet">
+                  <numberSet minimum="500" maximum="500" step="0" />
+                </param>
+                <param name="selectionMode">exceptCurrent</param>
+                <param name="question" type="content">
+                  <item>The cat in the boots</item>
+                </param>
+              </params>
+              <right>
+                <answer>Puss in Boots</answer>
+              </right>
+            </question>
+            <question price="400" type="secretPublicPrice">
+              <params>
+                <param name="theme">Ranges</param>
+                <param name="price" type="numberSet">
+                  <numberSet minimum="500" maximum="1000" step="500" />
+                </param>
+                <param name="question" type="content">
+                  <item>A secret question with a price range</item>
+                </param>
+              </params>
+              <right>
+                <answer>Range</answer>
+              </right>
+            </question>
+          </questions>
+        </theme>
+        <theme name="Sounds &amp; video">
+          <questions>
+            <question price="100">
+              <params>
+                <param name="question" type="content">
+                  <item>Name this sound</item>
+                  <item type="audio" isRef="True" placement="background">beep.wav</item>
+                </param>
+              </params>
+              <right>
+                <answer>Beep</answer>
+              </right>
+            </question>
+            <question price="200" type="stake">
+              <params>
+                <param name="question" type="content">
+                  <item>Name this clip</item>
+                  <item type="video" isRef="True">clip.mp4</item>
+                </param>
+              </params>
+              <right>
+                <answer>Clip</answer>
+              </right>
+            </question>
+            <question price="300">
+              <params>
+                <param name="question" type="content">
+                  <item>A question whose picture is missing</item>
+                  <item type="image" isRef="True">missing.png</item>
+                </param>
+              </params>
+              <right>
+                <answer>Missing</answer>
+              </right>
+            </question>
+            <question price="400">
+              <params>
+                <param name="question" type="content">
+                  <item type="image" isRef="True">also missing.png</item>
+                </param>
+              </params>
+              <right>
+                <answer>Dropped</answer>
+              </right>
+            </question>
+            <question price="500" type="noRisk">
+              <params>
+                <param name="question" type="content">
+                  <item>A no-risk question</item>
+                  <item type="html" isRef="True">page.html</item>
+                </param>
+              </params>
+              <right>
+                <answer>No risk</answer>
+              </right>
+            </question>
+          </questions>
+        </theme>
+        <theme name="Options">
+          <questions>
+            <question price="100">
+              <params>
+                <param name="question" type="content">
+                  <item>Pick the largest planet</item>
+                </param>
+                <param name="answerType">select</param>
+                <param name="answerOptions" type="group">
+                  <param name="A" type="content">
+                    <item>Mars</item>
+                  </param>
+                  <param name="B" type="content">
+                    <item>Jupiter</item>
+                  </param>
+                  <param name="C" type="content">
+                    <item>Venus</item>
+                  </param>
+                </param>
+              </params>
+              <right>
+                <answer>B</answer>
+              </right>
+            </question>
+          </questions>
+        </theme>
+      </themes>
+    </round>
+    <round name="Final" type="final">
+      <themes>
+        <theme name="Final A">
+          <questions>
+            <question price="0">
+              <params>
+                <param name="question" type="content">
+                  <item>The first final question</item>
+                </param>
+              </params>
+              <right>
+                <answer>First</answer>
+              </right>
+            </question>
+          </questions>
+        </theme>
+        <theme name="Final B">
+          <questions>
+            <question price="0">
+              <params>
+                <param name="question" type="content">
+                  <item>The second final question</item>
+                </param>
+              </params>
+              <right>
+                <answer>Second</answer>
+              </right>
+            </question>
+          </questions>
+        </theme>
+      </themes>
+    </round>
+  </rounds>
+</package>
