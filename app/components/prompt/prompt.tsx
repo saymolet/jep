@@ -4,7 +4,6 @@ import * as React from "react";
 import { useFetcher } from "react-router";
 
 import type { RoomProps } from "~/components/game";
-import { SadFile } from "~/components/icons";
 import type { Action, Player } from "~/engine";
 import {
   CANT_BUZZ_FLAG,
@@ -13,6 +12,9 @@ import {
   QUANTIZATION_FACTOR_MS,
   useEngineContext,
 } from "~/engine";
+import type { Clue } from "~/models/convert.server";
+import type { MediaBlock } from "~/utils/media";
+import { getClueMedia, getClueReadMs, hasPlayableMedia } from "~/utils/media";
 import useFitText from "~/utils/use-fit-text";
 import useKeyPress from "~/utils/use-key-press";
 import useSoloAction from "~/utils/use-solo-action";
@@ -22,6 +24,7 @@ import useTimeout from "~/utils/use-timeout";
 import { ConnectedAnswerForm as AnswerForm } from "./answer-form";
 import { Buzzes } from "./buzz";
 import { ConnectedCheckForm as CheckForm } from "./check-form";
+import { ClueImage, PlayableMedia } from "./clue-media";
 import { Countdown } from "./countdown";
 import { Fade } from "./fade";
 import { Kbd } from "./kbd";
@@ -30,15 +33,6 @@ import { ConnectedNextClueForm as NextClueForm } from "./next-clue-form";
 import { ReadClueTimer } from "./read-clue-timer";
 import ShinyText from "./shiny-text";
 import { ConnectedWagerForm as WagerForm } from "./wager-form";
-
-/** READ_PER_CHAR_MS is the number of milliseconds to "read" each character of
- * the clue before the buzzer opens. Longer clues should take longer to read.
- */
-const READ_PER_CHAR_MS = 60;
-
-/** READ_BASE_MS is the base amount of time it takes to read a clue.
- */
-const READ_BASE_MS = 1000;
 
 /** READ_REOPENED_MS is the amount of time to "re-read" the clue after a
  * failed buzz before re-opening the buzzers.
@@ -54,22 +48,28 @@ const LONG_FORM_CLUE_DURATION_SEC = 30;
 const TIMES_UP_SFX = "/sounds/times-up.mp3";
 const LONG_FORM_SFX = "/sounds/long-form.mp3";
 
-function SadFileIcon({ badSrc }: { badSrc: string }) {
-  return (
-    <div className="flex items-center justify-center border border-white p-4 text-white">
-      <SadFile className="h-10 w-10" title={badSrc} />
-    </div>
-  );
+/** revealMedia picks the media to show for a clue: once the answer is shown,
+ * answer media (if any) replaces the clue media. */
+function revealMedia(clue: Clue, showAnswerMedia: boolean): MediaBlock[] {
+  if (showAnswerMedia && clue.answerMedia && hasAnswerMedia(clue)) {
+    return clue.answerMedia;
+  }
+  return getClueMedia(clue);
 }
 
-function ClueText({
+function hasAnswerMedia(clue: Clue): boolean {
+  return (clue.answerMedia?.length ?? 0) > 0;
+}
+
+export function ClueText({
   answer,
   canBuzz,
   clue,
   focusOnBuzz,
   onBuzz,
   showAnswer,
-  imageSrc,
+  media = [],
+  autoPlayMedia = false,
 }: {
   answer: string;
   canBuzz: boolean;
@@ -77,58 +77,56 @@ function ClueText({
   focusOnBuzz: boolean;
   onBuzz: (buzzedAt: number) => void;
   showAnswer: boolean;
-  imageSrc?: string;
+  /** Pictures, audio and video shown with the clue (or answer). */
+  media?: MediaBlock[];
+  /** Try to start audio/video when it first appears. */
+  autoPlayMedia?: boolean;
 }) {
   const { fontSize, ref } = useFitText<HTMLParagraphElement>({
     maxFontSize: 200,
   });
-  const [imageError, setImageError] = React.useState(false);
-  const imgRef = React.useRef<HTMLImageElement>(null);
-
-  // Detect broken images that fail without firing onError (e.g. CSP blocks in Safari)
-  React.useEffect(() => {
-    const img = imgRef.current;
-    if (img && img.complete && img.naturalWidth === 0) {
-      setImageError(true);
-    }
-  }, [imageSrc]);
+  const images = media.filter((b) => b.type === "image");
+  const hasMedia = media.length > 0;
 
   return (
-    <button
-      type="button"
-      disabled={!canBuzz}
-      onClick={() => onBuzz(Date.now())}
-      className="flex w-screen grow flex-col items-center justify-center p-4"
-      autoFocus={focusOnBuzz}
-    >
-      <p
-        className={`mx-auto max-h-96 w-full max-w-screen-lg font-korinna leading-normal font-bold text-white uppercase transition-opacity duration-150 text-shadow-lg word-spacing-1`}
-        ref={ref}
-        style={{ fontSize, opacity: fontSize ? 1 : 0 }}
+    <div className="flex min-h-0 w-screen grow flex-col items-center justify-center gap-2 pb-2">
+      <button
+        type="button"
+        disabled={!canBuzz}
+        onClick={() => onBuzz(Date.now())}
+        className={clsx(
+          "flex w-full grow flex-col items-center justify-center gap-2 p-4",
+          { "min-h-24": hasMedia },
+        )}
+        autoFocus={focusOnBuzz}
       >
-        {clue}
-        <br />
-        <span
-          className={clsx("text-cyan-300", {
-            invisible: !showAnswer,
-          })}
+        <p
+          className={clsx(
+            "mx-auto w-full max-w-screen-lg font-korinna leading-normal font-bold text-white uppercase transition-opacity duration-150 text-shadow-lg word-spacing-1",
+            // Leave room for the media below the text.
+            hasMedia ? "max-h-[20dvh]" : "max-h-96",
+          )}
+          ref={ref}
+          style={{ fontSize, opacity: fontSize ? 1 : 0 }}
         >
-          {answer}
-        </span>
-      </p>
-      {imageSrc ? (
-        imageError ? (
-          <SadFileIcon badSrc={imageSrc} />
-        ) : (
-          <img
-            ref={imgRef}
-            src={imageSrc}
-            alt={`Image for clue: ${clue}`}
-            onError={() => setImageError(true)}
-          />
-        )
-      ) : null}
-    </button>
+          {clue}
+          {clue ? <br /> : null}
+          <span
+            className={clsx("text-cyan-300", {
+              invisible: !showAnswer,
+            })}
+          >
+            {answer}
+          </span>
+        </p>
+        {images.map((block, i) => (
+          <ClueImage key={`${i}-${block.src}`} block={block} />
+        ))}
+      </button>
+      {/* Audio/video controls live outside the buzz button: tapping them must
+          not buzz in, and interactive content can't be nested in a button. */}
+      <PlayableMedia blocks={media} autoPlay={autoPlayMedia} />
+    </div>
   );
 }
 
@@ -229,8 +227,7 @@ function ReadWagerableCluePrompt({ roomId, userId }: RoomProps) {
   useSoloAction(fetcher, soloDispatch);
   const submit = fetcher.submit;
 
-  const numCharactersInClue = clue.clue.length ?? 0;
-  const clueDurationMs = READ_BASE_MS + READ_PER_CHAR_MS * numCharactersInClue;
+  const clueDurationMs = getClueReadMs(clue);
 
   /** submitBuzz submits a buzz of deltaMs to the server. */
   const submitBuzz = React.useCallback(
@@ -312,7 +309,8 @@ function ReadWagerableCluePrompt({ roomId, userId }: RoomProps) {
         canBuzz={boardControl === userId}
         onBuzz={() => handleClick(Date.now())}
         focusOnBuzz
-        imageSrc={clue.imageSrc}
+        media={getClueMedia(clue)}
+        autoPlayMedia
         showAnswer={false}
         answer={clue.answer}
       />
@@ -335,20 +333,19 @@ function ReadCluePrompt({
     useEngineContext();
 
   if (!clue) throw new Error("No clue found");
-  const numCharactersInClue = clue.clue.length ?? 0;
 
   // Compute clueDurationMs once at mount so the ReadClueTimer CSS animation
   // doesn't restart when server buzz events arrive mid-animation. The
   // component remounts between ReadClue phases, so this captures the right
   // value for re-reads (after a wrong answer) too.
-  const [clueDurationMs] = React.useState(() => {
-    const hasLockedOut =
+  const [isReRead] = React.useState(
+    () =>
       !clue.wagerable &&
-      Array.from(buzzes.values()).some((b) => b === CANT_BUZZ_FLAG);
-    return hasLockedOut
-      ? READ_REOPENED_MS
-      : READ_BASE_MS + READ_PER_CHAR_MS * numCharactersInClue;
-  });
+      Array.from(buzzes.values()).some((b) => b === CANT_BUZZ_FLAG),
+  );
+  const [clueDurationMs] = React.useState(() =>
+    isReRead ? READ_REOPENED_MS : getClueReadMs(clue),
+  );
 
   const [optimisticBuzzes, setOptimisticBuzzes] = React.useState(buzzes);
   const myBuzzDurationMs = optimisticBuzzes.get(userId);
@@ -512,7 +509,8 @@ function ReadCluePrompt({
         canBuzz={!lockout && myBuzzDurationMs === undefined}
         onBuzz={() => handleClick(Date.now())}
         focusOnBuzz
-        imageSrc={clue.imageSrc}
+        media={getClueMedia(clue)}
+        autoPlayMedia={!isReRead}
         showAnswer={false}
         answer={clue.answer}
       />
@@ -558,12 +556,15 @@ function ReadLongFormCluePrompt({ roomId, userId }: RoomProps) {
     myBuzzDurationMs === undefined ? Date.now() : undefined,
   );
 
-  // Play the long form sound when the component mounts.
+  // Play the long form sound when the component mounts, unless the clue has
+  // its own audio/video to listen to.
+  const clueHasPlayableMedia = hasPlayableMedia(getClueMedia(clue));
   const [playLongFormSfx, { stop }] = useGameSound(LONG_FORM_SFX);
   React.useEffect(() => {
+    if (clueHasPlayableMedia) return;
     playLongFormSfx();
     return () => stop();
-  }, [playLongFormSfx, stop]);
+  }, [playLongFormSfx, stop, clueHasPlayableMedia]);
 
   const clueValue = activeClue ? getClueValue(activeClue, userId) : 0;
 
@@ -580,7 +581,8 @@ function ReadLongFormCluePrompt({ roomId, userId }: RoomProps) {
         canBuzz={false}
         onBuzz={() => null}
         focusOnBuzz={false}
-        imageSrc={clue.imageSrc}
+        media={getClueMedia(clue)}
+        autoPlayMedia
         showAnswer={false}
         answer={clue.answer}
       />
@@ -662,7 +664,8 @@ function RevealAnswerToBuzzerPrompt({ roomId, userId }: RoomProps) {
         canBuzz={false}
         clue={clue.clue}
         focusOnBuzz={false}
-        imageSrc={clue.imageSrc}
+        media={revealMedia(clue, canShowAnswer && showAnswer)}
+        autoPlayMedia={hasAnswerMedia(clue) && canShowAnswer && showAnswer}
         onBuzz={() => null}
         showAnswer={false}
       />
@@ -739,7 +742,8 @@ function RevealAnswerLongFormPrompt({ roomId, userId }: RoomProps) {
         canBuzz={false}
         clue={clue.clue}
         focusOnBuzz={false}
-        imageSrc={clue.imageSrc}
+        media={revealMedia(clue, true)}
+        autoPlayMedia={hasAnswerMedia(clue)}
         onBuzz={() => null}
         showAnswer
       />
@@ -820,7 +824,8 @@ function RevealAnswerToAllPrompt({ roomId, userId }: RoomProps) {
         canBuzz={false}
         onBuzz={() => null}
         focusOnBuzz={false}
-        imageSrc={clue.imageSrc}
+        media={revealMedia(clue, true)}
+        autoPlayMedia={hasAnswerMedia(clue)}
         showAnswer
         answer={clue.answer}
       />

@@ -1,44 +1,65 @@
 import { z } from "zod";
 
-/** IMAGE_DOMAIN_ALLOWLIST lists the domains that are allowed for image sources.
- * Some clues have images, and we want to make sure that the images are hosted
- * on a trusted domain. This is for security and to prevent abuse.
- *
- * Submit a GitHub issue to add a new domain to this list.
- */
-export const IMAGE_DOMAIN_ALLOWLIST = [
-  "www.j-archive.com",
-  "upload.wikimedia.org",
-];
+import {
+  MAX_MEDIA_BLOCKS,
+  MEDIA_TYPES,
+  type MediaBlock,
+  mediaBlockError,
+} from "~/utils/media";
 
 function isValidImageSrc(src: string): boolean {
   try {
     const url = new URL(src);
-    if (url.protocol !== "http:" && url.protocol !== "https:") return false;
-    if (!IMAGE_DOMAIN_ALLOWLIST.includes(url.hostname)) return false;
-    return true;
+    // http: is still accepted for backwards compatibility with old games.
+    return url.protocol === "http:" || url.protocol === "https:";
   } catch {
     return false;
   }
 }
 
+export const MediaBlockSchema = z
+  .object({
+    type: z.enum(MEDIA_TYPES),
+    src: z.string().trim().min(1, "media src must not be empty"),
+    alt: z.string().optional(),
+  })
+  .superRefine((block, ctx) => {
+    const error = mediaBlockError(block);
+    if (error) ctx.addIssue({ code: "custom", message: error, path: ["src"] });
+  });
+
+const MediaListSchema = z
+  .array(MediaBlockSchema)
+  .max(MAX_MEDIA_BLOCKS, `at most ${MAX_MEDIA_BLOCKS} media blocks per clue`)
+  .optional();
+
 export const ClueSchema = z
   .object({
-    clue: z.string().trim().min(1, "clue must not be empty"),
+    // The clue text may be empty when media carries the question.
+    clue: z.string().trim(),
     answer: z.string().trim().min(1, "answer must not be empty"),
     value: z.number(),
     imageSrc: z
       .string()
       .trim()
       .min(1, "imageSrc must not be empty; remove the field instead")
-      .refine(
-        isValidImageSrc,
-        `imageSrc must be a valid HTTP(S) URL from [${IMAGE_DOMAIN_ALLOWLIST.join(", ")}]`,
-      )
+      .refine(isValidImageSrc, "imageSrc must be a valid HTTP(S) URL")
       .optional(),
+    media: MediaListSchema,
+    answerMedia: MediaListSchema,
     wagerable: z.boolean().optional(),
     longForm: z.boolean().optional(),
   })
+  .refine(
+    (clue) =>
+      clue.clue.length > 0 ||
+      clue.imageSrc !== undefined ||
+      (clue.media?.length ?? 0) > 0,
+    {
+      message: "clue must not be empty (unless the clue has media)",
+      path: ["clue"],
+    },
+  )
   .refine((clue) => !clue.longForm || clue.wagerable, {
     message: "long-form clues must also be wagerable",
   });
@@ -83,6 +104,7 @@ export type Game = z.infer<typeof GameSchema>;
 export type Board = z.infer<typeof BoardSchema>;
 export type Category = z.infer<typeof CategorySchema>;
 export type Clue = z.infer<typeof ClueSchema>;
+export type { MediaBlock };
 
 export const Convert = {
   toGame(json: string): Game {

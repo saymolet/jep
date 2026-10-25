@@ -84,7 +84,11 @@ export default function handleRequest(
       "script-src 'self' 'unsafe-inline'",
       "style-src 'self' 'unsafe-inline'",
       `connect-src 'self' ${ENV.SUPABASE_URL} ws://${new URL(ENV.SUPABASE_URL).host} wss://${new URL(ENV.SUPABASE_URL).host}`,
-      "img-src 'self' data: https://www.j-archive.com https://upload.wikimedia.org",
+      // Clue media (pictures, audio, video) may be hosted on any https site.
+      "img-src 'self' data: https:",
+      "media-src 'self' https:",
+      // YouTube clips are embedded via the privacy-enhanced domain only.
+      "frame-src https://www.youtube-nocookie.com",
     ].join("; "),
   );
 

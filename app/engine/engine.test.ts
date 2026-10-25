@@ -8,6 +8,7 @@ import {
   CANT_BUZZ_FLAG,
   CLUE_TIMEOUT_MS,
   gameEngine,
+  getTiebreakerSeed,
   getWinningBuzzer,
   parseUtcMs,
 } from "./engine";
@@ -3846,6 +3847,24 @@ describe("getWinningBuzzer", () => {
     const k = 435;
     expect(player1Wins).toBeGreaterThan(k);
     expect(player1Wins).toBeLessThan(n_trials - k);
+  });
+});
+
+describe("getTiebreakerSeed", () => {
+  it("uses the clue text", () => {
+    expect(getTiebreakerSeed({ clue: "Some clue", answer: "A" })).toBe(
+      "Some clue",
+    );
+  });
+
+  it("falls back to the answer for media clues without text", () => {
+    expect(getTiebreakerSeed({ clue: "", answer: "Moonlight Sonata" })).toBe(
+      "Moonlight Sonata",
+    );
+  });
+
+  it("is undefined without a clue", () => {
+    expect(getTiebreakerSeed(undefined)).toBeUndefined();
   });
 });
 

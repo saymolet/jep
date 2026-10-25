@@ -1,7 +1,12 @@
 import type { AuthSession } from "~/models/auth";
-import type { Board, Game as ConvertedGame } from "~/models/convert.server";
-import { Convert, GameSchema } from "~/models/convert.server";
-import type { Database } from "~/models/database.types";
+import type {
+  Board,
+  Clue,
+  Game as ConvertedGame,
+  MediaBlock,
+} from "~/models/convert.server";
+import { Convert, GameSchema, MediaBlockSchema } from "~/models/convert.server";
+import type { Database, Json } from "~/models/database.types";
 import { getSupabase } from "~/supabase";
 import { getSupabaseAdmin } from "~/supabase/admin.server";
 
@@ -32,6 +37,55 @@ const SITEMAP_RESULTS_PER_PAGE = 1000;
 
 /* Helpers */
 
+/** dbMediaToMedia reads a `media`/`answer_media` jsonb column. Null, empty or
+ * malformed values (which createGame never writes) become undefined so the
+ * game JSON round-trips without empty fields. */
+function dbMediaToMedia(value: Json | null): MediaBlock[] | undefined {
+  if (value === null) return undefined;
+  const result = MediaBlockSchema.array().safeParse(value);
+  if (!result.success) {
+    console.warn("ignoring malformed clue media", result.error.message);
+    return undefined;
+  }
+  return result.data.length > 0 ? result.data : undefined;
+}
+
+function mediaToDbMedia(media: MediaBlock[] | undefined): Json | null {
+  if (!media || media.length === 0) return null;
+  return media.map(({ type, src, alt }) =>
+    alt === undefined ? { type, src } : { type, src, alt },
+  );
+}
+
+/** dbClueToClue maps a clues row to the game representation. */
+export function dbClueToClue(clue: DbClue): Clue {
+  return {
+    ...clue,
+    longForm: clue.long_form,
+    imageSrc: clue.image_src ?? undefined,
+    media: dbMediaToMedia(clue.media),
+    answerMedia: dbMediaToMedia(clue.answer_media),
+  };
+}
+
+/** clueToDbClue maps a game clue to a clues row to insert. */
+export function clueToDbClue(
+  clue: Clue,
+  categoryId: number,
+): ClueTable["Insert"] {
+  return {
+    category_id: categoryId,
+    answer: clue.answer,
+    clue: clue.clue,
+    value: clue.value,
+    wagerable: clue.wagerable ?? false,
+    long_form: clue.longForm ?? false,
+    image_src: clue.imageSrc,
+    media: mediaToDbMedia(clue.media),
+    answer_media: mediaToDbMedia(clue.answerMedia),
+  };
+}
+
 function dbGameToGame(dbGame: DbGame, categories: CategoryAndClues[]): Game {
   const game: Game = {
     id: dbGame.id,
@@ -61,11 +115,7 @@ function dbGameToGame(dbGame: DbGame, categories: CategoryAndClues[]): Game {
     board.categories.push({
       ...category,
       note: category.note ?? undefined,
-      clues: category.clues.map((clue) => ({
-        ...clue,
-        longForm: clue.long_form,
-        imageSrc: clue.image_src ?? undefined,
-      })),
+      clues: category.clues.map(dbClueToClue),
     });
     board.categoryNames.push(category.name);
   }
@@ -298,15 +348,7 @@ export async function createGame(
         );
       }
       for (const clue of category.clues) {
-        cluesToInsert.push({
-          category_id: dbCategory.id,
-          answer: clue.answer,
-          clue: clue.clue,
-          value: clue.value,
-          wagerable: clue.wagerable ?? false,
-          long_form: clue.longForm ?? false,
-          image_src: clue.imageSrc,
-        });
+        cluesToInsert.push(clueToDbClue(clue, dbCategory.id));
       }
     }
   }

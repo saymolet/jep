@@ -1,7 +1,7 @@
 import path from "path";
 
 import { expect } from "@playwright/test";
-import type { Page } from "@playwright/test";
+import type { Locator, Page } from "@playwright/test";
 
 /** Navigate to a mock game route, join, start round 1, and wait for the board
  *  fill animation to complete. */
@@ -113,4 +113,59 @@ export async function playOneClue(page: Page) {
     page.getByRole("button", { name: /back to board/i }),
   ).toBeVisible({ timeout: 5_000 });
   await page.getByRole("button", { name: /back to board/i }).click();
+}
+
+/** silentWav builds a short silent WAV file (8 kHz, 8-bit mono). */
+function silentWav(seconds = 1): Buffer {
+  const samples = 8000 * seconds;
+  const buf = Buffer.alloc(44 + samples, 0x80);
+  buf.write("RIFF", 0);
+  buf.writeUInt32LE(36 + samples, 4);
+  buf.write("WAVEfmt ", 8);
+  buf.writeUInt32LE(16, 16); // fmt chunk size
+  buf.writeUInt16LE(1, 20); // PCM
+  buf.writeUInt16LE(1, 22); // mono
+  buf.writeUInt32LE(8000, 24); // sample rate
+  buf.writeUInt32LE(8000, 28); // byte rate
+  buf.writeUInt16LE(1, 32); // block align
+  buf.writeUInt16LE(8, 34); // bits per sample
+  buf.write("data", 36);
+  buf.writeUInt32LE(samples, 40);
+  return buf;
+}
+
+const ONE_PIXEL_PNG = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+  "base64",
+);
+
+/** Serve stand-ins for clue media hosted on the internet (Wikimedia, YouTube),
+ * so e2e tests never depend on the network: they assert on the rendered
+ * elements, not on the real files. */
+export async function stubExternalMedia(page: Page) {
+  await page.route(/^https:\/\/upload\.wikimedia\.org\//, (route) => {
+    const path = new URL(route.request().url()).pathname;
+    if (/\.(png|jpe?g|gif|webp)$/i.test(path)) {
+      return route.fulfill({ contentType: "image/png", body: ONE_PIXEL_PNG });
+    }
+    if (/\.(mp3|ogg|wav)$/i.test(path)) {
+      return route.fulfill({ contentType: "audio/wav", body: silentWav() });
+    }
+    return route.abort();
+  });
+  await page.route(/^https:\/\/www\.youtube-nocookie\.com\//, (route) =>
+    route.fulfill({
+      contentType: "text/html",
+      body: "<!doctype html><title>YouTube stub</title>",
+    }),
+  );
+}
+
+/** Click a clue on the board, retrying until its prompt opens. */
+export async function openClue(page: Page, clueButton: Locator) {
+  // The board fill animation silently ignores clicks.
+  await expect(async () => {
+    await clueButton.click();
+    await expect(page.getByText(/buzz in/i)).toBeVisible({ timeout: 1_000 });
+  }).toPass({ timeout: 10_000 });
 }

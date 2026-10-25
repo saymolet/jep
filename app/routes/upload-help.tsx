@@ -13,8 +13,6 @@ export const meta: Route.MetaFunction = () =>
 
 const JSON_EDIT_URL =
   "https://json-editor.github.io/json-editor/?data=N4Ig9gDgLglmB2BnEAuUMDGCA2MBGqIAZglAIYDuApomALZUCsIANOHgFZUZQD62ZAJ5gArlELwwAJzplsrEIgwALKrNSgAJEtXqUIZVCgQUAelMda8ALQ61ZAHTSA5qYAmUskSjWADAHZTO1kAYgVNGDdCQ2MzU2wwDDllMEQoFABmX2zTZzIGB2DHSwQFMjc3GFgEOQAFKUgqKVgaVCI5RCo2CDIjJvhCAD0HACoAHTGHLggJqatNBVgobCpCACkqCABCAAIAcXyqHYBlFXtFwQhV/TBObnFuhqvmmFa0ECWVjQ/L68UoKQweDOEAAXzYZDEKSk3ygv0IaUBwLBbCwEEEgOchlh8P0iKBIPBIEkUGuoDhVwRAIJKJAeDAZCkbmQ7wpf0ZnkECiqahZ5Nx7C4PAUECeTRafJASVJzmkggAcodJWzCByhNzSXRlQL8cjQUTpVRZYC3vzKfo1Vy2DytTjzYL7iKxS9TcTDna/rrCWwSWSfvavbSMNgRK6VRapJyNbyPYRbkKHiBRY0XZLg6HY3jqXqIUhqDDWTrs96QAA3OQZwv2oEypq0ihkZxNMh3L5Vv70sArMgDIkJYEAMWkdEzdLAXaoPdpMFkTeOUgwo8D+rYUioAEcRDA11EUABtKUh1a5xD5hTlo8gAC6+qJa8326ou4P8HdqKPyBvK5A963O9QB6GsaCpKgoQHSK8n63quG5/k+AEfFUXwQlC0hgZAGIwFiia+go9KMsy15EogKQULwTQNFILIgDWzY8HAAxsFAugduOUCImQEAACxgqCQA=";
-const ALLOWED_DOMAINS_URL =
-  "https://github.com/cmnord/jep/blob/main/app/models/game.server.ts#L36-L42";
 
 export default function Help() {
   return (
@@ -82,11 +80,76 @@ export default function Help() {
           players may write down their answers over a longer time period instead
           of competing to buzz in. Long-form clues must also be wagerable.
         </p>
+        <h2 className="mb-4 text-xl font-semibold">
+          Questions with pictures, audio and video
+        </h2>
         <p className="mb-4">
-          A clue may have an associated image. To add one, set "imageSrc" to a
-          URL pointing to the image. Jep! does not host images. Images must come
-          from one of the{" "}
-          <Anchor href={ALLOWED_DOMAINS_URL}>allowed domains</Anchor>.
+          A clue can show pictures, play sound or play video. Add a{" "}
+          <Code>media</Code> list to show media together with the clue, and an{" "}
+          <Code>answerMedia</Code> list to show media when the answer is
+          revealed (for example a picture of the answer). Each item has a{" "}
+          <Code>type</Code> (<Code>"image"</Code>, <Code>"audio"</Code> or{" "}
+          <Code>"video"</Code>), a <Code>src</Code> and an optional{" "}
+          <Code>alt</Code> text description.
+        </p>
+        <ul className="mb-4 list-inside list-disc">
+          <li>
+            Jep! does not host files: <Code>src</Code> must be an{" "}
+            <Code>https://</Code> link to a file hosted anywhere on the web (for
+            example Wikimedia Commons or your own storage).
+          </li>
+          <li>
+            For <Code>"video"</Code>, a YouTube link also works (
+            <Code>youtube.com/watch?v=…</Code> or <Code>youtu.be/…</Code>). Add{" "}
+            <Code>t=90</Code> or <Code>t=1m30s</Code> to start at a given time —
+            handy for music rounds.
+          </li>
+          <li>
+            The clue text may be empty (<Code>"clue": ""</Code>) when the media
+            carries the question.
+          </li>
+          <li>
+            Audio and video start by themselves when the clue opens if the
+            browser allows it; otherwise players tap play. Buzzers open after at
+            least 10 seconds for clues with audio or video, and at least 3
+            seconds for clues with pictures.
+          </li>
+          <li>
+            Use widely supported formats: JPEG/PNG/WebP/GIF pictures, MP3 audio
+            and MP4 video work on every phone and computer.
+          </li>
+        </ul>
+        <CodeBlock
+          text={`{
+  "clue": "",
+  "answer": "Moonlight Sonata",
+  "value": 400,
+  "media": [
+    {
+      "type": "audio",
+      "src": "https://upload.wikimedia.org/wikipedia/commons/transcoded/e/eb/Beethoven_Moonlight_1st_movement.ogg/Beethoven_Moonlight_1st_movement.ogg.mp3"
+    }
+  ],
+  "answerMedia": [
+    {
+      "type": "image",
+      "src": "https://example.com/beethoven.jpg",
+      "alt": "Portrait of Ludwig van Beethoven"
+    }
+  ]
+},
+{
+  "clue": "Name this short film",
+  "answer": "Big Buck Bunny",
+  "value": 600,
+  "media": [
+    { "type": "video", "src": "https://youtu.be/aqz-KE-bpKQ?t=60" }
+  ]
+}`}
+        />
+        <p className="mb-4">
+          The older <Code>imageSrc</Code> field (a single picture URL) still
+          works and is shown like an image in <Code>media</Code>.
         </p>
         <h1 className="mb-4 text-2xl font-semibold">Type definition</h1>
         <CodeBlock
@@ -115,7 +178,15 @@ interface Clue {
   value: number;
   wagerable?: boolean; // default false
   longForm?: boolean; // default false
-  imageSrc?: string;
+  imageSrc?: string; // a single picture; prefer media
+  media?: MediaBlock[]; // shown with the clue
+  answerMedia?: MediaBlock[]; // shown when the answer is revealed
+}
+
+interface MediaBlock {
+  type: "image" | "audio" | "video";
+  src: string; // https:// URL, or a YouTube link for "video"
+  alt?: string;
 }`}
         />
         <h1 className="mb-4 text-2xl font-semibold">
