@@ -129,6 +129,8 @@ export interface SavedSoloState {
 interface SerializedState {
   type: GameState;
   answers: [string, [string, string][]][];
+  /** Missing in saves from before multiple choice questions. */
+  choicePicks?: [string, [string, number][]][];
   boardControl: string | null;
   players: [string, Player][];
   leftPlayers: [string, Player][];
@@ -166,6 +168,10 @@ export function serializeState(state: State): SerializedState {
   return {
     type: state.type,
     answers: Array.from(state.answers.entries()).map(([k, v]) => [
+      k,
+      Array.from(v.entries()),
+    ]),
+    choicePicks: Array.from(state.choicePicks.entries()).map(([k, v]) => [
       k,
       Array.from(v.entries()),
     ]),
@@ -212,6 +218,9 @@ export function deserializeState(
   return {
     type: serialized.type,
     answers: new Map(serialized.answers.map(([k, v]) => [k, new Map(v)])),
+    choicePicks: new Map(
+      (serialized.choicePicks ?? []).map(([k, v]) => [k, new Map(v)]),
+    ),
     boardControl: serialized.boardControl,
     game,
     players: new Map(serialized.players),

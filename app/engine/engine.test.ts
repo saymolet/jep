@@ -3882,3 +3882,47 @@ describe("parseUtcMs", () => {
     expect(parseUtcMs("2024-01-01T05:00:05.000+05:00")).toBe(1704067205000);
   });
 });
+
+describe("checking a tied buzz on a question without text", () => {
+  it("accepts the check from the tie winner chosen by the answer seed", async () => {
+    const { getMockGame } = await import("~/models/mock.server");
+    const game = await getMockGame("media");
+    // (0, 1) is an audio question with an empty text.
+    const clue = game.boards[0].categories[1].clues[0];
+    expect(clue.clue).toBe("");
+
+    let state = stateFromGame(game);
+    const actions: TestAction[] = [
+      PLAYER1_JOIN_ACTION,
+      PLAYER2_JOIN_ACTION,
+      {
+        type: ActionType.StartRound,
+        payload: { round: 0, userId: PLAYER1.userId },
+      },
+      {
+        type: ActionType.ChooseClue,
+        payload: { userId: PLAYER1.userId, i: 0, j: 1 },
+      },
+      {
+        type: ActionType.Buzz,
+        payload: { userId: PLAYER1.userId, i: 0, j: 1, deltaMs: 100 },
+      },
+      {
+        type: ActionType.Buzz,
+        payload: { userId: PLAYER2.userId, i: 0, j: 1, deltaMs: 100 },
+      },
+    ];
+    for (const action of actions) {
+      state = gameEngine(state, { ts: 0, ...action });
+    }
+    const winner = getWinningBuzzer(state.buzzes, getTiebreakerSeed(clue));
+    expect(winner).toBeDefined();
+    state = gameEngine(state, {
+      type: ActionType.Check,
+      payload: { userId: winner!.userId, i: 0, j: 1, correct: true },
+      ts: 0,
+    });
+    expect(state.type).toBe(GameState.RevealAnswerToAll);
+    expect(state.players.get(winner!.userId)?.score).toBe(clue.value);
+  });
+});

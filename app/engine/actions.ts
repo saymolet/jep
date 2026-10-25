@@ -30,8 +30,16 @@ export const PlayerPayload = z.object({
 const RoundPayload = z.object({ round: z.number(), userId: z.string() });
 const BuzzPayload = CluePayload.extend({ deltaMs: z.number() });
 const AnswerPayload = CluePayload.extend({ answer: z.string() });
-const CheckPayload = CluePayload.extend({ correct: z.boolean() });
-const CorrectCheckPayload = CheckPayload.extend({ round: z.number() });
+const CheckPayload = CluePayload.extend({
+  correct: z.boolean(),
+  /** Index of the option picked on a multiple choice clue. Older events have
+   * none. The engine validates the index against the clue. */
+  choice: z.number().optional(),
+});
+const CorrectCheckPayload = CluePayload.extend({
+  correct: z.boolean(),
+  round: z.number(),
+});
 const TransferPlayerPayload = z.object({
   oldUserId: z.string(),
   newUserId: z.string(),
@@ -123,7 +131,13 @@ export function isAnswerAction(action: Action): action is {
 
 export function isCheckAction(action: Action): action is {
   type: ActionType.Check;
-  payload: { userId: string; i: number; j: number; correct: boolean };
+  payload: {
+    userId: string;
+    i: number;
+    j: number;
+    correct: boolean;
+    choice?: number;
+  };
   ts: number;
 } {
   return (
