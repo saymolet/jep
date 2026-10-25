@@ -1,7 +1,7 @@
 import type { Page } from "@playwright/test";
 
 import { expect, test } from "./fixtures";
-import { goto, playOneClue, uploadGame, waitForConnected } from "./helpers";
+import { goto, uploadGame, waitForConnected } from "./helpers";
 
 /** Pick a team in the join dialog and join. */
 async function joinTeam(page: Page, team: RegExp) {
@@ -15,6 +15,32 @@ async function joinTeam(page: Page, team: RegExp) {
   await expect(page.getByRole("button", { name: /join game/i })).toBeHidden({
     timeout: 10_000,
   });
+}
+
+/** Open the first $200 question, buzz in and mark it right. Unlike
+ * playOneClue, Enter is only pressed until the buzz is won, so a slow check
+ * can't fire the autofocused Reveal / Correct buttons by accident. */
+async function answerFirstClueRight(page: Page) {
+  const clue = page.getByRole("button", { name: "$ 200" }).first();
+  await expect(async () => {
+    await clue.click();
+    await expect(page.getByText(/buzz in/i)).toBeVisible({ timeout: 1_000 });
+  }).toPass({ timeout: 10_000 });
+
+  const reveal = page.getByRole("button", { name: /reveal answer/i });
+  const correct = page.getByRole("button", { name: /correct!/i });
+  const back = page.getByRole("button", { name: /back to board/i });
+  const anyStep = reveal.or(correct).or(back).first();
+  await expect(async () => {
+    if (!(await anyStep.isVisible())) await page.keyboard.press("Enter");
+    await expect(anyStep).toBeVisible({ timeout: 1_000 });
+  }).toPass({ timeout: 15_000 });
+
+  if (await reveal.isVisible()) await reveal.click();
+  await expect(correct.or(back).first()).toBeVisible({ timeout: 5_000 });
+  if (await correct.isVisible()) await correct.click();
+  await expect(back).toBeVisible({ timeout: 5_000 });
+  await back.click();
 }
 
 test.describe("team mode in a room", () => {
@@ -71,7 +97,7 @@ test.describe("team mode in a room", () => {
       if (await start.isVisible()) await start.click({ timeout: 2_000 });
       await expect(start).toBeHidden({ timeout: 3_000 });
     }).toPass({ timeout: 20_000 });
-    await playOneClue(host);
+    await answerFirstClueRight(host);
 
     // The only question was played, so the game is over: players go to the
     // summary, which names the winning team; the TV says it too.
@@ -121,7 +147,7 @@ test.describe("team mode in a room", () => {
       if (await start.isVisible()) await start.click({ timeout: 2_000 });
       await expect(start).toBeHidden({ timeout: 3_000 });
     }).toPass({ timeout: 20_000 });
-    await playOneClue(host);
+    await answerFirstClueRight(host);
 
     // Back on the board: teams are grouped, the leading team first.
     for (const page of [host, guest]) {
