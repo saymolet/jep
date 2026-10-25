@@ -3,6 +3,7 @@ import { z } from "zod";
 import { ActionType } from "~/engine";
 import { applyRoomEventsToState } from "~/engine/room-event";
 import { stateFromGame } from "~/engine/state";
+import { createT, getRequestLocale } from "~/i18n";
 import { getValidAuthSession } from "~/models/auth";
 import { getGame } from "~/models/game.server";
 import { createRoomEvent, getRoomEvents } from "~/models/room-event.server";
@@ -24,12 +25,13 @@ const formSchema = z.object({
 });
 
 export async function action({ request, params }: Route.ActionArgs) {
+  const t = createT(getRequestLocale(request));
   const formData = await request.formData();
   const { i, j, userId, result, choice } = parseFormData(formData, formSchema);
 
   const roomId = params.roomId ? parseInt(params.roomId) : undefined;
   if (!roomId) {
-    throw new Response("room name not found in URL params", { status: 404 });
+    throw new Response(t("room.error.noRoomInUrl"), { status: 404 });
   }
 
   if (roomId === -1) {
@@ -52,7 +54,7 @@ export async function action({ request, params }: Route.ActionArgs) {
   await requireSessionUserId(request, userId, authSession);
   const room = await getRoom(roomId, authSession?.accessToken);
   if (!room) {
-    throw new Response("room not found", { status: 404 });
+    throw new Response(t("room.error.roomNotFound"), { status: 404 });
   }
 
   let correct = result === "correct";
@@ -61,7 +63,7 @@ export async function action({ request, params }: Route.ActionArgs) {
     // the client. The engine re-checks it the same way on every client.
     const game = await getGame(room.game_id, authSession?.userId);
     if (!game) {
-      throw new Response("game not found", { status: 404 });
+      throw new Response(t("room.error.gameNotFound"), { status: 404 });
     }
     const state = applyRoomEventsToState(
       stateFromGame(game),
@@ -69,7 +71,7 @@ export async function action({ request, params }: Route.ActionArgs) {
     );
     const clue = game.boards.at(state.round)?.categories.at(j)?.clues.at(i);
     if (!clue || !hasChoices(clue) || !isChoiceIndex(clue, choice)) {
-      throw new Response("invalid choice for this question", { status: 400 });
+      throw new Response(t("room.error.invalidChoice"), { status: 400 });
     }
     correct = isCorrectChoice(clue, choice);
   }

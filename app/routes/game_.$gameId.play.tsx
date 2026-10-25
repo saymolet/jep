@@ -3,6 +3,7 @@ import { redirect } from "react-router";
 import { ActiveRoomsList } from "~/components/active-rooms";
 import { ButtonLink } from "~/components/button";
 import { Play } from "~/components/icons";
+import { createT, getRequestLocale, useTranslation } from "~/i18n";
 import { getValidAuthSession } from "~/models/auth";
 import { getGame } from "~/models/game.server";
 import { createRoom, getActiveRooms } from "~/models/room.server";
@@ -17,10 +18,11 @@ export const meta: Route.MetaFunction = ({ loaderData }) => {
  * game are already in progress, in which case the player chooses between
  * joining one of them and starting a new room (`?new` skips the choice). */
 export async function loader({ request, params }: Route.LoaderArgs) {
+  const t = createT(getRequestLocale(request));
   const gameId = params.gameId;
 
   if (!gameId) {
-    throw new Response("game ID not found", { status: 404 });
+    throw new Response(t("room.error.noGameInUrl"), { status: 404 });
   }
 
   const authSession = await getValidAuthSession(request);
@@ -42,6 +44,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 }
 
 export default function ChooseRoom({ loaderData }: Route.ComponentProps) {
+  const { t } = useTranslation();
   const { preview: game, activeRooms } = loaderData;
 
   return (
@@ -52,8 +55,7 @@ export default function ChooseRoom({ loaderData }: Route.ComponentProps) {
             {game.title}
           </h1>
           <p className="mt-2 text-sm text-slate-300 sm:text-base">
-            This game is already being played. Join a room in progress or start
-            your own.
+            {t("room.alreadyPlaying")}
           </p>
         </div>
 
@@ -62,7 +64,7 @@ export default function ChooseRoom({ loaderData }: Route.ComponentProps) {
         <div className="grid sm:flex">
           <ButtonLink to={`/game/${game.id}/play?new`} variant="primary">
             <Play className="h-4 w-4" />
-            Start a new room
+            {t("room.startNewRoom")}
           </ButtonLink>
         </div>
       </div>

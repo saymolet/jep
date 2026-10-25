@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { ActionType } from "~/engine";
+import { createT, getRequestLocale } from "~/i18n";
 import { getValidAuthSession } from "~/models/auth";
 import { createRoomEvent } from "~/models/room-event.server";
 import { getRoom } from "~/models/room.server";
@@ -15,12 +16,13 @@ const formSchema = z.object({
 });
 
 export async function action({ request, params }: Route.ActionArgs) {
+  const t = createT(getRequestLocale(request));
   const formData = await request.formData();
   const { userId, round } = parseFormData(formData, formSchema);
 
   const roomId = params.roomId ? parseInt(params.roomId) : undefined;
   if (!roomId) {
-    throw new Response("room name not found in URL params", { status: 404 });
+    throw new Response(t("room.error.noRoomInUrl"), { status: 404 });
   }
 
   if (roomId === -1) {
@@ -35,7 +37,7 @@ export async function action({ request, params }: Route.ActionArgs) {
   await requireSessionUserId(request, userId, authSession);
   const room = await getRoom(roomId, authSession?.accessToken);
   if (!room) {
-    throw new Response("room not found", { status: 404 });
+    throw new Response(t("room.error.roomNotFound"), { status: 404 });
   }
 
   await createRoomEvent(

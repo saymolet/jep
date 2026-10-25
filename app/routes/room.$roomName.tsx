@@ -5,6 +5,7 @@ import GameComponent from "~/components/game";
 import { ActionType, GameEngineContext, useGameEngine } from "~/engine";
 import { applyRoomEventsToState } from "~/engine/room-event";
 import { GameState, stateFromGame } from "~/engine/state";
+import { createT, getRequestLocale } from "~/i18n";
 import { getValidAuthSession } from "~/models/auth";
 import { getGame } from "~/models/game.server";
 import { createRoomEvent, getRoomEvents } from "~/models/room-event.server";
@@ -25,9 +26,10 @@ export const meta: Route.MetaFunction = ({ loaderData }) => {
 };
 
 export async function loader({ request, params }: Route.LoaderArgs) {
+  const t = createT(getRequestLocale(request));
   const roomName = params.roomName;
   if (!roomName) {
-    throw new Response("room name not found in URL params", { status: 404 });
+    throw new Response(t("room.error.noRoomInUrl"), { status: 404 });
   }
 
   const roomParts = roomName.split("-");
@@ -36,12 +38,12 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   const authSession = await getValidAuthSession(request);
   const room = await getRoom(roomId, authSession?.accessToken);
   if (!room || room.name !== roomWord) {
-    throw new Response("room not found", { status: 404 });
+    throw new Response(t("room.error.roomNotFound"), { status: 404 });
   }
 
   const game = await getGame(room.game_id, authSession?.userId);
   if (!game) {
-    throw new Response("game not found", { status: 404 });
+    throw new Response(t("room.error.gameNotFound"), { status: 404 });
   }
 
   const user = authSession

@@ -2,6 +2,7 @@ import * as React from "react";
 
 import type { Action, Player } from "~/engine";
 import { isSecretClue, stateFromGame } from "~/engine/state";
+import { useTranslation } from "~/i18n";
 import type { Game } from "~/models/convert.server";
 import { formatDollars } from "~/utils";
 
@@ -21,6 +22,7 @@ export default function ReplayPlayer({
   actions,
   allPlayers,
 }: ReplayPlayerProps) {
+  const { t } = useTranslation();
   const frames = React.useMemo(
     () => buildReplayFrames(game, actions),
     [game, actions],
@@ -50,7 +52,7 @@ export default function ReplayPlayer({
 
   // Build clue label
   const clueLabel = React.useMemo(() => {
-    if (!currentFrame) return "Ready";
+    if (!currentFrame) return t("summary.ready");
     if (
       currentFrameIndex === frames.length - 1 &&
       currentFrame.phase === "resolved"
@@ -58,7 +60,7 @@ export default function ReplayPlayer({
       // Check if this is the very last clue
       const nextFrameExists = currentFrameIndex + 1 < frames.length;
       if (!nextFrameExists) {
-        return "Game Over";
+        return t("summary.gameOver");
       }
     }
     const [ci, cj] = currentFrame.clue;
@@ -67,13 +69,13 @@ export default function ReplayPlayer({
     if (!category || !clue) return "";
     const value = clue.wagerable
       ? clue.longForm
-        ? "Final"
-        : "DD"
+        ? t("summary.final")
+        : t("summary.doubleDownShort")
       : formatDollars(
           isSecretClue(clue) ? (clue.secretValue ?? clue.value) : clue.value,
         );
-    return `${category.name} for ${value}`;
-  }, [currentFrame, currentFrameIndex, frames.length, game.boards]);
+    return t("summary.clueLabel", { category: category.name, value });
+  }, [currentFrame, currentFrameIndex, frames.length, game.boards, t]);
 
   // Compute frame indices where each new round starts (for scrubber tick marks)
   const roundBoundaries = React.useMemo(() => {

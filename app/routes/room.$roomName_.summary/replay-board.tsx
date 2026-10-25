@@ -14,6 +14,7 @@ import { PlayerIcon } from "~/components/player";
 import Popover from "~/components/popover";
 import { clueIsPlayable } from "~/engine";
 import type { Player } from "~/engine/state";
+import { useTranslation } from "~/i18n";
 import type { Board, Clue } from "~/models/convert.server";
 import { generateGrid, getPlayerColor } from "~/utils";
 
@@ -92,6 +93,7 @@ function ReplayClue({
   allPlayers,
   resolvedState,
 }: ReplayClueProps) {
+  const { t } = useTranslation();
   const wide = useIsWideBoard();
   const playable = clueIsPlayable(clue);
 
@@ -150,8 +152,8 @@ function ReplayClue({
 
   const clueValue = clue.wagerable
     ? clue.longForm
-      ? "Final"
-      : "DD"
+      ? t("summary.final")
+      : t("summary.doubleDownShort")
     : clue.value;
 
   const cellContent = (

@@ -6,6 +6,7 @@ import Popover from "~/components/popover";
 import { UndoArmingContext, UndoCheckConfirm } from "~/components/undo-check";
 import type { Player } from "~/engine";
 import { GameState, useEngineContext } from "~/engine";
+import { useTranslation } from "~/i18n";
 
 import { RoomProps } from "../game";
 import { EditPlayerForm } from "./edit-player";
@@ -248,6 +249,7 @@ export function PlayerScores({ roomId, userId }: RoomProps) {
     numAnswered,
     getCheckCorrection,
   } = useEngineContext();
+  const { t } = useTranslation();
 
   const yourPlayer = players.get(userId);
 
@@ -301,7 +303,7 @@ export function PlayerScores({ roomId, userId }: RoomProps) {
     <UndoCheckConfirm
       roomId={roomId}
       userId={userId}
-      prompt="Undo your check on the last clue?"
+      prompt={t("room.undoLastCheck")}
       commitType="secondary"
     />
   ) : undefined;

@@ -2,6 +2,7 @@ import clsx from "clsx";
 import * as React from "react";
 
 import { ConnectionState } from "~/engine/use-game-engine";
+import { type TFunction, useTranslation } from "~/i18n";
 import useDebounce from "~/utils/use-debounce";
 
 import Popover from "./popover";
@@ -11,32 +12,32 @@ const DURATION_UPDATE_INTERVAL_MS = 500;
 /** How long the state must be DISCONNECTED before showing the prominent banner. */
 const BANNER_DELAY_MS = 5000;
 
-function getHumanReadableDuration(diffMs: number): string {
+export function getHumanReadableDuration(diffMs: number, t: TFunction): string {
   if (diffMs < 1000) {
-    return "just now";
+    return t("room.time.justNow");
   }
 
   const seconds = Math.floor(diffMs / 1000);
   if (seconds < 5) {
-    return "a few seconds ago";
+    return t("room.time.fewSeconds");
   } else if (seconds < 10) {
-    return "less than 10 seconds ago";
+    return t("room.time.under10Seconds");
   } else if (seconds < 20) {
-    return "less than 20 seconds ago";
+    return t("room.time.under20Seconds");
   } else if (seconds < 40) {
-    return "half a minute ago";
+    return t("room.time.halfMinute");
   } else if (seconds < 60) {
-    return "less than a minute ago";
+    return t("room.time.underMinute");
   } else if (seconds < 90) {
-    return "about a minute ago";
+    return t("room.time.aboutMinute");
   }
 
   const minutes = Math.floor(diffMs / (60 * 1000));
   if (diffMs < 60 * 60 * 1000) {
-    return `${minutes} minute${minutes === 1 ? "" : "s"} ago`;
+    return t("room.time.minutesAgo", { count: minutes });
   } else {
     const hours = Math.floor(diffMs / (60 * 60 * 1000));
-    return `${hours} hour${hours === 1 ? "" : "s"} ago`;
+    return t("room.time.hoursAgo", { count: hours });
   }
 }
 
@@ -52,10 +53,11 @@ function DurationLabel({
   durationMsg: string;
   decorationColor: string;
 }) {
+  const { intlLocale } = useTranslation();
   return (
     <div>
       {label}{" "}
-      <Popover content={new Date(timestamp).toLocaleTimeString()}>
+      <Popover content={new Date(timestamp).toLocaleTimeString(intlLocale)}>
         <button className={`underline ${decorationColor} decoration-dashed`}>
           {durationMsg}
         </button>
@@ -73,6 +75,7 @@ export default function Connection({
   lastMessageAt?: number;
   reconnect?: () => void;
 }) {
+  const { t, intlLocale } = useTranslation();
   const debouncedState = useDebounce(state, 500);
 
   const isConnected = debouncedState === ConnectionState.CONNECTED;
@@ -100,19 +103,19 @@ export default function Connection({
 
   const [durationMsg, setDurationMsg] = React.useState<string | undefined>(
     lastMessageAt
-      ? getHumanReadableDuration(Date.now() - lastMessageAt)
+      ? getHumanReadableDuration(Date.now() - lastMessageAt, t)
       : undefined,
   );
   const [disconnectedMsg, setDisconnectedMsg] = React.useState<
     string | undefined
   >(
     disconnectedSince
-      ? getHumanReadableDuration(Date.now() - disconnectedSince)
+      ? getHumanReadableDuration(Date.now() - disconnectedSince, t)
       : undefined,
   );
   const [connectedMsg, setConnectedMsg] = React.useState<string | undefined>(
     connectedSince
-      ? getHumanReadableDuration(Date.now() - connectedSince)
+      ? getHumanReadableDuration(Date.now() - connectedSince, t)
       : undefined,
   );
 
@@ -130,24 +133,24 @@ export default function Connection({
     function update() {
       setDurationMsg(
         lastMessageAt
-          ? getHumanReadableDuration(Date.now() - lastMessageAt)
+          ? getHumanReadableDuration(Date.now() - lastMessageAt, t)
           : undefined,
       );
       setDisconnectedMsg(
         disconnectedSince
-          ? getHumanReadableDuration(Date.now() - disconnectedSince)
+          ? getHumanReadableDuration(Date.now() - disconnectedSince, t)
           : undefined,
       );
       setConnectedMsg(
         connectedSince
-          ? getHumanReadableDuration(Date.now() - connectedSince)
+          ? getHumanReadableDuration(Date.now() - connectedSince, t)
           : undefined,
       );
     }
     update();
     const id = setInterval(update, DURATION_UPDATE_INTERVAL_MS);
     return () => clearInterval(id);
-  }, [lastMessageAt, disconnectedSince, connectedSince]);
+  }, [lastMessageAt, disconnectedSince, connectedSince, t]);
 
   const isRetrying = debouncedState === ConnectionState.RECONNECTING;
 
@@ -158,13 +161,17 @@ export default function Connection({
         <div className="h-2 w-2 shrink-0 rounded-full bg-red-500" />
         <div className="flex grow flex-col gap-1">
           <span className="font-medium text-red-100">
-            {reconnect ? "Connection lost" : "Offline"}
+            {reconnect
+              ? t("room.connection.lost")
+              : t("room.connection.offline")}
           </span>
           {disconnectedSince && disconnectedMsg && (
             <span className="text-red-300">
-              Disconnected{" "}
+              {t("room.connection.disconnected")}{" "}
               <Popover
-                content={new Date(disconnectedSince).toLocaleTimeString()}
+                content={new Date(disconnectedSince).toLocaleTimeString(
+                  intlLocale,
+                )}
               >
                 <button className="underline decoration-red-500 decoration-dashed">
                   {disconnectedMsg}
@@ -174,8 +181,10 @@ export default function Connection({
           )}
           {durationMsg && lastMessageAt && (
             <span className="text-red-300">
-              Last event{" "}
-              <Popover content={new Date(lastMessageAt).toLocaleTimeString()}>
+              {t("room.connection.lastEvent")}{" "}
+              <Popover
+                content={new Date(lastMessageAt).toLocaleTimeString(intlLocale)}
+              >
                 <button className="underline decoration-red-500 decoration-dashed">
                   {durationMsg}
                 </button>
@@ -188,7 +197,7 @@ export default function Connection({
             onClick={reconnect}
             className="shrink-0 rounded bg-red-700 px-3 py-1 text-sm font-medium text-red-100 transition-colors hover:bg-red-600"
           >
-            Reconnect
+            {t("room.connection.reconnect")}
           </button>
         ) : null}
       </div>
@@ -200,19 +209,21 @@ export default function Connection({
     return (
       <div className="flex items-center gap-2 text-sm text-yellow-300">
         <div className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-yellow-500" />
-        <span>Reconnecting...</span>
+        <span>{t("room.connection.reconnecting")}</span>
       </div>
     );
   }
 
   // Default compact indicator for healthy / initial connection states.
   const isDisconnected = debouncedState === ConnectionState.DISCONNECTED;
-  const disconnectedLabel = reconnect ? "Disconnected" : "Offline";
+  const disconnectedLabel = reconnect
+    ? t("room.connection.disconnected")
+    : t("room.connection.offline");
 
   const message = isConnected
-    ? "Connected"
+    ? t("room.connection.connected")
     : debouncedState === ConnectionState.CONNECTING
-      ? "Connecting"
+      ? t("room.connection.connecting")
       : disconnectedLabel;
 
   // Pick the best timestamp to display:
@@ -223,7 +234,7 @@ export default function Connection({
   if (isConnected && durationMsg && lastMessageAt) {
     timeLabel = (
       <DurationLabel
-        label="Connected · last event"
+        label={t("room.connection.connectedLastEvent")}
         timestamp={lastMessageAt}
         durationMsg={durationMsg}
         decorationColor="decoration-slate-500"
@@ -232,7 +243,7 @@ export default function Connection({
   } else if (isConnected && connectedSince && connectedMsg) {
     timeLabel = (
       <DurationLabel
-        label="Connected"
+        label={t("room.connection.connected")}
         timestamp={connectedSince}
         durationMsg={connectedMsg}
         decorationColor="decoration-slate-500"
@@ -264,7 +275,7 @@ export default function Connection({
           onClick={reconnect}
           className="shrink-0 rounded bg-slate-700 px-3 py-1 text-sm font-medium text-slate-200 transition-colors hover:bg-slate-600"
         >
-          Reconnect
+          {t("room.connection.reconnect")}
         </button>
       )}
     </div>

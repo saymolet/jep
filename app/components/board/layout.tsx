@@ -1,6 +1,8 @@
 import clsx from "clsx";
 import * as React from "react";
 
+import { useTranslation } from "~/i18n";
+
 /** Boards with up to this many categories keep the classic layout. */
 export const CLASSIC_MAX_COLUMNS = 5;
 /** Narrowest column of a wide board: still a comfortable tap target. Boards
@@ -156,6 +158,7 @@ export function EmptyBoard({
   columns: number;
   rows: number;
 }) {
+  const { t } = useTranslation();
   const wide = columns > CLASSIC_MAX_COLUMNS;
   return (
     <BoardLayout columns={columns}>
@@ -178,7 +181,10 @@ export function EmptyBoard({
               <td key={column} className="h-full border-2 border-blue-925">
                 <button
                   type="button"
-                  aria-label={`Hidden clue, row ${row + 1}, column ${column + 1}`}
+                  aria-label={t("room.hiddenClue", {
+                    row: row + 1,
+                    column: column + 1,
+                  })}
                   className={getClueButtonClassName({ playable: true, wide })}
                 >
                   <span className="block h-8 sm:h-12 lg:h-14" />

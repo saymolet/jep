@@ -18,6 +18,7 @@ import {
 import WagerHintsControl from "~/components/wager-hints-control";
 import type { Player } from "~/engine";
 import { Action, GameState, useEngineContext } from "~/engine";
+import { useTranslation } from "~/i18n";
 import { Board } from "~/models/convert.server";
 import type { PlayerColor } from "~/models/player-color";
 import { getPlayerColor } from "~/utils";
@@ -41,14 +42,13 @@ function JoinGameDialog({
   players: Map<string, Player>;
   type: GameState;
 } & RoomProps) {
+  const { t } = useTranslation();
   const [avatar, setAvatar] = useJoinAvatar();
   return (
     <Dialog
       isOpen={type !== GameState.GameOver}
-      title={`Join game "${gameTitle}"?`}
-      description={`${players.size} player${
-        players.size === 1 ? "" : "s"
-      } so far`}
+      title={t("room.joinGameTitle", { title: gameTitle })}
+      description={t("room.playersSoFar", { count: players.size })}
     >
       {players.size > 0 ? (
         <ul className="mb-4 grid grid-cols-3 gap-3 font-handwriting text-lg font-bold sm:grid-cols-4">
@@ -70,7 +70,7 @@ function JoinGameDialog({
             player={{ name, userId, color: playerColor, avatar }}
             size="tile"
           />
-          <p className="text-slate-300">Pick an avatar (optional)</p>
+          <p className="text-slate-300">{t("room.pickAvatarOptional")}</p>
         </div>
         <AvatarPicker value={avatar} onChange={setAvatar} />
       </div>
@@ -83,7 +83,7 @@ function JoinGameDialog({
           )}
           {avatar ? <input type="hidden" name="avatar" value={avatar} /> : null}
           <Button variant="primary" type="submit">
-            Join game
+            {t("room.joinGame")}
           </Button>
         </Form>
       </Dialog.Footer>
@@ -114,6 +114,7 @@ function PreviewRoundDialog({
   type: GameState;
   url: string;
 } & RoomProps) {
+  const { t, rich } = useTranslation();
   const isOpen = type === GameState.PreviewRound;
 
   // The dialog is modal, so a correction still pending from the last clue
@@ -125,7 +126,7 @@ function PreviewRoundDialog({
   const boardController = boardControl ? players.get(boardControl) : undefined;
   const boardControlName = boardController
     ? boardController.name
-    : "Unknown player";
+    : t("room.unknownPlayer");
 
   if (!board) return null;
 
@@ -144,7 +145,7 @@ function PreviewRoundDialog({
       title={
         <div className="flex justify-between">
           <span>
-            Start round {round + 1} of {numRounds}
+            {t("room.startRoundOf", { round: round + 1, total: numRounds })}
           </span>
           <SoundControl showLabel={false} showSlider={false} />
         </div>
@@ -152,13 +153,16 @@ function PreviewRoundDialog({
       description={
         isSingleLongFormClue ? null : (
           <>
-            <span
-              className="border-b-4 font-handwriting text-xl font-bold"
-              style={{ borderColor }}
-            >
-              {boardControlName}
-            </span>{" "}
-            starts with control of the board.
+            {rich("room.startsWithControl", {
+              name: (
+                <span
+                  className="border-b-4 font-handwriting text-xl font-bold"
+                  style={{ borderColor }}
+                >
+                  {boardControlName}
+                </span>
+              ),
+            })}
           </>
         )
       }
@@ -175,7 +179,7 @@ function PreviewRoundDialog({
           <HowToPlay />
           <div className="mb-2">
             <Link variant="inverse" to="/howto">
-              Practice buzzing &rarr;
+              {t("room.practiceBuzzing")} &rarr;
             </Link>
           </div>
         </div>
@@ -186,27 +190,25 @@ function PreviewRoundDialog({
             <UndoCheckConfirm
               roomId={roomId}
               userId={userId}
-              prompt="Undo your check on the last clue?"
+              prompt={t("room.undoLastCheck")}
               onCancel={() => setArmed(false)}
             />
           ) : (
             <div className="flex items-center gap-3">
-              <p className="text-sm text-slate-300">
-                Need to fix the last clue?
-              </p>
+              <p className="text-sm text-slate-300">{t("room.fixLastClue")}</p>
               <UndoCheckButton onClick={() => setArmed(true)} />
             </div>
           )}
         </div>
       ) : null}
       <Dialog.Footer>
-        <CopyLinkButton url={url} text="Copy link to room" />
+        <CopyLinkButton url={url} text={t("header.copyRoomLink")} />
         {boardControl === userId || isSingleLongFormClue ? (
           <Form method="POST" action={`/room/${roomId}/start`}>
             <input type="hidden" name="round" value={round} />
             <input type="hidden" name="userId" value={userId} />
             <Button variant="primary" type="submit" onClick={onDismiss}>
-              Start round
+              {t("room.startRound")}
             </Button>
           </Form>
         ) : null}
