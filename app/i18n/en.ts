@@ -10,6 +10,7 @@ import {
   howto,
   play,
   profile,
+  random,
   report,
   room,
   settings,
@@ -42,4 +43,5 @@ export const en = {
   ...errors,
   ...siq,
   ...settings,
+  ...random,
 } as const satisfies Messages;

@@ -10,6 +10,7 @@ export { home } from "./home";
 export { howto } from "./howto";
 export { play } from "./play";
 export { profile } from "./profile";
+export { random } from "./random";
 export { report } from "./report";
 export { room } from "./room";
 export { settings } from "./settings";
