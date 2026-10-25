@@ -1,5 +1,6 @@
 import { LoadingSpinner, MagnifyingGlass } from "~/components/icons";
 import Input from "~/components/input";
+import { useTranslation } from "~/i18n";
 import { useDebounceEnd } from "~/utils/use-debounce";
 
 export default function Search({
@@ -13,12 +14,13 @@ export default function Search({
   onChange: (value: string) => void;
   loading: boolean;
 }) {
+  const { t } = useTranslation();
   const debouncedLoading = useDebounceEnd(loading, 100);
 
   return (
     <div className="mb-4">
       <label htmlFor={name} className="sr-only">
-        Search
+        {t("common.search")}
       </label>
       <div className="relative">
         <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
@@ -29,7 +31,7 @@ export default function Search({
           id={name}
           name={name}
           variant="search"
-          placeholder="Search games..."
+          placeholder={t("common.searchGames")}
           onChange={(e) => onChange(e.target.value)}
           defaultValue={defaultValue}
         />

@@ -1,8 +1,10 @@
 import * as ToastPrimitive from "@radix-ui/react-toast";
 import { produce } from "immer";
 import * as React from "react";
-import { useFetcher } from "react-router";
+import { useFetcher, useRevalidator } from "react-router";
 
+import { type Locale, useChangeLocale, useTranslation } from "~/i18n";
+import { serializeLangCookie } from "~/i18n/resolve";
 import type { Avatar } from "~/models/avatar";
 import type { PlayerColor } from "~/models/player-color";
 import { type UserSettings, WagerHintsMode } from "~/models/user-settings";
@@ -34,6 +36,7 @@ export function UserSettingsProvider({
   const [settings, setSettings] = React.useState<UserSettings>(
     initialSettings ?? DEFAULT_SETTINGS,
   );
+  const { t } = useTranslation();
   const fetcher = useFetcher();
   const fetcherRef = React.useRef(fetcher);
   fetcherRef.current = fetcher;
@@ -102,7 +105,9 @@ export function UserSettingsProvider({
         onOpenChange={setToastOpen}
       >
         <ToastPrimitive.Description asChild>
-          <p className="text-sm text-slate-700">Preferences saved.</p>
+          <p className="text-sm text-slate-700">
+            {t("common.preferencesSaved")}
+          </p>
         </ToastPrimitive.Description>
       </ToastPrimitive.Root>
     </UserSettingsContext.Provider>
@@ -200,4 +205,28 @@ export function useSoundSettings() {
   );
 
   return { volume, mute, setVolume, setMute };
+}
+
+/** useSetLanguage returns a function that switches the UI language: shown at
+ * once, remembered in the `lang` cookie (read by the server on the next
+ * request) and, when logged in, saved to the account settings. Loaders are
+ * revalidated so text made on the server follows the new language too. */
+export function useSetLanguage() {
+  const { saveSettings } = useUserSettings();
+  const changeLocale = useChangeLocale();
+  const revalidator = useRevalidator();
+  const revalidatorRef = React.useRef(revalidator);
+  revalidatorRef.current = revalidator;
+
+  return React.useCallback(
+    (locale: Locale) => {
+      document.cookie = serializeLangCookie(locale);
+      changeLocale?.(locale);
+      saveSettings((draft) => {
+        draft.language = locale;
+      });
+      revalidatorRef.current.revalidate();
+    },
+    [changeLocale, saveSettings],
+  );
 }

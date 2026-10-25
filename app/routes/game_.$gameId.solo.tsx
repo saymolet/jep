@@ -10,6 +10,7 @@ import {
   GameState,
   useSoloGameEngine,
 } from "~/engine";
+import { createT, DEFAULT_LOCALE, getRequestLocale, isLocale } from "~/i18n";
 import { getValidAuthSession } from "~/models/auth";
 import { getGame } from "~/models/game.server";
 import { getUserByEmail } from "~/models/user";
@@ -35,16 +36,17 @@ export const meta: Route.MetaFunction = ({ loaderData }) => {
 };
 
 export async function loader({ request, params }: Route.LoaderArgs) {
+  const t = createT(getRequestLocale(request));
   const gameId = params.gameId;
 
   if (!gameId) {
-    throw new Response("game ID not found", { status: 404 });
+    throw new Response(t("room.error.noGameInUrl"), { status: 404 });
   }
 
   const authSession = await getValidAuthSession(request);
   const game = await getGame(gameId, authSession?.userId);
   if (!game) {
-    throw new Response("game not found", { status: 404 });
+    throw new Response(t("room.error.gameNotFound"), { status: 404 });
   }
 
   const user = authSession
@@ -81,9 +83,11 @@ export async function clientLoader({
   params,
   serverLoader,
 }: Route.ClientLoaderArgs) {
+  const lang = document.documentElement.lang;
+  const t = createT(isLocale(lang) ? lang : DEFAULT_LOCALE);
   const gameId = params.gameId;
   if (!gameId) {
-    throw new Response("game ID not found", { status: 404 });
+    throw new Response(t("room.error.noGameInUrl"), { status: 404 });
   }
 
   try {
@@ -105,10 +109,7 @@ export async function clientLoader({
     // Offline — try IndexedDB fallback
     const cached = await getCachedGame(gameId);
     if (!cached) {
-      throw new Response(
-        "Game not available offline. Play it once while online to cache it.",
-        { status: 503 },
-      );
+      throw new Response(t("room.error.notOffline"), { status: 503 });
     }
 
     const OFFLINE_USER_KEY = "jep-offline-userId";

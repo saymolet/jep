@@ -1,5 +1,7 @@
 import * as SliderPrimitive from "@radix-ui/react-slider";
 
+import { useTranslation } from "~/i18n";
+
 export function VolumeSlider({
   value,
   onValueChange,
@@ -7,6 +9,7 @@ export function VolumeSlider({
   value: number;
   onValueChange: (value: number) => void;
 }) {
+  const { t } = useTranslation();
   return (
     <SliderPrimitive.Root
       className="relative flex h-5 w-full touch-none items-center select-none"
@@ -14,7 +17,7 @@ export function VolumeSlider({
       onValueChange={([newVal]) => onValueChange(newVal)}
       max={1}
       step={0.01}
-      aria-label="Volume"
+      aria-label={t("common.volume")}
     >
       <SliderPrimitive.Track className="relative h-1 grow rounded-full bg-slate-300">
         <SliderPrimitive.Range

@@ -1,8 +1,10 @@
 import { useMatches } from "react-router";
 
 import Link from "~/components/link";
+import { useTranslation } from "~/i18n";
 
 export default function Footer() {
+  const { t } = useTranslation();
   const matches = useMatches();
   const isInGame = matches.some(
     (match) =>
@@ -23,7 +25,7 @@ export default function Footer() {
           target="_blank"
           rel="noopener noreferrer"
         >
-          About
+          {t("header.about")}
         </Link>
         <span>&middot;</span>
         <Link
@@ -32,7 +34,7 @@ export default function Footer() {
           target="_blank"
           rel="noopener noreferrer"
         >
-          How to Play
+          {t("header.howToPlay")}
         </Link>
         <span>&middot;</span>
         <Link
@@ -41,7 +43,7 @@ export default function Footer() {
           target="_blank"
           rel="noopener noreferrer"
         >
-          Community Guidelines
+          {t("header.communityGuidelines")}
         </Link>
       </div>
     </footer>

@@ -4,6 +4,7 @@ import clsx from "clsx";
 
 import * as DropdownMenu from "~/components/dropdown-menu";
 import { Pause, Play } from "~/components/icons";
+import { useTranslation } from "~/i18n";
 
 import type { Speed } from "./use-replay";
 
@@ -41,6 +42,7 @@ export function ReplayControls({
   onSeek,
   onSpeedChange,
 }: ReplayControlsProps) {
+  const { t } = useTranslation();
   const disabled = totalFrames === 0;
 
   return (
@@ -50,7 +52,9 @@ export function ReplayControls({
         pressed={playing}
         onPressedChange={(pressed) => (pressed ? onPlay() : onPause())}
         disabled={disabled}
-        aria-label={playing ? "Pause replay" : "Play replay"}
+        aria-label={
+          playing ? t("summary.pauseReplay") : t("summary.playReplay")
+        }
         className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
       >
         {playing ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
@@ -78,7 +82,7 @@ export function ReplayControls({
           step={1}
           disabled={disabled}
           onValueChange={([val]) => onSeek(val)}
-          aria-label="Replay timeline"
+          aria-label={t("summary.replayTimeline")}
         >
           <Slider.Track className="relative h-1 w-full grow rounded-full bg-white/20">
             <Slider.Range className="absolute h-full rounded-full bg-blue-500" />
@@ -96,7 +100,7 @@ export function ReplayControls({
                       e.stopPropagation();
                       onSeek(boundary);
                     }}
-                    aria-label={`Jump to round boundary`}
+                    aria-label={t("summary.jumpToRound")}
                     tabIndex={-1}
                   />
                 );
@@ -111,7 +115,7 @@ export function ReplayControls({
         <DropdownMenu.Trigger asChild>
           <button
             className="shrink-0 rounded px-2 py-1 font-mono text-sm text-slate-300 transition-colors hover:bg-white/10 hover:text-white"
-            aria-label={`Playback speed: ${speed}x`}
+            aria-label={t("summary.playbackSpeed", { speed })}
           >
             {speed}x
           </button>
@@ -119,7 +123,9 @@ export function ReplayControls({
         <DropdownMenu.Portal>
           <DropdownMenu.Content align="end">
             <DropdownMenu.Label>
-              <span className="text-xs text-slate-400">Speed</span>
+              <span className="text-xs text-slate-400">
+                {t("summary.speed")}
+              </span>
             </DropdownMenu.Label>
             {SPEEDS.map((s) => (
               <DropdownMenu.Item key={s} onSelect={() => onSpeedChange(s)}>

@@ -3,9 +3,11 @@ import { Link as RouterLink, useMatches } from "react-router";
 import { ButtonLink } from "~/components/button";
 import CopyLinkButton from "~/components/copy-link-button";
 import * as DropdownMenu from "~/components/dropdown-menu";
+import LanguageSwitcher from "~/components/language-switcher";
 import Link from "~/components/link";
 import SoundControl from "~/components/sound";
 import WagerHintsControl from "~/components/wager-hints-control";
+import { useTranslation } from "~/i18n";
 import type { Game } from "~/models/game.server";
 
 function isGameLoaderData(data: unknown): data is { game: Game } {
@@ -21,18 +23,20 @@ import {
 } from "./icons";
 
 function LoginButton({ pathname }: { pathname: string }) {
+  const { t } = useTranslation();
   const to =
     pathname === "/"
       ? "/login"
       : `/login?redirectTo=${encodeURIComponent(pathname)}`;
   return (
     <ButtonLink to={to} variant="inverse">
-      Log in
+      {t("header.logIn")}
     </ButtonLink>
   );
 }
 
 function AccountButton({ user }: { user: { id: string; email: string } }) {
+  const { t } = useTranslation();
   const { playerColor } = useGameDefaults();
   const backgroundColor =
     playerColor != null ? playerColor : stringToHslColor(user.id);
@@ -41,7 +45,7 @@ function AccountButton({ user }: { user: { id: string; email: string } }) {
       to="/profile"
       className="flex items-center justify-center rounded-full p-1 transition-colors hover:bg-blue-700"
       style={{ backgroundColor }}
-      aria-label="Profile"
+      aria-label={t("header.profile")}
     >
       <div className="flex h-6 w-6 items-center justify-center text-blue-1000 uppercase">
         {user.email.slice(0, 1)}
@@ -51,28 +55,30 @@ function AccountButton({ user }: { user: { id: string; email: string } }) {
 }
 
 function SiteLinks({ className }: { className?: string }) {
+  const { t } = useTranslation();
   return (
-    <div className={className} aria-label="Learn more">
+    <div className={className} aria-label={t("header.learnMore")}>
       <Link variant="inverse" to="/howto">
-        How to Play
+        {t("header.howToPlay")}
       </Link>
       <Link variant="inverse" to="/upload-help">
-        Upload a Game
+        {t("header.uploadGame")}
       </Link>
       <Link variant="inverse" to="/about">
-        About
+        {t("header.about")}
       </Link>
     </div>
   );
 }
 
 function GameSettings({ game, url }: { game: Game; url: string }) {
+  const { t } = useTranslation();
   return (
     <DropdownMenu.Root>
       <DropdownMenu.Trigger asChild>
         <button
           className={`flex h-6 w-6 items-center justify-center text-white hover:text-slate-300 data-[state=open]:text-slate-300`}
-          aria-label="Customise options"
+          aria-label={t("header.gameMenu")}
         >
           <InformationCircle className="h-6 w-6" />
         </button>
@@ -95,7 +101,7 @@ function GameSettings({ game, url }: { game: Game; url: string }) {
           )}
           <DropdownMenu.Label>
             <span className="text-sm text-slate-400">
-              {game.boards.length} round{game.boards.length === 1 ? "" : "s"}
+              {t("header.roundCount", { count: game.boards.length })}
             </span>
           </DropdownMenu.Label>
 
@@ -108,7 +114,7 @@ function GameSettings({ game, url }: { game: Game; url: string }) {
               rel="noopener noreferrer"
             >
               <ArrowTopRightOnSquare className="absolute left-0 m-1 h-5 w-5" />
-              <p className="pl-7">Game details</p>
+              <p className="pl-7">{t("header.gameDetails")}</p>
             </RouterLink>
           </DropdownMenu.Item>
           <DropdownMenu.Item
@@ -129,16 +135,16 @@ function GameSettings({ game, url }: { game: Game; url: string }) {
             onSelect={(e: Event) => e.preventDefault()}
           >
             <div className="w-full">
-              <CopyLinkButton url={url} text="Copy link to room" />
+              <CopyLinkButton url={url} text={t("header.copyRoomLink")} />
             </div>
           </DropdownMenu.Item>
           <DropdownMenu.Item asChild>
             <RouterLink to={`/report?gameId=${game.id}`}>
               <ExclamationTriangle
-                title="Report"
+                title={t("header.report")}
                 className="absolute left-0 m-1 h-5 w-5"
               />
-              <p className="pl-7">Report game</p>
+              <p className="pl-7">{t("header.reportGame")}</p>
             </RouterLink>
           </DropdownMenu.Item>
         </DropdownMenu.Content>
@@ -154,6 +160,7 @@ export default function Header({
   user?: { id: string; email: string };
   BASE_URL?: string;
 }) {
+  const { t } = useTranslation();
   const matches = useMatches();
   const gameRoute = matches.find(
     (match) =>
@@ -167,7 +174,10 @@ export default function Header({
   const pathname = matches[matches.length - 1].pathname;
 
   return (
-    <nav className="bg-blue-bright p-4" aria-label="Primary navigation">
+    <nav
+      className="bg-blue-bright p-4"
+      aria-label={t("header.primaryNavigation")}
+    >
       <div className="flex items-center justify-between">
         <RouterLink to="/">
           <h1 className="font-korinna text-2xl font-bold text-white text-shadow-md">
@@ -178,6 +188,7 @@ export default function Header({
           {!game && (
             <SiteLinks className="mr-4 hidden items-center gap-6 sm:flex" />
           )}
+          <LanguageSwitcher />
           {user ? (
             <AccountButton user={user} />
           ) : (

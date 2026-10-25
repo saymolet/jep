@@ -8,6 +8,10 @@ import Input from "~/components/input";
 import Link from "~/components/link";
 import Main from "~/components/main";
 import ShowPasswordButton from "~/components/show-password-button";
+import { createT, type TFunction } from "~/i18n";
+import { useTranslation } from "~/i18n";
+import { metaT } from "~/i18n/meta";
+import { getRequestLocale } from "~/i18n/resolve";
 import {
   createAuthSession,
   exchangeOAuthCode,
@@ -18,14 +22,18 @@ import { assertIsPost, parseFormData } from "~/utils/http.server";
 
 import type { Route } from "./+types/reset-password";
 
-const formSchema = z.object({
-  newPassword: z.string().min(6, "Password must be at least 6 characters"),
-  confirmPassword: z.string(),
-  accessToken: z.string().optional(),
-  refreshToken: z.string().optional(),
-});
+function formSchema(t: TFunction) {
+  return z.object({
+    newPassword: z.string().min(6, t("auth.passwordTooShort")),
+    confirmPassword: z.string(),
+    accessToken: z.string().optional(),
+    refreshToken: z.string().optional(),
+  });
+}
 
-export const meta: Route.MetaFunction = () => [{ title: "Reset password" }];
+export const meta: Route.MetaFunction = ({ matches }) => [
+  { title: metaT(matches)("auth.reset.metaTitle") },
+];
 
 export async function loader({ request }: Route.LoaderArgs) {
   const url = new URL(request.url);
@@ -50,14 +58,15 @@ export async function loader({ request }: Route.LoaderArgs) {
 
 export async function action({ request }: Route.ActionArgs) {
   assertIsPost(request);
+  const t = createT(getRequestLocale(request));
 
   const formData = await request.formData();
   const { newPassword, confirmPassword, accessToken, refreshToken } =
-    parseFormData(formData, formSchema);
+    parseFormData(formData, formSchema(t));
 
   if (newPassword !== confirmPassword) {
     return data(
-      { error: "Passwords do not match", ok: false },
+      { error: t("auth.passwordsDontMatch"), ok: false },
       { status: 400 },
     );
   }
@@ -71,8 +80,7 @@ export async function action({ request }: Route.ActionArgs) {
   if (!effectiveAccessToken || !effectiveRefreshToken) {
     return data(
       {
-        error:
-          "Reset link is invalid or expired. Request a new password reset link.",
+        error: t("auth.reset.invalidLink"),
         ok: false,
       },
       { status: 401 },
@@ -88,12 +96,13 @@ export async function action({ request }: Route.ActionArgs) {
     return data({ error: null, ok: true });
   } catch (error: unknown) {
     const message =
-      error instanceof Error ? error.message : "Failed to reset password";
+      error instanceof Error ? error.message : t("auth.reset.failed");
     return data({ error: message, ok: false }, { status: 500 });
   }
 }
 
 export default function ResetPassword({ actionData }: Route.ComponentProps) {
+  const { t } = useTranslation();
   const navigation = useNavigation();
   const disabled = navigation.state !== "idle";
   const [showPassword, setShowPassword] = React.useState(false);
@@ -117,19 +126,17 @@ export default function ResetPassword({ actionData }: Route.ComponentProps) {
   return (
     <div className="max-w-full grow">
       <Main>
-        <h1 className="mb-4 text-2xl font-semibold">Reset password</h1>
+        <h1 className="mb-4 text-2xl font-semibold">{t("auth.reset.title")}</h1>
         {actionData?.ok ? (
           <>
-            <SuccessMessage>
-              Your password has been reset successfully.
-            </SuccessMessage>
+            <SuccessMessage>{t("auth.reset.success")}</SuccessMessage>
             <p className="mt-4">
-              <Link to="/profile">Go to profile</Link>
+              <Link to="/profile">{t("auth.reset.goToProfile")}</Link>
             </p>
           </>
         ) : (
           <>
-            <p className="mb-4">Enter your new password below.</p>
+            <p className="mb-4">{t("auth.reset.intro")}</p>
             <Form method="POST" className="flex flex-col gap-4">
               {accessToken ? (
                 <input type="hidden" name="accessToken" value={accessToken} />
@@ -142,7 +149,7 @@ export default function ResetPassword({ actionData }: Route.ComponentProps) {
                   htmlFor="newPassword"
                   className="block text-sm font-medium text-gray-700"
                 >
-                  New password
+                  {t("auth.reset.newPassword")}
                 </label>
                 <div className="relative">
                   <Input
@@ -153,7 +160,7 @@ export default function ResetPassword({ actionData }: Route.ComponentProps) {
                     autoFocus
                     disabled={disabled}
                     minLength={6}
-                    placeholder="New password"
+                    placeholder={t("auth.reset.newPassword")}
                     required
                   />
                   <ShowPasswordButton
@@ -167,7 +174,7 @@ export default function ResetPassword({ actionData }: Route.ComponentProps) {
                   htmlFor="confirmPassword"
                   className="block text-sm font-medium text-gray-700"
                 >
-                  Confirm new password
+                  {t("auth.reset.confirmPassword")}
                 </label>
                 <Input
                   type={showPassword ? "text" : "password"}
@@ -176,12 +183,12 @@ export default function ResetPassword({ actionData }: Route.ComponentProps) {
                   autoComplete="new-password"
                   disabled={disabled}
                   minLength={6}
-                  placeholder="Confirm password"
+                  placeholder={t("auth.reset.confirmPlaceholder")}
                   required
                 />
               </div>
               <Button variant="primary" type="submit" disabled={disabled}>
-                Reset password
+                {t("auth.reset.submit")}
               </Button>
               {actionData?.error ? (
                 <ErrorMessage>{actionData.error}</ErrorMessage>

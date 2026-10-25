@@ -5,7 +5,10 @@ import {
 import { redirect } from "react-router";
 import { ENV } from "varlock/env";
 
+import { createT } from "~/i18n";
+import { getRequestLocale } from "~/i18n/resolve";
 import { getValidAuthSession } from "~/models/auth";
+import { SiqImportError } from "~/models/siq/errors";
 import { formatSiqSummary } from "~/models/siq/summary";
 import { flashFormState } from "~/session.server";
 import { getRedirectTo, safeRedirect } from "~/utils/http.server";
@@ -23,9 +26,15 @@ export async function action({ request }: Route.ActionArgs) {
   const authSession = await getValidAuthSession(request);
   const visibility = authSession !== null ? "UNLISTED" : "PUBLIC";
   const redirectTo = getRedirectTo(request);
+  const locale = getRequestLocale(request);
+  const t = createT(locale);
+  const uploadError = (reason: string) => ({
+    success: false,
+    message: t("upload.error.prefix", { reason }),
+  });
 
   try {
-    const uploadHandler = newUploadHandler(authSession, visibility);
+    const uploadHandler = newUploadHandler(authSession, visibility, locale);
     const formData = await parseFormData(
       request,
       {
@@ -40,10 +49,7 @@ export async function action({ request }: Route.ActionArgs) {
     const gameKey = formData.get("upload")?.toString();
 
     if (!gameKey) {
-      const formState = {
-        success: false,
-        message: "Error uploading game: no game key returned.",
-      };
+      const formState = uploadError(t("upload.error.noGameKey"));
       const headers = await flashFormState(request, formState);
       return redirect(safeRedirect(redirectTo), { headers, status: 400 });
     }
@@ -51,10 +57,12 @@ export async function action({ request }: Route.ActionArgs) {
     const gameUrl = ENV.BASE_URL + "/game/" + gameKey + "/play";
     const created =
       visibility === "PUBLIC"
-        ? `Created new public game. You may now view your game on the home page.`
-        : `Created new unlisted game. You may now visit the link ${gameUrl} to play the new game.`;
+        ? t("upload.createdPublic")
+        : t("upload.createdUnlisted", { url: gameUrl });
     const siqSummary = uploadHandler.siqSummary();
-    const imported = siqSummary ? formatSiqSummary(siqSummary) : undefined;
+    const imported = siqSummary
+      ? formatSiqSummary(siqSummary, locale)
+      : undefined;
     const formState = {
       success: true,
       message: imported ? `${imported.message} ${created}` : created,
@@ -66,19 +74,19 @@ export async function action({ request }: Route.ActionArgs) {
     return redirect(safeRedirect(redirectTo), { headers });
   } catch (error: unknown) {
     if (error instanceof MaxFileSizeExceededError) {
-      const formState = {
-        success: false,
-        message:
-          "Error uploading game: the file is too large (SIGame packs: at most 100 MB, JSON games: at most 1 MB).",
-      };
+      const formState = uploadError(t("upload.error.tooLarge"));
+      const headers = await flashFormState(request, formState);
+      return redirect(safeRedirect(redirectTo), { headers, status: 400 });
+    }
+    if (error instanceof SiqImportError) {
+      const formState = uploadError(error.localize(locale));
       const headers = await flashFormState(request, formState);
       return redirect(safeRedirect(redirectTo), { headers, status: 400 });
     }
     if (error instanceof Error) {
-      const formState = {
-        success: false,
-        message: "Error uploading game: " + error.message,
-      };
+      // Other messages (JSON syntax and schema problems, database errors)
+      // are technical and stay in English.
+      const formState = uploadError(error.message);
       const headers = await flashFormState(request, formState);
       return redirect(safeRedirect(redirectTo), { headers, status: 400 });
     }

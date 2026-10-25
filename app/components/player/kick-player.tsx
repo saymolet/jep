@@ -4,6 +4,7 @@ import * as DropdownMenu from "~/components/dropdown-menu";
 import { UserMinus } from "~/components/icons";
 import type { Action, Player } from "~/engine";
 import { useEngineContext } from "~/engine";
+import { useTranslation } from "~/i18n";
 import useSoloAction from "~/utils/use-solo-action";
 
 import { PlayerIcon, type PlayerIconSize } from "./player-icon";
@@ -19,6 +20,7 @@ export function KickablePlayerIcon({
   isSelf: boolean;
   size?: PlayerIconSize;
 }) {
+  const { t } = useTranslation();
   const { soloDispatch } = useEngineContext();
 
   const fetcher = useFetcher<Action>();
@@ -29,7 +31,11 @@ export function KickablePlayerIcon({
       <DropdownMenu.Trigger asChild>
         <button
           className="shrink-0 cursor-pointer rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none md:rounded-2xl"
-          aria-label={isSelf ? "Leave game" : `Kick player ${player.name}`}
+          aria-label={
+            isSelf
+              ? t("room.leaveGame")
+              : t("room.kickPlayerNamed", { name: player.name })
+          }
         >
           <PlayerIcon player={player} size={size} />
         </button>
@@ -50,7 +56,7 @@ export function KickablePlayerIcon({
               <DropdownMenu.Action type="submit">
                 <UserMinus className="absolute left-0 m-1 h-5 w-5" />
                 <span className="pl-7">
-                  {isSelf ? "Leave game" : "Kick player"}
+                  {isSelf ? t("room.leaveGame") : t("room.kickPlayer")}
                 </span>
               </DropdownMenu.Action>
             </fetcher.Form>

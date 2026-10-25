@@ -15,6 +15,7 @@ import Popover from "~/components/popover";
 import type { Action } from "~/engine";
 import { clueIsPlayable, State } from "~/engine";
 import type { Player } from "~/engine/state";
+import { useTranslation } from "~/i18n";
 import type { Board, Clue, Game } from "~/models/convert.server";
 import { generateGrid, getPlayerColor } from "~/utils";
 
@@ -29,13 +30,14 @@ interface Props {
 }
 
 function PostGameClue({ clue, state, round, i, j }: Props) {
+  const { t } = useTranslation();
   const wide = useIsWideBoard();
   const clueAnswer = state.isAnswered[round][i][j];
   const clueValue =
     clue.wagerable && clueAnswer.isAnswered
       ? clue.longForm
-        ? "Final"
-        : "DD"
+        ? t("summary.final")
+        : t("summary.doubleDownShort")
       : clue.value;
 
   if (!clueAnswer.isAnswered) {
@@ -180,6 +182,7 @@ function RoundButtons({
   setRound: (round: number) => void;
   numRounds: number;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="flex items-center justify-center gap-2">
       <Button
@@ -189,7 +192,7 @@ function RoundButtons({
         &larr;
       </Button>
       <p className="text-white">
-        Round {round + 1}/{numRounds}
+        {t("summary.roundOf", { round: round + 1, total: numRounds })}
       </p>
       <Button
         onClick={() => setRound((round + 1) % numRounds)}
@@ -212,6 +215,7 @@ export default function Summary({
   actions: Action[];
   allPlayers: Player[];
 }) {
+  const { t } = useTranslation();
   const [round, setRound] = React.useState(0);
   const board = game.boards[round];
 
@@ -222,13 +226,13 @@ export default function Summary({
           value="replay"
           className="rounded px-3 py-1 text-sm text-slate-400 transition-colors hover:text-white data-[state=active]:bg-blue-600 data-[state=active]:text-white"
         >
-          Replay
+          {t("summary.replay")}
         </Tabs.Trigger>
         <Tabs.Trigger
           value="summary"
           className="rounded px-3 py-1 text-sm text-slate-400 transition-colors hover:text-white data-[state=active]:bg-blue-600 data-[state=active]:text-white"
         >
-          Summary
+          {t("summary.summary")}
         </Tabs.Trigger>
       </Tabs.List>
 

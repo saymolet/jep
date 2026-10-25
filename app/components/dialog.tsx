@@ -1,6 +1,7 @@
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 
 import { XMark } from "~/components/icons";
+import { useTranslation } from "~/i18n";
 
 export default function Dialog({
   isOpen,
@@ -16,6 +17,7 @@ export default function Dialog({
   /** When provided, allows the dialog to be dismissed. */
   onClose?: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <DialogPrimitive.Root
       open={isOpen}
@@ -41,7 +43,7 @@ export default function Dialog({
               <DialogPrimitive.Close asChild>
                 <button
                   className={`absolute top-3 right-3 inline-flex h-6 w-6 items-center justify-center rounded-full text-blue-600 hover:bg-slate-100 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none`}
-                  aria-label="Close"
+                  aria-label={t("common.close")}
                 >
                   <XMark className="h-6 w-6" />
                 </button>

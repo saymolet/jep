@@ -1,5 +1,6 @@
 import Button from "~/components/button";
 import Dialog from "~/components/dialog";
+import { useTranslation } from "~/i18n";
 
 export default function ResumePrompt({
   onResume,
@@ -8,18 +9,19 @@ export default function ResumePrompt({
   onResume: () => void;
   onNewGame: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <Dialog
       isOpen
-      title="Game in progress"
-      description="You have a saved game in progress. Would you like to resume where you left off or start a new game?"
+      title={t("common.resume.title")}
+      description={t("common.resume.description")}
     >
       <Dialog.Footer>
         <Button onClick={onNewGame} type="button">
-          New Game
+          {t("common.resume.newGame")}
         </Button>
         <Button variant="primary" onClick={onResume} type="button" autoFocus>
-          Resume Game
+          {t("common.resume.resumeGame")}
         </Button>
       </Dialog.Footer>
     </Dialog>

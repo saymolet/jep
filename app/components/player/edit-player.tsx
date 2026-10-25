@@ -12,6 +12,7 @@ import {
 import Input from "~/components/input";
 import type { Action, Player } from "~/engine";
 import { useEngineContext } from "~/engine";
+import { useTranslation } from "~/i18n";
 import type { Avatar } from "~/models/avatar";
 import { storeAvatar } from "~/utils/avatar-storage";
 import useDebounce, { useDebounceEnd } from "~/utils/use-debounce";
@@ -51,6 +52,7 @@ function EditPlayer({
   scorePopoverAutoOpen?: boolean;
   pulse?: ScorePulse;
 }) {
+  const { t } = useTranslation();
   const inputRef = React.useRef<HTMLInputElement | null>(null);
   const debouncedLoading = useDebounceEnd(loading, 100);
 
@@ -77,7 +79,7 @@ function EditPlayer({
           type="text"
           id="name"
           name="name"
-          placeholder="Enter your name"
+          placeholder={t("room.enterName")}
           defaultValue={player.name}
           onChange={(e) => onChangeName(e.target.value)}
           onBlur={onBlur}
@@ -88,7 +90,10 @@ function EditPlayer({
           onClick={onEditAvatar}
           className="rounded-xl bg-white/10 px-3 py-2"
         >
-          <FaceSmile className="h-5 w-5 opacity-50" title="Change avatar" />
+          <FaceSmile
+            className="h-5 w-5 opacity-50"
+            title={t("room.changeAvatar")}
+          />
         </button>
         {debouncedLoading ? (
           <LoadingSpinner className="px-3 py-2 text-blue-600" />
@@ -98,7 +103,10 @@ function EditPlayer({
             onClick={onBlur}
             className="rounded-xl bg-white/10 px-3 py-2"
           >
-            <PaperAirplane className="h-5 w-5 opacity-50" title="Submit" />
+            <PaperAirplane
+              className="h-5 w-5 opacity-50"
+              title={t("room.submit")}
+            />
           </button>
         ) : (
           <button
@@ -106,7 +114,10 @@ function EditPlayer({
             onClick={handleFocus}
             className="rounded-xl bg-white/10 px-3 py-2"
           >
-            <PencilSquare className="h-5 w-5 opacity-50" title="Edit" />
+            <PencilSquare
+              className="h-5 w-5 opacity-50"
+              title={t("room.edit")}
+            />
           </button>
         )}
       </div>
@@ -131,6 +142,7 @@ export function EditPlayerForm({
   scorePopoverAutoOpen?: boolean;
   pulse?: ScorePulse;
 } & RoomProps) {
+  const { t } = useTranslation();
   const { players, soloDispatch, boardControl } = useEngineContext();
 
   const fetcher = useFetcher<Action>();
@@ -223,8 +235,8 @@ export function EditPlayerForm({
       <Dialog
         isOpen={avatarOpen}
         onClose={() => setAvatarOpen(false)}
-        title="Choose your avatar"
-        description="Pick an emoji or use a photo."
+        title={t("room.chooseAvatar")}
+        description={t("room.chooseAvatarDescription")}
       >
         <AvatarPicker value={optimisticPlayer.avatar} onChange={changeAvatar} />
       </Dialog>

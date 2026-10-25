@@ -11,6 +11,7 @@ import {
 } from "~/components/undo-check";
 import type { Action } from "~/engine";
 import { GameState, useEngineContext } from "~/engine";
+import { useTranslation } from "~/i18n";
 import useSoloAction from "~/utils/use-solo-action";
 import useTimeout from "~/utils/use-timeout";
 
@@ -30,25 +31,27 @@ function PlayerScores({
   longForm,
 }: {
   answerers: PlayerScore[];
-  boardControlName: string;
+  /** undefined when this user has board control. */
+  boardControlName: string | undefined;
   wagerable: boolean;
   longForm: boolean;
 }) {
+  const { t } = useTranslation();
   if (!answerers.length) {
     if (wagerable && longForm) {
       return (
-        <p className="font-bold text-white">
-          No one has enough money to wager on this clue.
-        </p>
+        <p className="font-bold text-white">{t("play.next.noOneCanWager")}</p>
       );
     } else if (wagerable) {
       return (
         <p className="font-bold text-white">
-          {boardControlName} does not have enough money to wager on this clue.
+          {boardControlName === undefined
+            ? t("play.notEnoughToWager")
+            : t("play.next.playerCantWager", { name: boardControlName })}
         </p>
       );
     } else {
-      return <p className="font-bold text-white">No one won the clue.</p>;
+      return <p className="font-bold text-white">{t("play.next.noOneWon")}</p>;
     }
   }
   return (
@@ -90,6 +93,7 @@ export function ConnectedNextClueForm({ roomId, userId }: RoomProps) {
     throw new Error("No active clue");
   }
 
+  const { t } = useTranslation();
   const fetcher = useFetcher<Action>();
   useSoloAction(fetcher, soloDispatch);
   const loading = fetcher.state === "loading";
@@ -101,9 +105,9 @@ export function ConnectedNextClueForm({ roomId, userId }: RoomProps) {
   const boardController = boardControl ? players.get(boardControl) : undefined;
   const boardControlName = boardController
     ? boardController.userId === userId
-      ? "You"
+      ? undefined
       : boardController.name
-    : "Unknown player";
+    : t("play.next.unknownPlayer");
 
   const [i, j] = activeClue;
 
@@ -146,7 +150,7 @@ export function ConnectedNextClueForm({ roomId, userId }: RoomProps) {
         <UndoCheckConfirm
           roomId={roomId}
           userId={userId}
-          prompt="Undo your check on this clue?"
+          prompt={t("play.undo.thisClue")}
           onCancel={() => setConfirmingUndo(false)}
         />
       ) : (
@@ -181,7 +185,9 @@ export function ConnectedNextClueForm({ roomId, userId }: RoomProps) {
                   }}
                 />
                 <span className="relative">
-                  {isRevealingAnswer ? "Reveal answer" : "Back to board"}
+                  {isRevealingAnswer
+                    ? t("play.check.revealAnswer")
+                    : t("play.next.backToBoard")}
                 </span>
               </Button>
             </fetcher.Form>

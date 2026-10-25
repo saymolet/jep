@@ -9,29 +9,37 @@ import { Kbd } from "~/components/prompt/kbd";
 import { Lockout } from "~/components/prompt/lockout";
 import { ReadClueTimer } from "~/components/prompt/read-clue-timer";
 import { CLUE_TIMEOUT_MS } from "~/engine";
+import { useTranslation } from "~/i18n";
+import { metaT } from "~/i18n/meta";
 import { getPageMetadata } from "~/utils/seo";
 import useKeyPress from "~/utils/use-key-press";
 import useTimeout from "~/utils/use-timeout";
 
 import type { Route } from "./+types/howto";
 
-export const meta: Route.MetaFunction = () =>
-  getPageMetadata(
-    "How to Play Jep!",
-    "Learn how to choose clues, buzz in, answer out loud, check responses, and play Jep! with friends online.",
-  );
+export const meta: Route.MetaFunction = ({ matches }) => {
+  const t = metaT(matches);
+  return getPageMetadata(t("howto.metaTitle"), t("howto.metaDescription"));
+};
 
 const CLUE_DURATION_MS = 5000;
 const LOCKOUT_MS = 250;
 
-const formatter = new Intl.DateTimeFormat("en-US", {
+const FORMAT_OPTIONS: Intl.DateTimeFormatOptions = {
   hour: "numeric",
   minute: "numeric",
   second: "numeric",
   fractionalSecondDigits: 3,
-});
+};
 
 export default function HowTo() {
+  const { t, rich, intlLocale } = useTranslation();
+  // Times are only formatted after mount (see clueShownAt), so the viewer's
+  // locale and time zone can't cause a hydration mismatch.
+  const formatter = React.useMemo(
+    () => new Intl.DateTimeFormat(intlLocale, FORMAT_OPTIONS),
+    [intlLocale],
+  );
   // Set after mount: reading Date.now() during render would make the server
   // and client render different "Clue shown at" times (a hydration mismatch).
   const [clueShownAt, setClueShownAt] = React.useState<number | undefined>();
@@ -120,56 +128,32 @@ export default function HowTo() {
     <div className="max-w-full grow">
       <Main>
         <HowToPlay />
-        <h1 className="mb-4 text-2xl font-semibold">No typing required</h1>
-        <p className="mb-4">
-          Jep! is a fast-paced, high-trust group party game.
-        </p>
-        <p className="mb-4">
-          Join the same room or voice call while playing so you can speak the
-          answers out loud to one another instead of typing. This keeps the game
-          fast.
-        </p>
-        <p className="mb-4">
-          We trust the guesser to honestly check their answers as right or
-          wrong. All players in the room or voice call will hear the guess.
-          Then, the guesser sees the correct answer and checks themselves.
-        </p>
+        <h1 className="mb-4 text-2xl font-semibold">{t("howto.noTyping")}</h1>
+        <p className="mb-4">{t("howto.partyGame")}</p>
+        <p className="mb-4">{t("howto.speakAloud")}</p>
+        <p className="mb-4">{t("howto.trust")}</p>
         <div className="p-2">
-          <img src="/images/card.jpg" alt="Looking at cards privately" />
+          <img src="/images/card.jpg" alt={t("howto.photoAlt")} />
           <p className="text-center text-sm">
-            Photo by{" "}
-            <Anchor href="https://unsplash.com/fr/@samgoh_">Sam Goh</Anchor> on{" "}
-            <Anchor href="https://unsplash.com/photos/Wfe_gWCpciU">
-              Unsplash
-            </Anchor>
+            {rich("howto.photoCredit", {
+              author: (c) => (
+                <Anchor href="https://unsplash.com/fr/@samgoh_">{c}</Anchor>
+              ),
+              site: (c) => (
+                <Anchor href="https://unsplash.com/photos/Wfe_gWCpciU">
+                  {c}
+                </Anchor>
+              ),
+            })}
           </p>
         </div>
-        <p className="mb-4">
-          If they say they were wrong, the buzzers re-open for other people to
-          buzz in and guess. Don't spoil the correct answer by reading it out
-          loud before other people have a chance to guess!
-        </p>
-        <p className="mb-4">
-          Some questions are multiple choice: everyone sees the options while
-          the question is read, and the fastest buzzer taps one. Jep! checks the
-          pick automatically, so there is nothing to check yourself.
-        </p>
-        <p className="mb-4">
-          Watch out for the cat in the bag! A secret question looks like any
-          other on the board. If you choose one, you must give it to another
-          player, who answers it alone without buzzing. If they are right they
-          win its value and choose next; if they are wrong they lose its value
-          and you keep choosing.
-        </p>
-        <p className="mb-4">
-          If they say they were right, the answer is revealed to everyone. If
-          they were lying about being right earlier, don't play with them again!
-        </p>
-        <p className="mb-4">
-          If no one buzzes in, the answer is revealed to everyone.
-        </p>
+        <p className="mb-4">{t("howto.wrong")}</p>
+        <p className="mb-4">{t("howto.choices")}</p>
+        <p className="mb-4">{t("howto.secret")}</p>
+        <p className="mb-4">{t("howto.right")}</p>
+        <p className="mb-4">{t("howto.noBuzz")}</p>
 
-        <h1 className="mb-4 text-2xl font-semibold">Buzzer practice</h1>
+        <h1 className="mb-4 text-2xl font-semibold">{t("howto.practice")}</h1>
         <button
           className="relative w-full bg-blue-1000 py-2"
           onClick={() => handleClick(Date.now())}
@@ -182,15 +166,17 @@ export default function HowTo() {
           <div className="flex flex-col p-2">
             <div className="flex justify-between p-4">
               <div className="text-white">
-                <span className="font-bold">Apples</span> for{" "}
-                <span className="font-bold">$200</span>
+                {rich("howto.demoCategory", {
+                  b: (c) => <span className="font-bold">{c}</span>,
+                  value: "$200",
+                })}
               </div>
               <span className="text-sm text-slate-300">
-                Click or press <Kbd>Enter</Kbd> to buzz in
+                {rich("howto.demoHint", { kbd: (c) => <Kbd>{c}</Kbd> })}
               </span>
             </div>
             <p className="font-korinna text-xl font-bold text-white uppercase text-shadow-md">
-              This apple variety is named after a city in New York State
+              {t("howto.demoClue")}
             </p>
             <Lockout active={lockout} />
           </div>
@@ -199,34 +185,36 @@ export default function HowTo() {
           <table className="w-full table-fixed font-mono">
             <tbody>
               <tr>
-                <td>Clue shown at:</td>
+                <td>{t("howto.clueShownAt")}</td>
                 <td className="text-right">
                   {clueShownAt ? formatter.format(clueShownAt) : "null"}
                 </td>
               </tr>
               <tr>
-                <td>Buzzer open at:</td>
+                <td>{t("howto.buzzerOpenAt")}</td>
                 <td className="text-right">
                   {buzzerOpenAt ? formatter.format(buzzerOpenAt) : "null"}
                 </td>
               </tr>
               <tr>
-                <td>Time remaining:</td>
+                <td>{t("howto.timeRemaining")}</td>
                 <td className="text-right">
-                  {msLeft !== undefined ? `${msLeft}ms` : "null"}
+                  {msLeft !== undefined
+                    ? t("howto.ms", { ms: msLeft })
+                    : "null"}
                 </td>
               </tr>
               <tr>
-                <td>Buzzed at:</td>
+                <td>{t("howto.buzzedAt")}</td>
                 <td className="text-right">
                   {buzzedAt ? formatter.format(buzzedAt) : "null"}
                 </td>
               </tr>
               <tr>
-                <td>Buzz duration:</td>
+                <td>{t("howto.buzzDuration")}</td>
                 <td className="text-right">
                   {buzzDurationMs !== null && buzzDurationMs <= CLUE_TIMEOUT_MS
-                    ? `${buzzDurationMs}ms`
+                    ? t("howto.ms", { ms: buzzDurationMs })
                     : "null"}
                 </td>
               </tr>
@@ -236,25 +224,23 @@ export default function HowTo() {
           <div className="flex flex-col gap-2">
             {hadLockout ? (
               <ErrorMessage>
-                You were locked out for {LOCKOUT_MS}ms for buzzing in before the
-                clue was done being "read".
+                {t("howto.lockedOut", { ms: LOCKOUT_MS })}
               </ErrorMessage>
             ) : null}
             {buzzDurationMs && buzzDurationMs > CLUE_TIMEOUT_MS ? (
               <ErrorMessage>
-                You didn't buzz in within {CLUE_TIMEOUT_MS / 1000} seconds after
-                the clue was done being "read".
+                {t("howto.tooSlow", { seconds: CLUE_TIMEOUT_MS / 1000 })}
               </ErrorMessage>
             ) : null}
             {buzzedAt !== undefined &&
             buzzDurationMs &&
             buzzDurationMs <= CLUE_TIMEOUT_MS ? (
               <SuccessMessage>
-                You successfully buzzed in {buzzDurationMs}ms!
+                {t("howto.success", { ms: buzzDurationMs })}
               </SuccessMessage>
             ) : null}
             <div className="flex">
-              <Button onClick={handleReset}>Reset</Button>
+              <Button onClick={handleReset}>{t("howto.reset")}</Button>
             </div>
           </div>
         </div>

@@ -6,6 +6,9 @@ import { EmptyBoard } from "~/components/board/layout";
 import { ButtonLink } from "~/components/button";
 import { GameVisibilityTag } from "~/components/game-visibility-icon";
 import { ArrowDownTray, Play, User } from "~/components/icons";
+import { createT, useTranslation } from "~/i18n";
+import { metaT } from "~/i18n/meta";
+import { getRequestLocale } from "~/i18n/resolve";
 import type { ActiveRoom } from "~/models/active-rooms";
 import { getValidAuthSession } from "~/models/auth";
 import {
@@ -25,12 +28,15 @@ const visibilitySchema = z.object({
   visibility: z.enum(["PUBLIC", "PRIVATE", "UNLISTED"]),
 });
 
-export const meta: Route.MetaFunction = ({ loaderData }) => {
+export const meta: Route.MetaFunction = ({ loaderData, matches }) => {
   if (!loaderData) return [];
 
   const description =
     loaderData.game.note ||
-    `Preview ${loaderData.game.title}, a trivia game by ${loaderData.game.author}, and choose how to play.`;
+    metaT(matches)("game.metaDescription", {
+      title: loaderData.game.title,
+      author: loaderData.game.author,
+    });
 
   return getPageMetadata(loaderData.game.title, description);
 };
@@ -43,13 +49,14 @@ export async function action({ request, params }: Route.ActionArgs) {
   }
 
   const authSession = await getValidAuthSession(request);
+  const t = createT(getRequestLocale(request));
 
   if (request.method === "DELETE") {
     const game = await deleteGame(gameId, authSession?.accessToken);
 
     const formState = {
       success: true,
-      message: `Game ${game?.title} deleted.`,
+      message: t("game.deleted", { title: game?.title ?? "" }),
     };
     const headers = await flashFormState(request, formState);
 
@@ -66,7 +73,10 @@ export async function action({ request, params }: Route.ActionArgs) {
 
     const formState = {
       success: true,
-      message: `Updated game ${game.title} to ${visibility}.`,
+      message: t("game.visibilityUpdated", {
+        title: game.title,
+        visibility: t(`common.visibility.${visibility}`),
+      }),
     };
     const headers = await flashFormState(request, formState);
 
@@ -87,7 +97,10 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   const game = await getGame(gameId, authSession?.userId);
 
   if (!game) {
-    throw new Response("game not found", { status: 404 });
+    throw new Response(
+      createT(getRequestLocale(request))("errors.gameNotFound"),
+      { status: 404 },
+    );
   }
 
   const activeRooms = await getActiveRooms(game, authSession?.accessToken);
@@ -141,15 +154,6 @@ type PreviewGame = {
   startingGrid: { columns: number; rows: number };
 };
 
-function GameStat({ count, label }: { count: number; label: string }) {
-  return (
-    <span>
-      {count} {label}
-      {count === 1 ? "" : "s"}
-    </span>
-  );
-}
-
 function PlayLinks({
   gameId,
   hasActiveRooms,
@@ -157,6 +161,7 @@ function PlayLinks({
   gameId: string;
   hasActiveRooms: boolean;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="grid gap-3 sm:flex sm:flex-wrap">
       {/* Rooms in progress are listed below, so skip the room chooser. */}
@@ -165,11 +170,11 @@ function PlayLinks({
         variant="primary"
       >
         <Play className="h-4 w-4" />
-        Play with friends
+        {t("game.playWithFriends")}
       </ButtonLink>
       <ButtonLink to={`/game/${gameId}/solo`} variant="inverse">
         <User className="h-4 w-4" />
-        Play solo
+        {t("game.playSolo")}
       </ButtonLink>
     </div>
   );
@@ -182,6 +187,7 @@ function GameInvitation({
   game: PreviewGame;
   activeRooms: ActiveRoom[];
 }) {
+  const { t } = useTranslation();
   return (
     <main className="flex grow flex-col bg-blue-1000 text-white">
       <EmptyBoard {...game.startingGrid} />
@@ -193,7 +199,7 @@ function GameInvitation({
               {game.title}
             </h1>
             <p className="mt-2 text-sm text-slate-300 sm:text-base">
-              By {game.author}
+              {t("game.byAuthor", { author: game.author })}
             </p>
           </div>
           {game.visibility !== "PUBLIC" ? (
@@ -208,9 +214,9 @@ function GameInvitation({
         ) : null}
 
         <div className="flex gap-2 text-sm text-slate-300">
-          <GameStat count={game.roundCount} label="round" />
+          <span>{t("header.roundCount", { count: game.roundCount })}</span>
           <span aria-hidden="true">&middot;</span>
-          <GameStat count={game.clueCount} label="clue" />
+          <span>{t("game.clueCount", { count: game.clueCount })}</span>
         </div>
 
         <PlayLinks gameId={game.id} hasActiveRooms={activeRooms.length > 0} />
@@ -225,11 +231,9 @@ function GameInvitation({
             className="inline-flex min-h-11 items-center gap-1.5 text-sm text-slate-300 underline decoration-slate-500 underline-offset-4 hover:text-white"
           >
             <ArrowDownTray className="h-4 w-4" />
-            Download JSON
+            {t("game.downloadJson")}
           </Link>
-          <p className="text-xs text-slate-400">
-            Edit the file and upload it again as a new game.
-          </p>
+          <p className="text-xs text-slate-400">{t("game.downloadJsonHint")}</p>
         </div>
 
         {game.copyright ? (

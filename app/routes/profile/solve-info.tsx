@@ -2,9 +2,11 @@ import { ArrowTopRightOnSquare } from "~/components/icons";
 import Link from "~/components/link";
 import LocalDate from "~/components/local-date";
 import SolveIcon from "~/components/solve-icon";
+import { useTranslation } from "~/i18n";
 import { Solve } from "~/models/solves.server";
 
 export default function SolveInfo({ solve }: { solve: Solve }) {
+  const { t } = useTranslation();
   const roomName = solve.rooms?.name;
   const gameId = solve.games?.id;
   const title = solve.games?.title;
@@ -32,7 +34,7 @@ export default function SolveInfo({ solve }: { solve: Solve }) {
             rel="noopener noreferrer"
           >
             <span className="inline-flex items-center gap-1">
-              Game details
+              {t("header.gameDetails")}
               <ArrowTopRightOnSquare className="h-3.5 w-3.5" />
             </span>
           </Link>

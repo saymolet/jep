@@ -7,6 +7,10 @@ import { ErrorMessage, SuccessMessage } from "~/components/error";
 import Input from "~/components/input";
 import Link, { Anchor } from "~/components/link";
 import Main from "~/components/main";
+import { createT } from "~/i18n";
+import { useTranslation } from "~/i18n";
+import { metaT } from "~/i18n/meta";
+import { getRequestLocale } from "~/i18n/resolve";
 import { getValidAuthSession } from "~/models/auth";
 import { getGame } from "~/models/game.server";
 import { insertReport } from "~/models/report.server";
@@ -16,7 +20,9 @@ import { parseFormData } from "~/utils/http.server";
 
 import type { Route } from "./+types/report";
 
-export const meta: Route.MetaFunction = () => [{ title: "Report a game" }];
+export const meta: Route.MetaFunction = ({ matches }) => [
+  { title: metaT(matches)("report.metaTitle") },
+];
 
 const formSchema = z.object({
   url: z.string().min(1),
@@ -32,6 +38,7 @@ export function loader({ request }: Route.LoaderArgs) {
 }
 
 export async function action({ request }: Route.ActionArgs) {
+  const t = createT(getRequestLocale(request));
   const formData = await request.formData();
   const { url: urlStr, reason } = parseFormData(formData, formSchema);
   const url = new URL(urlStr);
@@ -40,7 +47,7 @@ export async function action({ request }: Route.ActionArgs) {
     return data(
       {
         success: false,
-        message: `URL must be from ${ENV.BASE_URL}`,
+        message: t("report.wrongOrigin", { base: ENV.BASE_URL }),
       },
       { status: 400 },
     );
@@ -56,7 +63,10 @@ export async function action({ request }: Route.ActionArgs) {
       return data(
         {
           success: false,
-          message: "room name must be in the format of {roomId}-{roomName}",
+          message: t("report.badRoomName", {
+            roomId: "{roomId}",
+            roomName: "{roomName}",
+          }),
         },
         { status: 400 },
       );
@@ -69,7 +79,10 @@ export async function action({ request }: Route.ActionArgs) {
     const room = await getRoom(roomId, authSession?.accessToken);
     if (!room || room.name !== name) {
       return data(
-        { success: false, message: `room "${roomNameAndId}" not found` },
+        {
+          success: false,
+          message: t("report.roomNotFound", { room: roomNameAndId }),
+        },
         { status: 404 },
       );
     }
@@ -83,7 +96,10 @@ export async function action({ request }: Route.ActionArgs) {
 
     return data({
       success: true,
-      message: `Reported game ${room.game_id} in room ${roomNameAndId}.`,
+      message: t("report.reportedRoom", {
+        gameId: room.game_id,
+        room: roomNameAndId,
+      }),
     });
   } else if (pathname.startsWith("/game/")) {
     const gameIdAndSubpath = pathname.slice("/game/".length);
@@ -93,14 +109,17 @@ export async function action({ request }: Route.ActionArgs) {
       const game = await getGame(gameId, authSession?.userId);
       if (!game) {
         return data(
-          { success: false, message: `game "${gameId}" not found` },
+          { success: false, message: t("report.gameNotFound", { gameId }) },
           { status: 404 },
         );
       }
     } catch (error: unknown) {
       if (error instanceof Error) {
         return data(
-          { success: false, message: `Error fetching game: ${error.message}` },
+          {
+            success: false,
+            message: t("report.fetchError", { error: error.message }),
+          },
           { status: 404 },
         );
       }
@@ -115,13 +134,13 @@ export async function action({ request }: Route.ActionArgs) {
     );
 
     return data(
-      { success: true, message: `Reported game ${gameId}.` },
+      { success: true, message: t("report.reportedGame", { gameId }) },
       { status: 404 },
     );
   }
 
   return data(
-    { success: false, message: "Could not find /game/ or /room/ in URL." },
+    { success: false, message: t("report.noGameOrRoom") },
     { status: 400 },
   );
 }
@@ -130,29 +149,34 @@ export default function Report({
   loaderData,
   actionData,
 }: Route.ComponentProps) {
+  const { t, rich } = useTranslation();
   return (
     <div className="max-w-full grow">
       <Main>
-        <h1 className="mb-4 text-2xl font-semibold">Report game</h1>
+        <h1 className="mb-4 text-2xl font-semibold">{t("report.title")}</h1>
         <p className="mb-4">
-          Please report any game which violates the{" "}
-          <Link to="/community">community guidelines</Link>.
+          {rich("report.intro", {
+            guidelines: (chunks) => <Link to="/community">{chunks}</Link>,
+          })}
           <br className="mb-1" />
-          For anything else, please submit an issue on the{" "}
-          <Anchor href={GITHUB_URL}>GitHub</Anchor> project.
+          {rich("report.otherIssues", {
+            github: (chunks) => <Anchor href={GITHUB_URL}>{chunks}</Anchor>,
+          })}
         </p>
         <Form method="POST" className="flex flex-col gap-2">
           <label
             htmlFor="url"
             className="block text-sm font-medium text-gray-700"
           >
-            Link to game
+            {t("report.linkLabel")}
           </label>
           <Input
             type="text"
             id="url"
             name="url"
-            placeholder={`${loaderData.BASE_URL}/room/... or ${loaderData.BASE_URL}/game/...`}
+            placeholder={t("report.linkPlaceholder", {
+              base: loaderData.BASE_URL,
+            })}
             required
             defaultValue={
               loaderData.gameId
@@ -164,17 +188,17 @@ export default function Report({
             htmlFor="reason"
             className="block text-sm font-medium text-gray-700"
           >
-            Reason
+            {t("report.reasonLabel")}
           </label>
           <Input
             type="text"
             id="reason"
             name="reason"
-            placeholder="e.g. spam"
+            placeholder={t("report.reasonPlaceholder")}
             required
           />
           <Button variant="primary" type="submit">
-            Report
+            {t("report.submit")}
           </Button>
           {actionData ? (
             actionData?.success ? (

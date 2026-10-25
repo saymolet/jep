@@ -2,6 +2,7 @@ import clsx from "clsx";
 import * as React from "react";
 
 import { LoadingSpinner } from "~/components/icons";
+import { useTranslation } from "~/i18n";
 import {
   type Avatar,
   AVATAR_EMOJI,
@@ -20,6 +21,7 @@ export function AvatarPicker({
   value: Avatar | undefined;
   onChange: (avatar: Avatar | undefined) => void;
 }) {
+  const { t } = useTranslation();
   const inputId = React.useId();
   const [processing, setProcessing] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -36,7 +38,7 @@ export function AvatarPicker({
     try {
       onChange(await imageFileToAvatar(file));
     } catch {
-      setError("Couldn't use that picture. Try another one.");
+      setError(t("room.avatarPhotoError"));
     } finally {
       setProcessing(false);
     }
@@ -47,7 +49,7 @@ export function AvatarPicker({
       <div
         className="grid grid-cols-7 gap-1"
         role="group"
-        aria-label="Emoji avatars"
+        aria-label={t("room.emojiAvatars")}
       >
         {AVATAR_EMOJI.map((emoji) => {
           const isSelected =
@@ -56,7 +58,7 @@ export function AvatarPicker({
             <button
               key={emoji}
               type="button"
-              aria-label={`Avatar ${emoji}`}
+              aria-label={t("room.avatarEmoji", { emoji })}
               aria-pressed={isSelected}
               onClick={() => {
                 setError(null);
@@ -83,7 +85,9 @@ export function AvatarPicker({
           )}
         >
           {processing ? <LoadingSpinner className="h-4 w-4" /> : null}
-          {selected?.kind === "image" ? "Change photo" : "Upload photo"}
+          {selected?.kind === "image"
+            ? t("room.changePhoto")
+            : t("room.uploadPhoto")}
           <input
             id={inputId}
             type="file"
@@ -102,7 +106,7 @@ export function AvatarPicker({
           }}
           className="cursor-pointer rounded-md px-3 py-2 text-sm font-medium text-slate-300 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
         >
-          Remove
+          {t("room.removeAvatar")}
         </button>
       </div>
       {error ? (

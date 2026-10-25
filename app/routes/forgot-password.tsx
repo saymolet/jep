@@ -7,6 +7,8 @@ import { SuccessMessage } from "~/components/error";
 import Input from "~/components/input";
 import Link from "~/components/link";
 import Main from "~/components/main";
+import { useTranslation } from "~/i18n";
+import { metaT } from "~/i18n/meta";
 import { sendPasswordResetEmail } from "~/models/auth";
 import { assertIsPost, parseFormData } from "~/utils/http.server";
 
@@ -14,7 +16,9 @@ import type { Route } from "./+types/forgot-password";
 
 const formSchema = z.object({ email: z.string().email() });
 
-export const meta: Route.MetaFunction = () => [{ title: "Forgot password" }];
+export const meta: Route.MetaFunction = ({ matches }) => [
+  { title: metaT(matches)("auth.forgot.metaTitle") },
+];
 
 export async function action({ request }: Route.ActionArgs) {
   assertIsPost(request);
@@ -32,25 +36,22 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export default function ForgotPassword({ actionData }: Route.ComponentProps) {
+  const { t } = useTranslation();
   const navigation = useNavigation();
   const disabled = navigation.state !== "idle";
 
   return (
     <div className="max-w-full grow">
       <Main>
-        <h1 className="mb-4 text-2xl font-semibold">Forgot password</h1>
-        <p className="mb-4">
-          Enter your email address and we'll send you a link to reset your
-          password.
-        </p>
+        <h1 className="mb-4 text-2xl font-semibold">
+          {t("auth.forgot.title")}
+        </h1>
+        <p className="mb-4">{t("auth.forgot.intro")}</p>
         {actionData?.sent ? (
           <>
-            <SuccessMessage>
-              If an account exists for that email, you'll receive a password
-              reset link shortly.
-            </SuccessMessage>
+            <SuccessMessage>{t("auth.forgot.sent")}</SuccessMessage>
             <p className="mt-4">
-              <Link to="/login">Back to login</Link>
+              <Link to="/login">{t("auth.forgot.backToLogin")}</Link>
             </p>
           </>
         ) : (
@@ -60,25 +61,25 @@ export default function ForgotPassword({ actionData }: Route.ComponentProps) {
                 htmlFor="email"
                 className="block text-sm font-medium text-gray-700"
               >
-                Email address
+                {t("auth.emailAddress")}
               </label>
               <Input
                 type="email"
                 name="email"
                 id="email"
-                aria-label="Email address"
+                aria-label={t("auth.emailAddress")}
                 autoComplete="email"
                 autoFocus
                 disabled={disabled}
-                placeholder="Email"
+                placeholder={t("auth.emailPlaceholder")}
                 required
               />
             </div>
             <Button variant="primary" type="submit" disabled={disabled}>
-              Send reset link
+              {t("auth.forgot.submit")}
             </Button>
             <p>
-              <Link to="/login">Back to login</Link>
+              <Link to="/login">{t("auth.forgot.backToLogin")}</Link>
             </p>
           </Form>
         )}

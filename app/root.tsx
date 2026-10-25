@@ -11,21 +11,28 @@ import {
   useLocation,
   useMatches,
   useRouteError,
+  useRouteLoaderData,
 } from "react-router";
 import { ENV } from "varlock/env";
 
 import { CodeBlock } from "~/components/code";
 import Footer from "~/components/footer";
 import Header from "~/components/header";
+import {
+  createT,
+  DEFAULT_LOCALE,
+  I18nProvider,
+  isLocale,
+  type Locale,
+  useTranslation,
+} from "~/i18n";
+import { metaT } from "~/i18n/meta";
+import { resolveLocale, serializeLangCookie } from "~/i18n/resolve";
 import { getValidAuthSession } from "~/models/auth";
 import { getUserByEmail } from "~/models/user";
 import { parseUserSettings } from "~/models/user-settings.server";
 import { redactAnalyticsEvent } from "~/utils/analytics";
-import {
-  getSearchMetadata,
-  NO_INDEX_DIRECTIVES,
-  SITE_DESCRIPTION,
-} from "~/utils/seo";
+import { getSearchMetadata, NO_INDEX_DIRECTIVES } from "~/utils/seo";
 import { UserSettingsProvider } from "~/utils/user-settings";
 
 import type { Route } from "./+types/root";
@@ -34,7 +41,8 @@ import stylesheet from "./styles.css?url";
 
 const META_TITLE = "Jep!";
 
-export const meta: Route.MetaFunction = ({ loaderData }) => {
+export const meta: Route.MetaFunction = ({ loaderData, matches }) => {
+  const SITE_DESCRIPTION = metaT(matches)("common.siteDescription");
   if (!loaderData) {
     return [
       { title: META_TITLE },
@@ -95,6 +103,16 @@ export function shouldRevalidate({
   return defaultShouldRevalidate;
 }
 
+/** requestLocale resolves the UI language on the server, so the server HTML
+ * and the hydrating client render the same language (see `app/i18n`). */
+function requestLocale(request: Request, account?: string) {
+  return resolveLocale({
+    cookie: request.headers.get("Cookie"),
+    account,
+    acceptLanguage: request.headers.get("Accept-Language"),
+  });
+}
+
 export async function loader({ request }: Route.LoaderArgs) {
   const authSession = await getValidAuthSession(request);
   const showAnalytics = ENV.NODE_ENV === "production" && ENV.VERCEL === "1";
@@ -104,15 +122,48 @@ export async function loader({ request }: Route.LoaderArgs) {
       ? await getUserByEmail(authSession.email, authSession.accessToken)
       : undefined;
     const userSettings = user ? parseUserSettings(user.settings) : undefined;
-    return { user, userSettings, BASE_URL: ENV.BASE_URL, showAnalytics };
+    const { locale, source: localeSource } = requestLocale(
+      request,
+      userSettings?.language,
+    );
+    return {
+      user,
+      userSettings,
+      BASE_URL: ENV.BASE_URL,
+      showAnalytics,
+      locale,
+      localeSource,
+    };
   } catch {
+    const { locale, source: localeSource } = requestLocale(request);
     return {
       user: undefined,
       userSettings: undefined,
       BASE_URL: ENV.BASE_URL,
       showAnalytics,
+      locale,
+      localeSource,
     };
   }
+}
+
+/** useLocaleState keeps the UI language: the root loader's, or the one just
+ * picked with the switcher (shown at once, before the loaders revalidate). */
+function useLocaleState(loaderLocale: Locale, localeSource: string) {
+  const [locale, setLocale] = React.useState(loaderLocale);
+  React.useEffect(() => {
+    setLocale(loaderLocale);
+  }, [loaderLocale]);
+
+  // The language came from the account (e.g. logging in on a new device):
+  // remember it in the cookie too, so actions answer in the same language.
+  React.useEffect(() => {
+    if (localeSource === "account") {
+      document.cookie = serializeLangCookie(loaderLocale);
+    }
+  }, [loaderLocale, localeSource]);
+
+  return [locale, setLocale] as const;
 }
 
 /** useMarkHydrated sets `data-hydrated` on <html> once React has hydrated the
@@ -128,6 +179,11 @@ function useMarkHydrated() {
 
 export default function App({ loaderData }: Route.ComponentProps) {
   useMarkHydrated();
+  const [locale, setLocale] = useLocaleState(
+    loaderData.locale,
+    loaderData.localeSource,
+  );
+  const SITE_DESCRIPTION = createT(locale)("common.siteDescription");
   const location = useLocation();
   const matches = useMatches();
   const publicGamePreview = matches.some(
@@ -157,7 +213,7 @@ export default function App({ loaderData }: Route.ComponentProps) {
   };
 
   return (
-    <html lang="en">
+    <html lang={locale}>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width,initial-scale=1" />
@@ -189,16 +245,18 @@ export default function App({ loaderData }: Route.ComponentProps) {
           <ToastPrimitive.Viewport
             className={`fixed right-0 bottom-0 z-50 m-0 flex w-96 max-w-full list-none flex-col gap-3 p-[var(--viewport-padding)] outline-none [--viewport-padding:_25px]`}
           />
-          <UserSettingsProvider
-            initialSettings={loaderData.userSettings}
-            loggedIn={!!loaderData.user}
-          >
-            <Header user={loaderData.user} BASE_URL={loaderData.BASE_URL} />
-            <Outlet />
-            <Footer />
-            <ScrollRestoration />
-            <Scripts />
-          </UserSettingsProvider>
+          <I18nProvider locale={locale} onChangeLocale={setLocale}>
+            <UserSettingsProvider
+              initialSettings={loaderData.userSettings}
+              loggedIn={!!loaderData.user}
+            >
+              <Header user={loaderData.user} BASE_URL={loaderData.BASE_URL} />
+              <Outlet />
+              <Footer />
+              <ScrollRestoration />
+              <Scripts />
+            </UserSettingsProvider>
+          </I18nProvider>
         </ToastPrimitive.Provider>
       </body>
     </html>
@@ -215,12 +273,25 @@ const errorHeader = (
   </nav>
 );
 
+/** useErrorLocale is the UI language for error pages: the root loader's when
+ * it ran, English otherwise. */
+function useErrorLocale(): Locale {
+  const rootData = useRouteLoaderData("root");
+  const locale: unknown =
+    typeof rootData === "object" && rootData !== null && "locale" in rootData
+      ? rootData.locale
+      : undefined;
+  return isLocale(locale) ? locale : DEFAULT_LOCALE;
+}
+
 function ErrorDocument({ children }: { children: React.ReactNode }) {
   useMarkHydrated();
+  const locale = useErrorLocale();
+  const t = createT(locale);
   return (
-    <html>
+    <html lang={locale}>
       <head>
-        <title>Oh no!</title>
+        <title>{t("common.errorTitle")}</title>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width,initial-scale=1" />
         <meta name="robots" content={NO_INDEX_DIRECTIVES} />
@@ -229,7 +300,7 @@ function ErrorDocument({ children }: { children: React.ReactNode }) {
       </head>
       <body className="flex flex-col">
         {errorHeader}
-        {children}
+        <I18nProvider locale={locale}>{children}</I18nProvider>
         <ScrollRestoration />
         <Scripts />
       </body>
@@ -242,26 +313,33 @@ function RouteError() {
   const error = useRouteError();
   console.error(error);
 
+  return (
+    <ErrorDocument>
+      <RouteErrorContent error={error} />
+    </ErrorDocument>
+  );
+}
+
+function RouteErrorContent({ error }: { error: unknown }) {
+  const { t } = useTranslation();
+
   if (isRouteErrorResponse(error)) {
     return (
-      <ErrorDocument>
-        <div className="flex flex-col gap-4 p-12">
-          <h1 className="text-3xl font-bold">Caught error</h1>
-          <p>Status: {error.status}</p>
-          <CodeBlock text={JSON.stringify(error.data, null, 2)} />
-        </div>
-      </ErrorDocument>
+      <div className="flex flex-col gap-4 p-12">
+        <h1 className="text-3xl font-bold">{t("common.caughtError")}</h1>
+        <p>{t("common.errorStatus", { status: error.status })}</p>
+        <CodeBlock text={JSON.stringify(error.data, null, 2)} />
+      </div>
     );
   }
 
-  const message = error instanceof Error ? error.message : "Unknown error";
+  const message =
+    error instanceof Error ? error.message : t("common.unknownError");
   return (
-    <ErrorDocument>
-      <div className="p-12">
-        <h1 className="mb-4 text-xl font-bold">Error</h1>
-        <p className="font-mono text-sm text-red-500">{message}</p>
-      </div>
-    </ErrorDocument>
+    <div className="p-12">
+      <h1 className="mb-4 text-xl font-bold">{t("common.error")}</h1>
+      <p className="font-mono text-sm text-red-500">{message}</p>
+    </div>
   );
 }
 

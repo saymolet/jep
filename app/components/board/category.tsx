@@ -1,6 +1,7 @@
 import clsx from "clsx";
 
 import Popover from "~/components/popover";
+import { useTranslation } from "~/i18n";
 import useFitText from "~/utils/use-fit-text";
 
 import { useIsWideBoard } from "./layout";
@@ -16,6 +17,7 @@ export function Category({
   hidden?: boolean;
   allAnswered?: boolean;
 }) {
+  const { t } = useTranslation();
   const wide = useIsWideBoard();
   const { fontSize, ref } = useFitText<HTMLSpanElement>({
     maxFontSize: 80,
@@ -68,7 +70,7 @@ export function Category({
           <button
             type="button"
             className="w-full"
-            aria-label="Show completed category"
+            aria-label={t("room.showCompletedCategory")}
           >
             {nameContent}
           </button>
@@ -78,7 +80,7 @@ export function Category({
           {nameContent}
           {note && !hidden ? (
             <span className="text-xs leading-none font-normal text-slate-300 sm:text-sm">
-              Note: {note}
+              {t("room.categoryNote", { note })}
             </span>
           ) : null}
         </>

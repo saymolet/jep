@@ -1,0 +1,19 @@
+/** Every English message area (see `../en.ts`). */
+export { about } from "./about";
+export { auth } from "./auth";
+export { common } from "./common";
+export { community } from "./community";
+export { errors } from "./errors";
+export { game } from "./game";
+export { header } from "./header";
+export { home } from "./home";
+export { howto } from "./howto";
+export { play } from "./play";
+export { profile } from "./profile";
+export { report } from "./report";
+export { room } from "./room";
+export { settings } from "./settings";
+export { siq } from "./siq";
+export { summary } from "./summary";
+export { upload } from "./upload";
+export { uploadHelp } from "./uploadHelp";

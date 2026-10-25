@@ -8,6 +8,7 @@ import { ArrowUturnLeft } from "~/components/icons";
 import type { Action } from "~/engine";
 import { GameState, useEngineContext } from "~/engine";
 import { GAME_OVER_CORRECTION_GRACE_MS } from "~/engine/state";
+import { useTranslation } from "~/i18n";
 import useSoloAction from "~/utils/use-solo-action";
 import useTimeout from "~/utils/use-timeout";
 
@@ -96,10 +97,11 @@ export function UndoArmingProvider({
  * its own, so it's safe to place alongside other actions.
  */
 export function UndoCheckButton({ onClick }: { onClick: () => void }) {
+  const { t } = useTranslation();
   return (
     <Button type="button" onClick={onClick}>
       <ArrowUturnLeft className="h-4 w-4" />
-      undo
+      {t("play.undo.undo")}
     </Button>
   );
 }
@@ -115,7 +117,7 @@ export function UndoCheckConfirm({
   onCancel,
   commitType = "primary",
 }: {
-  prompt: string;
+  prompt: React.ReactNode;
   /** When set, renders a "cancel" button. Omit inside popovers, where
    * tapping outside dismisses instead. */
   onCancel?: () => void;
@@ -123,6 +125,7 @@ export function UndoCheckConfirm({
    * blend in. */
   commitType?: "primary" | "secondary";
 } & RoomProps) {
+  const { t, rich } = useTranslation();
   const { getCheckCorrection, soloDispatch } = useEngineContext();
   const correction = getCheckCorrection(userId);
   const fetcher = useFetcher<Action>();
@@ -163,16 +166,18 @@ export function UndoCheckConfirm({
           disabled={justArmed}
         >
           <ArrowUturnLeft className="h-4 w-4" />
-          undo (
-          <DollarsDiff
-            amount={scoreSwing}
-            variant={commitType === "secondary" ? "onLight" : "default"}
-          />
-          )
+          {rich("play.undo.undoAmount", {
+            amount: (
+              <DollarsDiff
+                amount={scoreSwing}
+                variant={commitType === "secondary" ? "onLight" : "default"}
+              />
+            ),
+          })}
         </Button>
         {onCancel ? (
           <Button type="button" onClick={onCancel}>
-            cancel
+            {t("play.undo.cancel")}
           </Button>
         ) : null}
       </div>

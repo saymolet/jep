@@ -4,6 +4,7 @@ import { useFetcher } from "react-router";
 import type { RoomProps } from "~/components/game";
 import type { Action } from "~/engine";
 import { useEngineContext } from "~/engine";
+import { useTranslation } from "~/i18n";
 import { formatElapsedTime } from "~/utils";
 import useSoloAction from "~/utils/use-solo-action";
 
@@ -24,12 +25,13 @@ export function ClockDisplay({
   disabled?: boolean;
   onToggle?: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <button
       onClick={onToggle}
       disabled={disabled}
       className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm text-slate-300 transition-colors hover:bg-white/10 hover:text-white disabled:pointer-events-none"
-      title={running ? "Pause clock" : "Resume clock"}
+      title={running ? t("room.pauseClock") : t("room.resumeClock")}
     >
       <span className="text-base">{running ? PAUSE_SYMBOL : PLAY_SYMBOL}</span>
       <span className="font-mono tabular-nums">

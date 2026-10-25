@@ -54,12 +54,13 @@ const JSON_GAME = JSON.stringify({
   ],
 });
 
-async function upload(file: File) {
+async function upload(file: File, headers?: HeadersInit) {
   const body = new FormData();
   body.append("upload", file);
   const request = new Request("http://localhost/game?redirectTo=/profile", {
     method: "POST",
     body,
+    headers,
   });
   const response = await action({
     request,
@@ -159,6 +160,34 @@ describe("POST /game", () => {
     expect(response.status).toBe(400);
     expect(formState?.message).toBe(
       "Error uploading game: The file is not a SIGame pack (not a zip).",
+    );
+  });
+
+  it("answers in Ukrainian", async () => {
+    const created = await upload(
+      new File([JSON_GAME], "game.jep.json", { type: "application/json" }),
+      { "Accept-Language": "uk" },
+    );
+    expect(created.formState?.message).toBe(
+      "Нову публічну гру створено. Її вже видно на головній сторінці.",
+    );
+
+    const broken = await upload(new File(["not a zip"], "broken.siq"), {
+      "Accept-Language": "uk",
+    });
+    expect(broken.formState?.message).toBe(
+      "Не вдалося завантажити гру: Цей файл не є пакетом SIGame (це не zip-архів).",
+    );
+
+    const pack = await upload(
+      new File([buildSiq("v5")], "test.siq", { type: "" }),
+      { "Accept-Language": "uk-UA,uk;q=0.9" },
+    );
+    expect(pack.formState?.message).toMatch(
+      /^Імпортовано пакет SIGame «Test pack v5»: 2 раунди, 4 категорії, 10 питань, 5 медіафайлів\./,
+    );
+    expect(pack.formState?.details?.[0]).toMatch(
+      /файлу «missing.png» немає в пакеті\.$/,
     );
   });
 

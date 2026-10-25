@@ -65,4 +65,28 @@ describe("formatSiqSummary", () => {
     expect(bytes).toBeLessThan(2000);
     expect(details.at(-1)).toMatch(/^…and \d+ more warnings\.$/);
   });
+
+  it("speaks Ukrainian", () => {
+    expect(
+      formatSiqSummary(
+        {
+          ...BASE,
+          boards: 1,
+          categories: 3,
+          questions: 25,
+          mediaFiles: 21,
+          droppedQuestions: 2,
+          warnings: Array.from({ length: 10 }, (_, i) => `w${i}`),
+        },
+        "uk",
+      ),
+    ).toEqual({
+      message:
+        "Імпортовано пакет SIGame «Pack»: 1 раунд, 3 категорії, 25 питань, 21 медіафайл. Пропущено 2 питання. 10 попереджень.",
+      details: [
+        ...Array.from({ length: 8 }, (_, i) => `w${i}`),
+        "…і ще 2 попередження.",
+      ],
+    });
+  });
 });

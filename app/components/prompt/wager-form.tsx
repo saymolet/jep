@@ -13,11 +13,15 @@ import {
   getHighestClueValue,
   useEngineContext,
 } from "~/engine";
+import { useTranslation } from "~/i18n";
 import { WagerHintsMode } from "~/models/user-settings";
 import { formatDollars } from "~/utils";
 import useSoloAction from "~/utils/use-solo-action";
 import { useWagerHintsSettings } from "~/utils/user-settings";
-import type { WagerRecommendation } from "~/utils/wager-strategy";
+import type {
+  WagerReasonKey,
+  WagerRecommendation,
+} from "~/utils/wager-strategy";
 import { getFinalClueStrategy } from "~/utils/wager-strategy";
 
 type PlayerAndCanWager = Player & { canWager: boolean; hasWager: boolean };
@@ -29,6 +33,7 @@ function PlayerScores({
   players: PlayerAndCanWager[];
   userId: string;
 }) {
+  const { t } = useTranslation();
   // Sort from highest to lowest score.
   const playerScores = players.sort((a, b) => b.score - a.score);
 
@@ -41,11 +46,11 @@ function PlayerScores({
         >
           <p className="text-center">
             <span className="font-handwriting text-xl font-bold">{p.name}</span>
-            {p.userId === userId ? <span> (you)</span> : null}
+            {p.userId === userId ? <span> {t("play.wager.you")}</span> : null}
             {p.canWager ? (
               <span className="ml-1"> {p.hasWager ? "☑️" : "💭"}</span>
             ) : (
-              <span> (can't wager)</span>
+              <span> {t("play.wager.cantWager")}</span>
             )}
           </p>
           <p>
@@ -57,9 +62,10 @@ function PlayerScores({
   );
 }
 
-function WhyButton({ reason }: { reason: string }) {
+function WhyButton({ reason }: { reason: WagerReasonKey }) {
+  const { t } = useTranslation();
   return (
-    <Popover content={<p>{reason}</p>}>
+    <Popover content={<p>{t(reason)}</p>}>
       <button
         type="button"
         className="flex h-5 w-5 items-center justify-center rounded-full border border-slate-500 text-xs text-slate-400 transition-colors hover:border-white hover:text-white"
@@ -76,18 +82,19 @@ function SuggestedDrawer({
   onSelectAmount,
   defaultOpen,
 }: {
-  allInReason?: string;
+  allInReason?: WagerReasonKey;
   recommendations: WagerRecommendation[];
   onSelectAmount: (amount: number) => void;
   defaultOpen: boolean;
 }) {
+  const { t } = useTranslation();
   const totalCount = recommendations.length + (allInReason ? 1 : 0);
   if (totalCount === 0) return null;
 
   return (
     <Collapsible.Root defaultOpen={defaultOpen} className="w-full">
       <Collapsible.Trigger className="group flex items-center gap-1.5 text-sm text-slate-300 transition-colors hover:text-white">
-        <span>Suggestions</span>
+        <span>{t("play.wager.suggestions")}</span>
         <span className="rounded-full bg-slate-700 px-1.5 text-xs text-slate-400">
           {totalCount}
         </span>
@@ -98,7 +105,9 @@ function SuggestedDrawer({
       <Collapsible.Content className="flex flex-wrap items-center gap-2 pt-2">
         {allInReason ? (
           <div className="flex items-center gap-1">
-            <span className="text-sm text-slate-300">All-in</span>
+            <span className="text-sm text-slate-300">
+              {t("play.wager.allIn")}
+            </span>
             <WhyButton reason={allInReason} />
           </div>
         ) : null}
@@ -108,7 +117,7 @@ function SuggestedDrawer({
               variant="primary"
               onClick={() => onSelectAmount(rec.amount)}
             >
-              {rec.label}:{" "}
+              {t(rec.label)}:{" "}
               <span className="font-handwriting font-bold">
                 {formatDollars(rec.amount)}
               </span>
@@ -140,6 +149,7 @@ function WagerForm({
   strategy?: { recommendations: WagerRecommendation[] };
   wagerHints: string;
 }) {
+  const { t, rich } = useTranslation();
   const maxWager = longForm ? score : Math.max(score, highestClueValue);
   const [wagerValue, setWagerValue] = React.useState("");
 
@@ -156,11 +166,9 @@ function WagerForm({
   return (
     <div className="flex flex-col items-center gap-4 p-2">
       <div className="flex w-full flex-col items-center gap-2">
-        <p className="font-bold text-white">
-          How much will you wager on this clue?
-        </p>
+        <p className="font-bold text-white">{t("play.wager.howMuch")}</p>
         <p className="text-center text-sm text-slate-300">
-          You can wager up to {formatDollars(maxWager)}.
+          {t("play.wager.upTo", { amount: formatDollars(maxWager) })}
         </p>
         <PlayerScores players={players} userId={userId} />
       </div>
@@ -178,11 +186,11 @@ function WagerForm({
           onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
             setWagerValue(e.target.value)
           }
-          placeholder="choose wager amount"
+          placeholder={t("play.wager.placeholder")}
           required
         />
         <Button type="submit" loading={loading}>
-          Submit
+          {t("play.wager.submit")}
         </Button>
       </div>
 
@@ -191,11 +199,13 @@ function WagerForm({
         variant="primary"
         onClick={() => setWagerValue(maxWager.toString())}
       >
-        All-in (
-        <span className="font-handwriting font-bold">
-          {formatDollars(maxWager)}
-        </span>
-        )
+        {rich("play.wager.allInAmount", {
+          amount: (
+            <span className="font-handwriting font-bold">
+              {formatDollars(maxWager)}
+            </span>
+          ),
+        })}
       </Button>
 
       {/* Suggestions drawer */}
@@ -214,6 +224,7 @@ function WagerForm({
 export function ConnectedWagerForm({ roomId, userId }: RoomProps) {
   const { activeClue, buzzes, board, clue, players, soloDispatch, wagers } =
     useEngineContext();
+  const { t, rich } = useTranslation();
   const { wagerHints } = useWagerHintsSettings();
   const fetcher = useFetcher<Action>();
   useSoloAction(fetcher, soloDispatch);
@@ -254,14 +265,17 @@ export function ConnectedWagerForm({ roomId, userId }: RoomProps) {
     return (
       <div className="flex flex-col items-center gap-4 p-2">
         <p className="font-bold text-white">
-          Your wager:{" "}
-          <span className="font-handwriting text-xl font-bold">
-            {formatDollars(wager)}
-          </span>
+          {rich("play.wager.yourWager", {
+            amount: (
+              <span className="font-handwriting text-xl font-bold">
+                {formatDollars(wager)}
+              </span>
+            ),
+          })}
           <br />
         </p>
         <p className="text-sm text-slate-300">
-          Waiting for other players to wager...
+          {t("play.wager.waitingForOthers")}
         </p>
         <PlayerScores players={playersList} userId={userId} />
       </div>

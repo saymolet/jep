@@ -1,6 +1,7 @@
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 
 import { EllipsisHorizontal } from "~/components/icons";
+import { useTranslation } from "~/i18n";
 
 function Item({
   children,
@@ -52,12 +53,13 @@ function MoreActionsTrigger({
 }: {
   onClick?: React.MouseEventHandler;
 }) {
+  const { t } = useTranslation();
   return (
     <DropdownMenu.Trigger asChild>
       <button
         type="button"
         className="inline-flex rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
-        aria-label="More actions"
+        aria-label={t("common.moreActions")}
         onClick={onClick}
       >
         <EllipsisHorizontal className="h-5 w-5" />

@@ -13,8 +13,7 @@ import {
   LoadingSpinner,
 } from "~/components/icons";
 import Link from "~/components/link";
-
-const UPLOAD_TEXT = "Upload or import a game";
+import { useTranslation } from "~/i18n";
 
 /** Files the upload accepts: Jep! games and SIGame packs. Browsers report
  * .siq files as zip, octet-stream or nothing; the server checks the name. */
@@ -41,6 +40,7 @@ function UploadBox({
   loadingText: string;
   onChange: (file?: File) => void;
 }) {
+  const { t } = useTranslation();
   const inputRef = React.useRef<HTMLInputElement>(null);
 
   const onDrop = React.useCallback(
@@ -69,9 +69,11 @@ function UploadBox({
     noClick: true,
   });
 
-  let label = loading ? loadingText : UPLOAD_TEXT;
+  const uploadText = t("upload.uploadOrImport");
+  const invalidText = t("upload.invalidFileType");
+  let label = loading ? loadingText : uploadText;
   if (isDragActive) {
-    label = isDragReject ? "Invalid file type" : "Drop file here";
+    label = isDragReject ? invalidText : t("upload.dropFileHere");
   }
 
   return (
@@ -102,13 +104,13 @@ function UploadBox({
             className="invisible col-start-1 row-start-1"
             aria-hidden="true"
           >
-            {UPLOAD_TEXT}
+            {uploadText}
           </span>
           <span
             className="invisible col-start-1 row-start-1"
             aria-hidden="true"
           >
-            Invalid file type
+            {invalidText}
           </span>
         </p>
         <input
@@ -124,10 +126,10 @@ function UploadBox({
         />
       </button>
       <p id="upload_help" className="mt-1 text-center text-xs text-slate-500">
-        Jep! game (.jep.json) or SIGame pack (.siq, up to 100 MB)
+        {t("upload.hint")}
       </p>
       <Link to="/upload-help">
-        <span className="text-sm">Upload help</span>
+        <span className="text-sm">{t("upload.help")}</span>
       </Link>
     </div>
   );
@@ -144,6 +146,7 @@ export default function Upload({
   loggedIn: boolean;
   redirectTo: string;
 }) {
+  const { t, rich } = useTranslation();
   const [showModal, setShowModal] = React.useState(false);
   const [file, setFile] = React.useState<File | undefined>();
   const submit = useSubmit();
@@ -169,23 +172,25 @@ export default function Upload({
         isOpen={showModal}
         title={
           <div className="flex items-center gap-4">
-            <ExclamationTriangle title="Warning" className="h-8 w-8" />
-            <p>Confirm public upload</p>
+            <ExclamationTriangle
+              title={t("home.warning")}
+              className="h-8 w-8"
+            />
+            <p>{t("upload.confirmPublic")}</p>
           </div>
         }
         onClose={() => setShowModal(false)}
-        description={`Do you want to upload the game "${
-          file?.name ?? "unknown"
-        }" publicly?`}
+        description={t("upload.confirmPublicDescription", {
+          name: file?.name ?? t("upload.unknownFile"),
+        })}
       >
         <div className="mb-4 flex flex-col gap-2 text-sm text-slate-300">
-          <WarningMessage>
-            As a guest, you will not be able to edit or delete the game later.
-          </WarningMessage>
-          <p>Log in to upload private games, edit games, or delete games.</p>
+          <WarningMessage>{t("upload.guestWarning")}</WarningMessage>
+          <p>{t("upload.logInHint")}</p>
           <p>
-            Games must follow the{" "}
-            <Link to="/community">community guidelines</Link>.
+            {rich("upload.guidelines", {
+              link: (chunks) => <Link to="/community">{chunks}</Link>,
+            })}
           </p>
         </div>
         <Dialog.Footer>
@@ -195,7 +200,7 @@ export default function Upload({
               setShowModal(false);
             }}
           >
-            Upload publicly
+            {t("upload.uploadPublicly")}
           </Button>
           <ButtonLink
             variant="primary"
@@ -206,13 +211,15 @@ export default function Upload({
                 : `/login?redirectTo=${encodeURIComponent(location.pathname)}`
             }
           >
-            Log in
+            {t("header.logIn")}
           </ButtonLink>
         </Dialog.Footer>
       </Dialog>
       <UploadBox
         loading={fetcher.state === "submitting"}
-        loadingText={isSiqFile(file) ? "Importing SIGame pack…" : "Uploading…"}
+        loadingText={
+          isSiqFile(file) ? t("upload.importingSiq") : t("upload.uploading")
+        }
         onChange={handleChangeUpload}
       />
     </fetcher.Form>

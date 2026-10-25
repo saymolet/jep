@@ -11,6 +11,7 @@ import {
   Play,
   Trash,
 } from "~/components/icons";
+import { useTranslation } from "~/i18n";
 import type { DbGame } from "~/models/game.server";
 
 export type DownloadStatus = "none" | "downloading" | "downloaded";
@@ -26,24 +27,25 @@ function RemoveDownloadModal({
   onConfirm: () => void;
   gameTitle: string;
 }) {
+  const { t } = useTranslation();
   return (
     <Dialog
       isOpen={isOpen}
       title={
         <div className="flex items-center gap-4">
-          <ExclamationTriangle title="Warning" className="h-8 w-8" />
-          <p>Remove download</p>
+          <ExclamationTriangle title={t("home.warning")} className="h-8 w-8" />
+          <p>{t("home.removeDownload")}</p>
         </div>
       }
       onClose={onClickClose}
-      description={`Remove the offline download for "${gameTitle}"? You won't be able to play this game offline until you download it again.`}
+      description={t("home.removeDownloadDescription", { title: gameTitle })}
     >
       <Dialog.Footer>
         <Button onClick={onClickClose} type="button">
-          Cancel
+          {t("home.cancel")}
         </Button>
         <Button variant="danger" onClick={onConfirm} type="button">
-          Remove download
+          {t("home.removeDownload")}
         </Button>
       </Dialog.Footer>
     </Dialog>
@@ -61,6 +63,7 @@ export default function OfflineMenu({
   onDownload: () => void;
   onRemove: () => void;
 }) {
+  const { t } = useTranslation();
   const [showRemoveModal, setShowRemoveModal] = React.useState(false);
 
   return (
@@ -86,7 +89,7 @@ export default function OfflineMenu({
                     onClick={(e) => e.stopPropagation()}
                   >
                     <Play className="absolute left-0 m-1 h-5 w-5" />
-                    <p className="pl-7">Play offline</p>
+                    <p className="pl-7">{t("home.playOffline")}</p>
                   </Link>
                 </DropdownMenu.Item>
                 <DropdownMenu.Item
@@ -100,7 +103,7 @@ export default function OfflineMenu({
                     }}
                   >
                     <Trash className="absolute left-0 m-1 h-5 w-5 text-red-600 group-hover:text-red-700" />
-                    <p className="pl-7">Remove download</p>
+                    <p className="pl-7">{t("home.removeDownload")}</p>
                   </DropdownMenu.Action>
                 </DropdownMenu.Item>
               </>
@@ -121,7 +124,7 @@ export default function OfflineMenu({
                   ) : (
                     <ArrowDownTray className="absolute left-0 m-1 h-5 w-5" />
                   )}
-                  <p className="pl-7">Download for offline</p>
+                  <p className="pl-7">{t("home.downloadOffline")}</p>
                 </DropdownMenu.Action>
               </DropdownMenu.Item>
             )}

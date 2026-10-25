@@ -1,3 +1,4 @@
+import { createT, type Locale, type TFunction } from "~/i18n";
 import { choicesError, MAX_CHOICES, MIN_CHOICES } from "~/utils/choices";
 import { MAX_MEDIA_BLOCKS } from "~/utils/media";
 
@@ -101,6 +102,7 @@ async function resolveAll(
   resolveMedia: MediaResolver,
   where: string,
   warnings: string[],
+  t: TFunction,
 ): Promise<MediaBlock[]> {
   const blocks: MediaBlock[] = [];
   for (const item of content) {
@@ -114,7 +116,11 @@ async function resolveAll(
   }
   if (blocks.length > MAX_MEDIA_BLOCKS) {
     warnings.push(
-      `${where}: only the first ${MAX_MEDIA_BLOCKS} of ${blocks.length} media files are used.`,
+      t("siq.warn.tooManyMedia", {
+        where,
+        max: MAX_MEDIA_BLOCKS,
+        count: blocks.length,
+      }),
     );
     return blocks.slice(0, MAX_MEDIA_BLOCKS);
   }
@@ -124,6 +130,7 @@ async function resolveAll(
 /** Multiple choice (v5 answerType "select"): options must be text only. */
 function convertChoices(
   question: SiqQuestion,
+  t: TFunction,
 ): { choices: string[]; answer: string } | { error: string } | undefined {
   if (question.answerType?.toLowerCase() !== "select" || !question.options) {
     return undefined;
@@ -131,11 +138,11 @@ function convertChoices(
   const options = question.options;
   if (options.length < MIN_CHOICES || options.length > MAX_CHOICES) {
     return {
-      error: `options not imported (Jep! needs ${MIN_CHOICES}–${MAX_CHOICES}).`,
+      error: t("siq.warn.optionsCount", { min: MIN_CHOICES, max: MAX_CHOICES }),
     };
   }
   if (options.some((o) => o.content.some((c) => c.kind !== "text"))) {
-    return { error: "options with pictures or sound are not imported." };
+    return { error: t("siq.warn.optionsMedia") };
   }
   const choices = options.map((o) => joinText(o.content));
   const right = question.right[0]?.trim() ?? "";
@@ -145,11 +152,11 @@ function convertChoices(
       choices[i].toLowerCase() === right.toLowerCase(),
   );
   if (index < 0) {
-    return { error: "options not imported (the right option is unknown)." };
+    return { error: t("siq.warn.optionsUnknownRight") };
   }
   const answer = choices[index];
   const error = choicesError(choices, answer);
-  if (error) return { error: `options not imported (${error}).` };
+  if (error) return { error: t("siq.warn.optionsInvalid", { reason: error }) };
   return { choices, answer };
 }
 
@@ -158,6 +165,7 @@ async function convertQuestion(
   where: string,
   final: boolean,
   resolveMedia: MediaResolver,
+  t: TFunction,
 ): Promise<QuestionResult> {
   const warnings: string[] = [];
   const clueText = joinText(question.question);
@@ -166,25 +174,27 @@ async function convertQuestion(
     resolveMedia,
     where,
     warnings,
+    t,
   );
 
   if (clueText.length === 0 && media.length === 0) {
-    warnings.push(`${where}: question skipped (no text and no usable media).`);
+    warnings.push(t("siq.warn.questionSkipped", { where }));
     return { warnings };
   }
 
   const answerMedia = await resolveAll(
     question.answer,
     resolveMedia,
-    `${where} (answer)`,
+    t("siq.answerPart", { where }),
     warnings,
+    t,
   );
 
   let answer = uniqueAnswers(question.right).join(" / ");
   if (!answer) answer = joinText(question.answer);
   if (!answer) {
-    answer = "(no answer in the pack)";
-    warnings.push(`${where}: the pack has no answer for this question.`);
+    answer = t("siq.noAnswerPlaceholder");
+    warnings.push(t("siq.warn.noAnswer", { where }));
   }
 
   const clue: Clue = {
@@ -201,9 +211,9 @@ async function convertQuestion(
     return { clue, warnings };
   }
 
-  const choices = convertChoices(question);
+  const choices = convertChoices(question, t);
   if (choices && "error" in choices) {
-    warnings.push(`${where}: ${choices.error}`);
+    warnings.push(t("siq.warn.at", { where, reason: choices.error }));
   } else if (choices) {
     clue.choices = choices.choices;
     clue.answer = choices.answer;
@@ -222,9 +232,7 @@ async function convertQuestion(
   } else if (STAKE_TYPES.has(type)) {
     clue.wagerable = true;
   } else if (!NORMAL_TYPES.has(type)) {
-    warnings.push(
-      `${where}: question type "${question.type}" is played as a normal question.`,
-    );
+    warnings.push(t("siq.warn.unknownType", { where, type: question.type }));
   }
 
   return { clue, warnings };
@@ -264,16 +272,18 @@ export async function siqToGame(
   {
     fileName = "",
     resolveMedia,
-  }: { fileName?: string; resolveMedia: MediaResolver },
+    locale = "en",
+  }: { fileName?: string; resolveMedia: MediaResolver; locale?: Locale },
 ): Promise<SiqConversion> {
+  const t = createT(locale);
   const warnings: string[] = [];
   const boards: Board[] = [];
   let droppedQuestions = 0;
 
   for (const [r, round] of pkg.rounds.entries()) {
-    const roundName = round.name || `Round ${r + 1}`;
-    const themeName = (name: string, t: number) =>
-      name.trim() || `Theme ${t + 1}`;
+    const roundName = round.name || t("siq.roundName", { n: r + 1 });
+    const themeName = (name: string, index: number) =>
+      name.trim() || t("siq.themeName", { n: index + 1 });
 
     if (isFinalRound(round)) {
       // SIGame players remove final themes until one is left and play it.
@@ -281,18 +291,16 @@ export async function siqToGame(
       // the final question, the rest is skipped.
       let kept: { name: string; clue: Clue } | undefined;
       let skippedThemes = 0;
-      for (const [t, theme] of round.themes.entries()) {
+      for (const [index, theme] of round.themes.entries()) {
         if (kept) {
           skippedThemes++;
           continue;
         }
-        const name = themeName(theme.name, t);
+        const name = themeName(theme.name, index);
         for (const [q, question] of theme.questions.entries()) {
           const where = `${roundName} › ${name} › ${question.price}`;
           if (q > 0) {
-            warnings.push(
-              `${where}: skipped (a final theme has one question in Jep!).`,
-            );
+            warnings.push(t("siq.warn.finalExtraQuestion", { where }));
             droppedQuestions++;
             continue;
           }
@@ -301,6 +309,7 @@ export async function siqToGame(
             where,
             true,
             resolveMedia,
+            t,
           );
           warnings.push(...result.warnings);
           if (result.clue) kept = { name, clue: result.clue };
@@ -309,7 +318,11 @@ export async function siqToGame(
       }
       if (skippedThemes > 0) {
         warnings.push(
-          `${roundName}: Jep! plays one final question, so only the theme "${kept?.name}" was imported; ${skippedThemes} other final theme${skippedThemes === 1 ? " was" : "s were"} skipped.`,
+          t("siq.warn.finalThemesSkipped", {
+            round: roundName,
+            theme: kept?.name ?? "",
+            count: skippedThemes,
+          }),
         );
         droppedQuestions += round.themes
           .slice(round.themes.length - skippedThemes)
@@ -321,14 +334,14 @@ export async function siqToGame(
           categories: [{ name: kept.name, clues: [kept.clue] }],
         });
       } else {
-        warnings.push(`${roundName}: skipped (no usable final question).`);
+        warnings.push(t("siq.warn.noFinal", { round: roundName }));
       }
       continue;
     }
 
     const categories: (Category | undefined)[] = await Promise.all(
-      round.themes.map(async (theme, t) => {
-        const name = themeName(theme.name, t);
+      round.themes.map(async (theme, index) => {
+        const name = themeName(theme.name, index);
         const results = await Promise.all(
           theme.questions.map((question) =>
             convertQuestion(
@@ -336,6 +349,7 @@ export async function siqToGame(
               `${roundName} › ${name} › ${question.price}`,
               false,
               resolveMedia,
+              t,
             ),
           ),
         );
@@ -347,7 +361,7 @@ export async function siqToGame(
         }
         if (clues.length === 0) {
           warnings.push(
-            `${roundName} › ${name}: theme skipped (no usable questions).`,
+            t("siq.warn.themeSkipped", { where: `${roundName} › ${name}` }),
           );
           return undefined;
         }
@@ -356,21 +370,26 @@ export async function siqToGame(
     );
     const kept = categories.filter((c): c is Category => c !== undefined);
     if (kept.length === 0) {
-      warnings.push(`${roundName}: skipped (no usable questions).`);
+      warnings.push(t("siq.warn.roundSkipped", { round: roundName }));
       continue;
     }
     const roundBoards = toBoards(kept);
     if (roundBoards.length > 1) {
       warnings.push(
-        `${roundName}: ${kept.length} themes don't fit on one board (at most ${MAX_CATEGORIES}), so it was split into ${roundBoards.length} rounds.`,
+        t("siq.warn.roundSplit", {
+          round: roundName,
+          count: kept.length,
+          max: MAX_CATEGORIES,
+          boards: roundBoards.length,
+        }),
       );
     }
     boards.push(...roundBoards);
   }
 
   const game: Game = {
-    title: pkg.name || trimTitle(fileName) || "SIGame pack",
-    author: pkg.authors.join(", ") || "Unknown",
+    title: pkg.name || trimTitle(fileName) || t("siq.defaultTitle"),
+    author: pkg.authors.join(", ") || t("siq.unknownAuthor"),
     copyright: "",
     note: pkg.comments,
     boards,

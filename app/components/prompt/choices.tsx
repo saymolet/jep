@@ -5,6 +5,7 @@ import { useFetcher } from "react-router";
 import type { RoomProps } from "~/components/game";
 import type { Action, Player } from "~/engine";
 import { useEngineContext } from "~/engine";
+import { useTranslation } from "~/i18n";
 import { choiceLabel, getCorrectChoiceIndex } from "~/utils/choices";
 import useSoloAction from "~/utils/use-solo-action";
 import useTimeout from "~/utils/use-timeout";
@@ -42,10 +43,11 @@ export function ChoiceList({
 }) {
   // Read-only lists are compact (two columns even on phones) so the question
   // and its media keep their room; pickable options are full-width rows.
+  const { t } = useTranslation();
   const compact = !onPick;
   const pickersByChoice = new Map<number, string[]>();
   for (const [userId, choice] of picks) {
-    const name = players.get(userId)?.name ?? "Someone";
+    const name = players.get(userId)?.name ?? t("play.choices.someone");
     pickersByChoice.set(choice, [...(pickersByChoice.get(choice) ?? []), name]);
   }
 
@@ -55,7 +57,7 @@ export function ChoiceList({
         "mx-auto grid w-full max-w-screen-lg shrink-0 gap-2 px-4 pb-2 sm:grid-cols-2",
         compact ? "grid-cols-2" : "grid-cols-1",
       )}
-      aria-label="Options"
+      aria-label={t("play.choices.options")}
       data-testid="choices"
     >
       {choices.map((choice, index) => {
@@ -165,6 +167,7 @@ export function ConnectedChoiceList({
 export function ConnectedChoicePicker({ roomId, userId }: RoomProps) {
   const { activeClue, clue, choicePicks, players, soloDispatch } =
     useEngineContext();
+  const { t } = useTranslation();
   const fetcher = useFetcher<Action>();
   useSoloAction(fetcher, soloDispatch);
   const submit = fetcher.submit;
@@ -209,8 +212,8 @@ export function ConnectedChoicePicker({ roomId, userId }: RoomProps) {
     <>
       <p className="px-4 pb-2 text-center font-bold text-white">
         {picked === undefined
-          ? "Pick your answer"
-          : `You picked ${choiceLabel(picked)}...`}
+          ? t("play.choices.pickYourAnswer")
+          : t("play.choices.youPicked", { label: choiceLabel(picked) })}
       </p>
       <ChoiceList
         choices={clue.choices}

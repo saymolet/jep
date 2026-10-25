@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { ActionType } from "~/engine";
+import { createT } from "~/i18n";
 import { MOCK_GAME, getMockGame } from "~/models/mock.server";
 import type { DbRoomEvent } from "~/models/room-event.server";
 
@@ -120,5 +121,13 @@ describe("formatTimeAgo", () => {
     [125, "2 h ago"],
   ])("%i minutes → %s", (minutes, label) => {
     expect(formatTimeAgo(minutes)).toBe(label);
+  });
+
+  it.each([
+    [0, "щойно"],
+    [5, "5 хв тому"],
+    [125, "2 год тому"],
+  ])("%i minutes → %s in Ukrainian", (minutes, label) => {
+    expect(formatTimeAgo(minutes, createT("uk"))).toBe(label);
   });
 });

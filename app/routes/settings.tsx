@@ -4,9 +4,12 @@ import { data, Form, redirect, useFetcher } from "react-router";
 import Button from "~/components/button";
 import { ErrorMessage, SuccessMessage } from "~/components/error";
 import Input from "~/components/input";
+import LanguageSwitcher from "~/components/language-switcher";
 import Link from "~/components/link";
 import Main from "~/components/main";
 import ShowPasswordButton from "~/components/show-password-button";
+import { useTranslation } from "~/i18n";
+import { metaT } from "~/i18n/meta";
 import { getAuthAccountByAccessToken, requireAuthSession } from "~/models/auth";
 import {
   parseUserSettings,
@@ -16,7 +19,9 @@ import { getUserByEmail } from "~/models/user/service.server";
 
 import type { Route } from "./+types/settings";
 
-export const meta: Route.MetaFunction = () => [{ title: "Settings" }];
+export const meta: Route.MetaFunction = ({ matches }) => [
+  { title: metaT(matches)("settings.metaTitle") },
+];
 
 export async function action({ request }: Route.ActionArgs) {
   const authSession = await requireAuthSession(request);
@@ -80,6 +85,7 @@ function SettingsSection({
 }
 
 function ChangePasswordForm({ hasPassword }: { hasPassword: boolean }) {
+  const { t } = useTranslation();
   const fetcher = useFetcher<{ error: string | null; ok: boolean }>();
   const [showPassword, setShowPassword] = React.useState(false);
   const formRef = React.useRef<HTMLFormElement | null>(null);
@@ -106,7 +112,7 @@ function ChangePasswordForm({ hasPassword }: { hasPassword: boolean }) {
             htmlFor="currentPassword"
             className="text-sm font-medium text-slate-700"
           >
-            Current password
+            {t("settings.changePassword.current")}
           </label>
           <div className="relative">
             <Input
@@ -129,7 +135,7 @@ function ChangePasswordForm({ hasPassword }: { hasPassword: boolean }) {
           htmlFor="newPassword"
           className="text-sm font-medium text-slate-700"
         >
-          New password
+          {t("settings.changePassword.new")}
         </label>
         <div className="relative">
           <Input
@@ -152,7 +158,7 @@ function ChangePasswordForm({ hasPassword }: { hasPassword: boolean }) {
           htmlFor="confirmPassword"
           className="text-sm font-medium text-slate-700"
         >
-          Confirm new password
+          {t("settings.changePassword.confirm")}
         </label>
         <Input
           id="confirmPassword"
@@ -166,9 +172,15 @@ function ChangePasswordForm({ hasPassword }: { hasPassword: boolean }) {
       </div>
       <div className="flex flex-wrap items-center gap-3 pt-1">
         <Button variant="primary" type="submit" disabled={isSubmitting}>
-          {hasPassword ? "Change password" : "Set password"}
+          {hasPassword
+            ? t("settings.changePassword.submit")
+            : t("settings.changePassword.set")}
         </Button>
-        {success && <SuccessMessage>Password updated.</SuccessMessage>}
+        {success && (
+          <SuccessMessage>
+            {t("settings.changePassword.updated")}
+          </SuccessMessage>
+        )}
         {fetcher.data?.error && (
           <ErrorMessage>{fetcher.data.error}</ErrorMessage>
         )}
@@ -178,6 +190,7 @@ function ChangePasswordForm({ hasPassword }: { hasPassword: boolean }) {
 }
 
 function ChangeEmailForm({ email }: { email?: string }) {
+  const { t } = useTranslation();
   const fetcher = useFetcher<{ error: string | null; ok: boolean }>();
   const formRef = React.useRef<HTMLFormElement | null>(null);
 
@@ -199,7 +212,7 @@ function ChangeEmailForm({ email }: { email?: string }) {
     >
       <div className="flex flex-col gap-2">
         <label className="text-sm font-medium text-slate-700">
-          Current email
+          {t("settings.changeEmail.current")}
         </label>
         <p className="text-sm text-slate-500">{email}</p>
       </div>
@@ -208,7 +221,7 @@ function ChangeEmailForm({ email }: { email?: string }) {
           htmlFor="newEmail"
           className="text-sm font-medium text-slate-700"
         >
-          New email
+          {t("settings.changeEmail.new")}
         </label>
         <Input
           id="newEmail"
@@ -221,10 +234,10 @@ function ChangeEmailForm({ email }: { email?: string }) {
       </div>
       <div className="flex flex-wrap items-center gap-3 pt-1">
         <Button variant="primary" type="submit" disabled={isSubmitting}>
-          Change email
+          {t("settings.changeEmail.submit")}
         </Button>
         {success && (
-          <SuccessMessage>Confirmation email(s) sent.</SuccessMessage>
+          <SuccessMessage>{t("settings.changeEmail.sent")}</SuccessMessage>
         )}
         {fetcher.data?.error && (
           <ErrorMessage>{fetcher.data.error}</ErrorMessage>
@@ -235,6 +248,7 @@ function ChangeEmailForm({ email }: { email?: string }) {
 }
 
 export default function Settings({ loaderData }: Route.ComponentProps) {
+  const { t } = useTranslation();
   const dangerZoneFetcher = useFetcher<{ error: string | null; ok: boolean }>();
   const [deleteConfirmation, setDeleteConfirmation] = React.useState("");
 
@@ -246,29 +260,35 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
     <div className="max-w-full grow">
       <Main>
         <h1 className="mb-4 text-2xl font-semibold text-slate-900">
-          Account settings
+          {t("settings.title")}
         </h1>
         <p className="mb-8 text-sm text-slate-500">
-          <Link to="/profile">&larr; Back to profile</Link>
+          <Link to="/profile">{t("settings.backToProfile")}</Link>
         </p>
 
         <div className="flex flex-col gap-6">
-          <SettingsSection title="Change email">
+          <SettingsSection title={t("settings.language.title")}>
+            <p className="mb-4 text-sm text-slate-600">
+              {t("settings.language.description")}
+            </p>
+            <LanguageSwitcher variant="light" />
+          </SettingsSection>
+
+          <SettingsSection title={t("settings.changeEmail.title")}>
             <ChangeEmailForm email={loaderData.user?.email} />
           </SettingsSection>
 
-          <SettingsSection title="Change password">
+          <SettingsSection title={t("settings.changePassword.title")}>
             <ChangePasswordForm hasPassword={loaderData.hasPassword} />
           </SettingsSection>
 
           <Form method="POST" action="/logout">
-            <Button type="submit">Log out</Button>
+            <Button type="submit">{t("settings.logOut")}</Button>
           </Form>
 
-          <SettingsSection title="Danger zone" tone="danger">
+          <SettingsSection title={t("settings.danger.title")} tone="danger">
             <p className="mb-4 text-sm text-red-900/80">
-              Permanently delete your account and all associated data, including
-              your uploaded games, solve history, and reports.
+              {t("settings.danger.description")}
             </p>
             <dangerZoneFetcher.Form
               method="POST"
@@ -280,7 +300,7 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
                   htmlFor="deleteConfirmation"
                   className="text-sm font-medium text-slate-700"
                 >
-                  Type your email to confirm
+                  {t("settings.danger.typeEmail")}
                 </label>
                 <Input
                   id="deleteConfirmation"
@@ -299,7 +319,7 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
                   type="submit"
                   disabled={!canDelete || isDeleting}
                 >
-                  Delete account
+                  {t("settings.danger.delete")}
                 </Button>
                 {dangerZoneFetcher.data?.error && (
                   <ErrorMessage>{dangerZoneFetcher.data.error}</ErrorMessage>

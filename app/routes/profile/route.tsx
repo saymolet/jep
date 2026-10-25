@@ -20,6 +20,7 @@ import { AvatarPicker } from "~/components/player/avatar-picker";
 import SoundControl from "~/components/sound";
 import Upload from "~/components/upload";
 import WagerHintsControl from "~/components/wager-hints-control";
+import { useTranslation } from "~/i18n";
 import { requireAuthSession, type AuthSession } from "~/models/auth";
 import { getGamesForUser, type DbGame } from "~/models/game.server";
 import { hueToPlayerColor, normalizePlayerColor } from "~/models/player-color";
@@ -101,12 +102,15 @@ function DownloadedGamesSection({
   cachedGames: CachedGame[];
   onRemoved: (gameId: string) => void;
 }) {
+  const { t } = useTranslation();
   if (cachedGames.length === 0) return null;
   return (
     <>
-      <h2 className="mb-4 text-2xl font-semibold">Downloaded Games</h2>
+      <h2 className="mb-4 text-2xl font-semibold">
+        {t("profile.downloadedGames")}
+      </h2>
       <p className="mb-4 text-sm text-slate-500">
-        These games are downloaded to this browser for offline play.
+        {t("profile.downloadedGamesDescription")}
       </p>
       <ul className="mb-4 list-inside list-disc text-slate-700">
         {cachedGames.map((cg) => (
@@ -122,6 +126,7 @@ function DownloadedGamesSection({
 }
 
 export default function Profile({ loaderData }: Route.ComponentProps) {
+  const { t } = useTranslation();
   const [cachedGames, setCachedGames] = React.useState<CachedGame[]>([]);
 
   // clientLoader runs after hydration, so sync its result into state.
@@ -140,7 +145,7 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
     return (
       <div className="max-w-full grow">
         <Main>
-          <h1 className="mb-4 text-2xl font-semibold">Profile</h1>
+          <h1 className="mb-4 text-2xl font-semibold">{t("profile.title")}</h1>
           <OfflineIndicator />
           <DownloadedGamesSection
             cachedGames={cachedGames}
@@ -180,6 +185,7 @@ function PlayerDefaultsControl({
     setPlayerColor,
     setPlayerAvatar,
   } = useGameDefaults();
+  const { t } = useTranslation();
   const [editing, setEditing] = React.useState(false);
   const [avatarOpen, setAvatarOpen] = React.useState(false);
   const [nameDraft, setNameDraft] = React.useState(playerName ?? "");
@@ -187,7 +193,7 @@ function PlayerDefaultsControl({
 
   const fallbackHex = hueToPlayerColor(stringToHue(userId));
   const effectiveColor = playerColor ?? fallbackHex;
-  const namePlaceholder = "[Random emoji]";
+  const namePlaceholder = t("profile.randomEmoji");
 
   React.useEffect(() => {
     if (!editing) {
@@ -219,7 +225,7 @@ function PlayerDefaultsControl({
         <label
           htmlFor="defaultPlayerColor"
           className="inline-flex cursor-pointer"
-          title="Pick player color"
+          title={t("profile.pickColor")}
         >
           <PlayerIcon
             player={{
@@ -243,14 +249,17 @@ function PlayerDefaultsControl({
             onChange={(e) => setNameDraft(e.target.value)}
             onFocus={handleFocus}
             onBlur={handleBlur}
-            aria-label="Player name"
+            aria-label={t("profile.playerName")}
           />
           <button
             type="button"
             onClick={() => setAvatarOpen(true)}
             className="rounded-xl bg-white/10 px-3 py-2"
           >
-            <FaceSmile className="h-5 w-5 opacity-50" title="Change avatar" />
+            <FaceSmile
+              className="h-5 w-5 opacity-50"
+              title={t("profile.changeAvatar")}
+            />
           </button>
           {editing ? (
             <button
@@ -261,7 +270,10 @@ function PlayerDefaultsControl({
               }}
               className="rounded-xl bg-white/10 px-3 py-2"
             >
-              <PaperAirplane className="h-5 w-5 opacity-50" title="Submit" />
+              <PaperAirplane
+                className="h-5 w-5 opacity-50"
+                title={t("profile.submit")}
+              />
             </button>
           ) : (
             <button
@@ -269,7 +281,10 @@ function PlayerDefaultsControl({
               onClick={handleFocus}
               className="rounded-xl bg-white/10 px-3 py-2"
             >
-              <PencilSquare className="h-5 w-5 opacity-50" title="Edit" />
+              <PencilSquare
+                className="h-5 w-5 opacity-50"
+                title={t("profile.edit")}
+              />
             </button>
           )}
         </div>
@@ -291,8 +306,8 @@ function PlayerDefaultsControl({
       <Dialog
         isOpen={avatarOpen}
         onClose={() => setAvatarOpen(false)}
-        title="Default avatar"
-        description="Used when you join a game. Pick an emoji or use a photo."
+        title={t("profile.defaultAvatar")}
+        description={t("profile.defaultAvatarDescription")}
       >
         <AvatarPicker value={playerAvatar} onChange={setPlayerAvatar} />
       </Dialog>
@@ -307,14 +322,14 @@ function PlayerDefaultsControl({
             setEditing(false);
           }}
         >
-          Clear name
+          {t("profile.clearName")}
         </Button>
         <Button
           type="button"
           disabled={playerColor == null}
           onClick={() => setPlayerColor(undefined)}
         >
-          Clear color
+          {t("profile.clearColor")}
         </Button>
       </div>
     </section>
@@ -330,6 +345,7 @@ function OnlineProfile({
   cachedGames: CachedGame[];
   onRemoved: (gameId: string) => void;
 }) {
+  const { t } = useTranslation();
   const patchGame = useFetcher<never>();
   const uploadGame = useFetcher<never>();
   const formRef = React.useRef<HTMLFormElement | null>(null);
@@ -372,13 +388,15 @@ function OnlineProfile({
           <Link to="/settings">
             <span className="inline-flex items-center gap-1.5">
               <Cog6Tooth className="h-4 w-4" />
-              Account settings
+              {t("profile.accountSettings")}
             </span>
           </Link>
         </p>
         <OfflineIndicator />
 
-        <h2 className="mb-2 text-2xl font-semibold">Game settings</h2>
+        <h2 className="mb-2 text-2xl font-semibold">
+          {t("profile.gameSettings")}
+        </h2>
         <div className="mb-6 flex flex-col gap-4">
           <SoundControl />
           <WagerHintsControl />
@@ -389,7 +407,7 @@ function OnlineProfile({
           onRemoved={onRemoved}
         />
 
-        <h2 className="mb-4 text-2xl font-semibold">My Games</h2>
+        <h2 className="mb-4 text-2xl font-semibold">{t("profile.myGames")}</h2>
         <Upload
           fetcher={uploadGame}
           formRef={formRef}
@@ -397,7 +415,7 @@ function OnlineProfile({
           redirectTo="/profile"
         />
         {loaderData.games.length === 0 ? (
-          <p className="text-sm text-slate-500">No games found.</p>
+          <p className="text-sm text-slate-500">{t("profile.noGames")}</p>
         ) : null}
         <ul className="mb-4 list-inside list-disc text-slate-700">
           {loaderData.games.map((game) => (
@@ -410,7 +428,7 @@ function OnlineProfile({
           ))}
         </ul>
         {formState ? <FormStateMessage formState={formState} /> : null}
-        <h2 className="mb-4 text-2xl font-semibold">My Attempts / Solves</h2>
+        <h2 className="mb-4 text-2xl font-semibold">{t("profile.mySolves")}</h2>
         <div>
           {loaderData.solves.map((solve) => (
             <SolveInfo key={solve.id} solve={solve} />

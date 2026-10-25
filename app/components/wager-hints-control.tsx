@@ -1,13 +1,14 @@
 import * as Tabs from "@radix-ui/react-tabs";
 
+import { useTranslation } from "~/i18n";
 import { WagerHintsMode } from "~/models/user-settings";
 import { useWagerHintsSettings } from "~/utils/user-settings";
 
-const WAGER_HINTS_OPTIONS: { value: WagerHintsMode; label: string }[] = [
-  { value: WagerHintsMode.Show, label: "Always" },
-  { value: WagerHintsMode.TapToReveal, label: "On tap" },
-  { value: WagerHintsMode.Never, label: "Never" },
-];
+const WAGER_HINTS_OPTIONS = [
+  { value: WagerHintsMode.Show, label: "common.wagerHints.show" },
+  { value: WagerHintsMode.TapToReveal, label: "common.wagerHints.tapToReveal" },
+  { value: WagerHintsMode.Never, label: "common.wagerHints.never" },
+] as const;
 
 const wagerHintsModes = new Set<string>(Object.values(WagerHintsMode));
 function isWagerHintsMode(v: string): v is WagerHintsMode {
@@ -35,11 +36,12 @@ export default function WagerHintsControl({
   theme?: "light" | "dark";
 } = {}) {
   const { wagerHints, setWagerHints } = useWagerHintsSettings();
-  const t = themes[theme];
+  const { t } = useTranslation();
+  const styles = themes[theme];
 
   return (
     <div className="flex flex-col gap-1">
-      <span className={t.label}>Show suggested wagers</span>
+      <span className={styles.label}>{t("common.wagerHints")}</span>
       <Tabs.Root
         value={wagerHints}
         onValueChange={(v) => {
@@ -47,15 +49,15 @@ export default function WagerHintsControl({
         }}
       >
         <Tabs.List
-          className={`flex w-fit overflow-hidden rounded-lg shadow-sm transition-colors ${t.list}`}
+          className={`flex w-fit overflow-hidden rounded-lg shadow-sm transition-colors ${styles.list}`}
         >
           {WAGER_HINTS_OPTIONS.map((opt) => (
             <Tabs.Trigger
               key={opt.value}
               value={opt.value}
-              className={`px-3 py-1.5 text-sm transition-colors ${t.trigger}`}
+              className={`px-3 py-1.5 text-sm transition-colors ${styles.trigger}`}
             >
-              {opt.label}
+              {t(opt.label)}
             </Tabs.Trigger>
           ))}
         </Tabs.List>

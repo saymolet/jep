@@ -1,5 +1,6 @@
 import type { FileUpload } from "@mjackson/form-data-parser";
 
+import { createT, type Locale } from "~/i18n";
 import type { AuthSession } from "~/models/auth";
 import { Convert } from "~/models/convert.server";
 import type { GameVisibility } from "~/models/game.server";
@@ -34,11 +35,13 @@ export class UploadError extends Error {}
 /** newUploadHandler creates a function which uploads games to the database:
  * Jep! games (.jep.json) as they are, SIGame packs (.siq) converted, with
  * their media uploaded to storage. After a .siq import, `siqSummary()`
- * describes what was imported. */
+ * describes what was imported. Errors and the summary are in `locale`. */
 export function newUploadHandler(
   authSession: AuthSession | null,
   visibility: GameVisibility,
+  locale: Locale = "en",
 ) {
+  const t = createT(locale);
   const userId = authSession?.userId;
   let summary: SiqImportSummary | undefined;
 
@@ -49,9 +52,7 @@ export function newUploadHandler(
         `Invalid upload: fieldName=${fileUpload.fieldName}, type=${fileUpload.type}`,
       );
       if (fileUpload.fieldName === "upload") {
-        throw new UploadError(
-          "Unsupported file. Upload a Jep! game (.jep.json) or a SIGame pack (.siq).",
-        );
+        throw new UploadError(t("upload.error.unsupported"));
       }
       return undefined;
     }
@@ -60,7 +61,7 @@ export function newUploadHandler(
 
     if (kind === "json") {
       if (bytes.length > MAX_JSON_SIZE) {
-        throw new UploadError("JSON games must be at most 1 MB.");
+        throw new UploadError(t("upload.error.jsonTooLarge"));
       }
       const game = Convert.toGame(new TextDecoder().decode(bytes));
       return createGame(game, visibility, userId, authSession?.accessToken);
@@ -70,6 +71,7 @@ export function newUploadHandler(
     const result = await importSiq(bytes, {
       fileName: fileUpload.name,
       store,
+      locale,
     });
     try {
       const gameId = await createGame(

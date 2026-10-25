@@ -13,6 +13,7 @@ import {
   useEngineContext,
 } from "~/engine";
 import { getSecretTopic, isSecretClue } from "~/engine/state";
+import { useTranslation } from "~/i18n";
 import type { Clue } from "~/models/convert.server";
 import { hasChoices } from "~/utils/choices";
 import type { MediaBlock } from "~/utils/media";
@@ -52,13 +53,69 @@ const LONG_FORM_CLUE_DURATION_SEC = 30;
 const TIMES_UP_SFX = "/sounds/times-up.mp3";
 const LONG_FORM_SFX = "/sounds/long-form.mp3";
 
+function bold(chunks: React.ReactNode) {
+  return <span className="font-bold">{chunks}</span>;
+}
+
+function kbd(chunks: React.ReactNode) {
+  return <Kbd>{chunks}</Kbd>;
+}
+
+/** CategoryFor renders "<category> for $<value>" (and the wager, if any).
+ * Game content (the category) is passed as a node, never interpolated into
+ * the message. */
+function CategoryFor({
+  category,
+  value,
+  wager,
+}: {
+  category: React.ReactNode;
+  value: number;
+  wager?: number;
+}) {
+  const { rich } = useTranslation();
+  return (
+    <div className="text-white">
+      {wager === undefined
+        ? rich("play.categoryFor", {
+            category: <>{category}</>,
+            value: `$${value}`,
+            b: bold,
+          })
+        : rich("play.categoryForWagered", {
+            category: <>{category}</>,
+            value: `$${value}`,
+            wager: `$${wager}`,
+            b: bold,
+          })}
+    </div>
+  );
+}
+
+/** useClueMedia returns `getClueMedia` with a translated alt text for legacy
+ * `imageSrc` pictures. */
+function useClueMedia() {
+  const { t } = useTranslation();
+  return React.useCallback(
+    (clue: Clue) =>
+      getClueMedia(clue, (clueText) =>
+        t("play.media.imageFor", { clue: clueText }),
+      ),
+    [t],
+  );
+}
+
 /** revealMedia picks the media to show for a clue: once the answer is shown,
  * answer media (if any) replaces the clue media. */
-function revealMedia(clue: Clue, showAnswerMedia: boolean): MediaBlock[] {
+function revealMedia(
+  clue: Clue,
+  showAnswerMedia: boolean,
+  clueMedia: (clue: Clue) => MediaBlock[],
+): MediaBlock[] {
   if (showAnswerMedia && clue.answerMedia && hasAnswerMedia(clue)) {
     return clue.answerMedia;
   }
-  return getClueMedia(clue);
+  return clueMedia(clue);
 }
 
 function hasAnswerMedia(clue: Clue): boolean {
@@ -137,16 +194,17 @@ export function ClueText({
 /** BuzzHint is the top-right hint on the clue prompt. Secret questions are
  * answered without buzzing, so they are labelled instead. */
 function BuzzHint({ secret }: { secret: boolean }) {
+  const { t, rich } = useTranslation();
   if (secret) {
     return (
       <span className="text-right text-sm text-slate-300">
-        <span aria-hidden>🐱</span> Secret question
+        <span aria-hidden>🐱</span> {t("play.secretHint")}
       </span>
     );
   }
   return (
     <span className="text-sm text-slate-300">
-      Click or press <Kbd>Enter</Kbd> to buzz in
+      {rich("play.buzzHint", { kbd })}
     </span>
   );
 }
@@ -156,12 +214,13 @@ function BuzzHint({ secret }: { secret: boolean }) {
  */
 function WagerCluePrompt({ roomId, userId }: RoomProps) {
   const { clue, boardControl, buzzes, category, players } = useEngineContext();
+  const { t } = useTranslation();
   const { ref, fontSize } = useFitText<HTMLDivElement>({ maxFontSize: 300 });
 
   const canWager = buzzes.get(userId) !== CANT_BUZZ_FLAG;
   const wagererName = boardControl
-    ? (players.get(boardControl)?.name ?? "winning buzzer")
-    : "winning buzzer";
+    ? (players.get(boardControl)?.name ?? t("play.winningBuzzer"))
+    : t("play.winningBuzzer");
   const longForm = clue?.longForm ?? false;
 
   return (
@@ -172,9 +231,8 @@ function WagerCluePrompt({ roomId, userId }: RoomProps) {
         wonBuzz={canWager}
       />
       {longForm ? null : (
-        <div className="p-4 text-white">
-          <span className="font-bold">{category}</span> for{" "}
-          <span className="font-bold">${clue?.value}</span>
+        <div className="p-4">
+          <CategoryFor category={category} value={clue?.value ?? 0} />
         </div>
       )}
       <div
@@ -184,17 +242,17 @@ function WagerCluePrompt({ roomId, userId }: RoomProps) {
       >
         {longForm ? (
           <div className="mx-auto flex max-h-96 max-w-screen-lg flex-col p-4">
-            <ShinyText text="final clue" />
+            <ShinyText text={t("play.finalClue")} />
             <p className="text-center font-korinna font-bold break-words text-white uppercase text-shadow-md">
               {category}
             </p>
           </div>
         ) : (
           <div className="relative p-4">
-            <ShinyText text="double down" />
+            <ShinyText text={t("play.doubleDown")} />
             {/* Hidden absolute element keeps shiny text from overflowing its grid */}
             <p className="invisible absolute top-0 left-0 p-4 text-center font-black text-white uppercase">
-              double down
+              {t("play.doubleDown")}
             </p>
           </div>
         )}
@@ -203,16 +261,12 @@ function WagerCluePrompt({ roomId, userId }: RoomProps) {
         <WagerForm roomId={roomId} userId={userId} />
       ) : longForm ? (
         <div className="flex flex-col items-center gap-2 p-2">
-          <p className="font-bold text-white">
-            You do not have enough money to wager on this clue.
-          </p>
-          <p className="text-sm text-slate-300">
-            Waiting for others to submit wagers...
-          </p>
+          <p className="font-bold text-white">{t("play.notEnoughToWager")}</p>
+          <p className="text-sm text-slate-300">{t("play.waitingForWagers")}</p>
         </div>
       ) : (
         <p className="p-2 text-center font-bold text-white">
-          Waiting for response from {wagererName}...
+          {t("play.waitingForResponse", { name: wagererName })}
         </p>
       )}
       <Countdown startTime={undefined} />
@@ -235,6 +289,8 @@ function ReadWagerableCluePrompt({ roomId, userId }: RoomProps) {
     soloDispatch,
   } = useEngineContext();
 
+  const clueMedia = useClueMedia();
+  const { rich } = useTranslation();
   if (!boardControl) throw new Error("No board control found");
   if (!clue) throw new Error("No clue found");
   if (!activeClue) throw new Error("No active clue found");
@@ -316,13 +372,9 @@ function ReadWagerableCluePrompt({ roomId, userId }: RoomProps) {
         }
       />
       <div className="flex justify-between p-4">
-        <div className="text-white">
-          <span className="font-bold">{category}</span> for{" "}
-          <span className="font-bold">${clue.value}</span> (wagered{" "}
-          <span className="font-bold">${clueValue}</span>)
-        </div>
+        <CategoryFor category={category} value={clue.value} wager={clueValue} />
         <span className="text-sm text-slate-300">
-          Click or press <Kbd>Enter</Kbd> to buzz in
+          {rich("play.buzzHint", { kbd })}
         </span>
       </div>
       <ClueText
@@ -330,7 +382,7 @@ function ReadWagerableCluePrompt({ roomId, userId }: RoomProps) {
         canBuzz={boardControl === userId}
         onBuzz={() => handleClick(Date.now())}
         focusOnBuzz
-        media={getClueMedia(clue)}
+        media={clueMedia(clue)}
         autoPlayMedia
         showAnswer={false}
         answer={clue.answer}
@@ -354,6 +406,8 @@ function ReadCluePrompt({
   const { activeClue, buzzes, category, clue, getClueValue, soloDispatch } =
     useEngineContext();
 
+  const clueMedia = useClueMedia();
+  const { rich } = useTranslation();
   if (!clue) throw new Error("No clue found");
 
   // Compute clueDurationMs once at mount so the ReadClueTimer CSS animation
@@ -518,12 +572,9 @@ function ReadCluePrompt({
         }
       />
       <div className="flex justify-between p-4">
-        <div className="text-white">
-          <span className="font-bold">{category}</span> for{" "}
-          <span className="font-bold">${clueValue}</span>
-        </div>
+        <CategoryFor category={category} value={clueValue} />
         <span className="text-sm text-slate-300">
-          Click or press <Kbd>Enter</Kbd> to buzz in
+          {rich("play.buzzHint", { kbd })}
         </span>
       </div>
       <ClueText
@@ -531,7 +582,7 @@ function ReadCluePrompt({
         canBuzz={!lockout && myBuzzDurationMs === undefined}
         onBuzz={() => handleClick(Date.now())}
         focusOnBuzz
-        media={getClueMedia(clue)}
+        media={clueMedia(clue)}
         autoPlayMedia={!isReRead}
         showAnswer={false}
         answer={clue.answer}
@@ -568,6 +619,8 @@ function ReadLongFormCluePrompt({ roomId, userId }: RoomProps) {
     players,
     soloDispatch,
   } = useEngineContext();
+  const clueMedia = useClueMedia();
+  const { t } = useTranslation();
   if (!clue) throw new Error("clue is undefined");
 
   const fetcher = useFetcher<Action>();
@@ -585,7 +638,7 @@ function ReadLongFormCluePrompt({ roomId, userId }: RoomProps) {
 
   // Play the long form sound when the component mounts, unless the clue has
   // its own audio/video to listen to.
-  const clueHasPlayableMedia = hasPlayableMedia(getClueMedia(clue));
+  const clueHasPlayableMedia = hasPlayableMedia(clueMedia(clue));
   const [playLongFormSfx, { stop }] = useGameSound(LONG_FORM_SFX);
   React.useEffect(() => {
     if (clueHasPlayableMedia) return;
@@ -598,17 +651,14 @@ function ReadLongFormCluePrompt({ roomId, userId }: RoomProps) {
   return (
     <>
       <div className="flex justify-between p-4">
-        <div className="text-white">
-          <span className="font-bold">{category}</span> for{" "}
-          <span className="font-bold">${clueValue}</span>
-        </div>
+        <CategoryFor category={category} value={clueValue} />
       </div>
       <ClueText
         clue={clue.clue}
         canBuzz={false}
         onBuzz={() => null}
         focusOnBuzz={false}
-        media={getClueMedia(clue)}
+        media={clueMedia(clue)}
         autoPlayMedia
         showAnswer={false}
         answer={clue.answer}
@@ -617,15 +667,13 @@ function ReadLongFormCluePrompt({ roomId, userId }: RoomProps) {
         <AnswerForm roomId={roomId} userId={userId} />
       ) : allPlayersCantAnswer ? (
         <div className="flex flex-col items-center gap-2 p-2">
-          <p className="font-bold text-white">
-            No one has enough money to wager, but give the clue a read!
-          </p>
+          <p className="font-bold text-white">{t("play.noOneCanWagerRead")}</p>
           <NextClueForm roomId={roomId} userId={userId} />
         </div>
       ) : (
         <div className="flex flex-col items-center gap-2 p-2">
           <p className="text-sm text-slate-300">
-            Waiting for others to answer...
+            {t("play.waitingForAnswers")}
           </p>
         </div>
       )}
@@ -651,6 +699,8 @@ function RevealAnswerToBuzzerPrompt({ roomId, userId }: RoomProps) {
     players,
     winningBuzzer,
   } = useEngineContext();
+  const { t } = useTranslation();
+  const clueMedia = useClueMedia();
   if (!clue) throw new Error("clue is undefined");
   if (!activeClue) throw new Error("activeClue is undefined");
   if (!winningBuzzer) throw new Error("winningBuzzer is undefined");
@@ -680,8 +730,8 @@ function RevealAnswerToBuzzerPrompt({ roomId, userId }: RoomProps) {
   );
 
   const winningPlayerName = winningBuzzer
-    ? (players.get(winningBuzzer)?.name ?? "winning buzzer")
-    : "winning buzzer";
+    ? (players.get(winningBuzzer)?.name ?? t("play.winningBuzzer"))
+    : t("play.winningBuzzer");
 
   return (
     <>
@@ -691,12 +741,12 @@ function RevealAnswerToBuzzerPrompt({ roomId, userId }: RoomProps) {
         wonBuzz={canShowAnswer}
       />
       <div className="flex justify-between gap-2 p-4">
-        <div className="text-white">
-          <span className="font-bold">
-            {isSecret && board ? getSecretTopic(board, activeClue) : category}
-          </span>{" "}
-          for <span className="font-bold">${clueValue}</span>
-        </div>
+        <CategoryFor
+          category={
+            isSecret && board ? getSecretTopic(board, activeClue) : category
+          }
+          value={clueValue}
+        />
         <BuzzHint secret={isSecret} />
       </div>
       {isSecret ? (
@@ -705,8 +755,8 @@ function RevealAnswerToBuzzerPrompt({ roomId, userId }: RoomProps) {
           data-testid="secret-receiver"
         >
           {canShowAnswer
-            ? "Your secret question! Only you answer it."
-            : `Secret question for ${winningPlayerName}`}
+            ? t("play.yourSecretQuestion")
+            : t("play.secretQuestionFor", { name: winningPlayerName })}
         </p>
       ) : null}
       <ClueText
@@ -714,7 +764,7 @@ function RevealAnswerToBuzzerPrompt({ roomId, userId }: RoomProps) {
         canBuzz={false}
         clue={clue.clue}
         focusOnBuzz={false}
-        media={revealMedia(clue, canShowAnswer && showAnswer)}
+        media={revealMedia(clue, canShowAnswer && showAnswer, clueMedia)}
         autoPlayMedia={
           isSecret
             ? !(canShowAnswer && showAnswer) || hasAnswerMedia(clue)
@@ -730,7 +780,7 @@ function RevealAnswerToBuzzerPrompt({ roomId, userId }: RoomProps) {
           <>
             <ConnectedChoiceList />
             <p className="p-2 text-center font-bold text-white">
-              Waiting for {winningPlayerName} to pick an answer...
+              {t("play.waitingForPick", { name: winningPlayerName })}
             </p>
           </>
         )
@@ -745,7 +795,7 @@ function RevealAnswerToBuzzerPrompt({ roomId, userId }: RoomProps) {
         />
       ) : (
         <p className="p-2 text-center font-bold text-white">
-          Waiting for response from {winningPlayerName}...
+          {t("play.waitingForResponse", { name: winningPlayerName })}
         </p>
       )}
       <Countdown startTime={showAnswer ? undefined : countdownStartedAt} />
@@ -765,6 +815,8 @@ function RevealAnswerLongFormPrompt({ roomId, userId }: RoomProps) {
     getClueValue,
     players,
   } = useEngineContext();
+  const { t, rich } = useTranslation();
+  const clueMedia = useClueMedia();
   if (!clue) throw new Error("clue is undefined");
   if (!activeClue) throw new Error("activeClue is undefined");
 
@@ -794,12 +846,9 @@ function RevealAnswerLongFormPrompt({ roomId, userId }: RoomProps) {
         wonBuzz={canCheckAnswer}
       />
       <div className="flex justify-between p-4">
-        <div className="text-white">
-          <span className="font-bold">{category}</span> for{" "}
-          <span className="font-bold">${clueValue}</span>
-        </div>
+        <CategoryFor category={category} value={clueValue} />
         <span className="text-sm text-slate-300">
-          Click or press <Kbd>Enter</Kbd> to buzz in
+          {rich("play.buzzHint", { kbd })}
         </span>
       </div>
       <ClueText
@@ -807,7 +856,7 @@ function RevealAnswerLongFormPrompt({ roomId, userId }: RoomProps) {
         canBuzz={false}
         clue={clue.clue}
         focusOnBuzz={false}
-        media={revealMedia(clue, true)}
+        media={revealMedia(clue, true, clueMedia)}
         autoPlayMedia={hasAnswerMedia(clue)}
         onBuzz={() => null}
         showAnswer
@@ -822,8 +871,9 @@ function RevealAnswerLongFormPrompt({ roomId, userId }: RoomProps) {
         />
       ) : (
         <p className="p-2 text-center text-sm text-slate-300">
-          Waiting for checks from{" "}
-          {unansweredPlayers.map((p) => p.name).join(", ")}...
+          {t("play.waitingForChecks", {
+            names: unansweredPlayers.map((p) => p.name).join(", "),
+          })}
         </p>
       )}
       <div className="flex w-full gap-2 overflow-x-scroll">
@@ -839,7 +889,7 @@ function RevealAnswerLongFormPrompt({ roomId, userId }: RoomProps) {
               {answer ? (
                 <p className="text-white">{answer}</p>
               ) : (
-                <p className="text-sm text-slate-300">[no answer]</p>
+                <p className="text-sm text-slate-300">{t("play.noAnswer")}</p>
               )}
             </div>
           );
@@ -860,6 +910,7 @@ function RevealAnswerLongFormPrompt({ roomId, userId }: RoomProps) {
 function RevealAnswerToAllPrompt({ roomId, userId }: RoomProps) {
   const { activeClue, answeredBy, board, category, clue, getClueValue } =
     useEngineContext();
+  const clueMedia = useClueMedia();
   if (!clue) throw new Error("clue is undefined");
 
   const clueValue = activeClue ? getClueValue(activeClue, userId) : 0;
@@ -875,14 +926,14 @@ function RevealAnswerToAllPrompt({ roomId, userId }: RoomProps) {
         wonBuzz={wonBuzz}
       />
       <div className="flex justify-between p-4">
-        <div className="text-white">
-          <span className="font-bold">
-            {isSecretClue(clue) && board && activeClue
+        <CategoryFor
+          category={
+            isSecretClue(clue) && board && activeClue
               ? getSecretTopic(board, activeClue)
-              : category}
-          </span>{" "}
-          for <span className="font-bold">${clueValue}</span>
-        </div>
+              : category
+          }
+          value={clueValue}
+        />
         <BuzzHint secret={isSecretClue(clue)} />
       </div>
 
@@ -891,7 +942,7 @@ function RevealAnswerToAllPrompt({ roomId, userId }: RoomProps) {
         canBuzz={false}
         onBuzz={() => null}
         focusOnBuzz={false}
-        media={revealMedia(clue, true)}
+        media={revealMedia(clue, true, clueMedia)}
         autoPlayMedia={hasAnswerMedia(clue)}
         showAnswer
         answer={clue.answer}

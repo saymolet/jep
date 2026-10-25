@@ -50,11 +50,13 @@ export async function startMockGame(page: Page, route = "/mock") {
   const startRound = page.getByRole("button", { name: /start round/i });
   await startRound.click();
   // Until the round starts, the preview dialog still covers the board.
-  await expect(startRound).toBeHidden();
+  // Starting the round is a server round trip (solo routes return the action);
+  // under the full parallel suite on a small machine it can exceed 5s.
+  await expect(startRound).toBeHidden({ timeout: 15_000 });
   // The dialog only unmounts after its close animation, and on unmount Radix
   // restores focus to the element focused before it opened. Wait for that so
   // it can't steal focus from whatever the test focuses next.
-  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page.getByRole("dialog")).toHaveCount(0, { timeout: 15_000 });
 }
 
 /** Play through a clue using only keyboard inputs.

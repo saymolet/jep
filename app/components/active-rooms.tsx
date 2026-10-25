@@ -2,6 +2,7 @@ import { Link } from "react-router";
 
 import { Play } from "~/components/icons";
 import { firstCharacter } from "~/components/player/player-icon";
+import { useTranslation } from "~/i18n";
 import { type ActiveRoom, formatTimeAgo } from "~/models/active-rooms";
 
 function PlayerList({ players }: { players: ActiveRoom["players"] }) {
@@ -30,6 +31,7 @@ function PlayerList({ players }: { players: ActiveRoom["players"] }) {
 /** ActiveRoomsList shows a game's rooms that are still in progress so friends
  * can join one without a shared link. Renders nothing when there are none. */
 export function ActiveRoomsList({ rooms }: { rooms: ActiveRoom[] }) {
+  const { t } = useTranslation();
   if (rooms.length === 0) return null;
 
   return (
@@ -38,7 +40,7 @@ export function ActiveRoomsList({ rooms }: { rooms: ActiveRoom[] }) {
         id="active-rooms-heading"
         className="mb-2 text-lg font-semibold text-white"
       >
-        Rooms in progress
+        {t("home.roomsInProgress")}
       </h2>
       <ul className="grid gap-2 md:grid-cols-2">
         {rooms.map((room) => (
@@ -53,16 +55,19 @@ export function ActiveRoomsList({ rooms }: { rooms: ActiveRoom[] }) {
                     {room.roomName}
                   </span>
                   <span className="text-xs text-slate-300">
-                    {room.players.length} player
-                    {room.players.length === 1 ? "" : "s"} &middot; active{" "}
-                    {formatTimeAgo(room.minutesAgo)}
+                    {t("home.roomActivity", {
+                      players: t("common.playerCount", {
+                        count: room.players.length,
+                      }),
+                      ago: formatTimeAgo(room.minutesAgo, t),
+                    })}
                   </span>
                 </div>
                 <PlayerList players={room.players} />
               </div>
               <span className="flex shrink-0 items-center gap-1 font-medium text-blue-200">
                 <Play className="h-4 w-4" />
-                Join
+                {t("home.join")}
               </span>
             </Link>
           </li>

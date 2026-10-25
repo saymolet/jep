@@ -19,6 +19,7 @@ import {
   getPlayer,
   stateFromGame,
 } from "~/engine/state";
+import { useTranslation } from "~/i18n";
 import { Game } from "~/models/game.server";
 import { getPlayerColor } from "~/utils";
 
@@ -169,6 +170,7 @@ export default function Chart({
   players: Player[];
   roomEvents: Action[];
 }) {
+  const { t } = useTranslation();
   const data = buildChartData(game, players, roomEvents);
 
   const roundBoundaries = game.boards.reduce((acc, _board, i) => {
@@ -180,14 +182,22 @@ export default function Chart({
 
   return (
     <>
-      <h2 className="text-2xl">Scores over time</h2>
+      <h2 className="text-2xl">{t("summary.scoresOverTime")}</h2>
       <ResponsiveContainer width="100%" height={400}>
         <LineChart data={data}>
           <XAxis dataKey="x">
-            <Label value="Clue" offset={-5} position="insideBottom" />
+            <Label
+              value={t("summary.chartClue")}
+              offset={-5}
+              position="insideBottom"
+            />
           </XAxis>
           <YAxis tick={(props) => <AngledAxisTick {...props} />}>
-            <Label value="Score" angle={-90} position="insideLeft" />
+            <Label
+              value={t("summary.chartScore")}
+              angle={-90}
+              position="insideLeft"
+            />
           </YAxis>
           <Tooltip />
           <Legend />

@@ -11,6 +11,7 @@ import Preview from "~/components/preview";
 import Prompt from "~/components/prompt";
 import { UndoArmingContext, UndoArmingProvider } from "~/components/undo-check";
 import { GameState, Player, useEngineContext } from "~/engine";
+import { useTranslation } from "~/i18n";
 import type { Game } from "~/models/convert.server";
 import type { PlayerColor } from "~/models/player-color";
 import useGameSound from "~/utils/use-sound";
@@ -36,26 +37,27 @@ function CallToAction({
   roomName: string;
   userId: string;
 }) {
+  const { t } = useTranslation();
   if (type === GameState.GameOver) {
     return (
       <>
-        <h2 className="text-xl font-semibold">Game over!</h2>
-        <Link to={`/room/${roomName}/summary`}>Review your game &rarr;</Link>
+        <h2 className="text-xl font-semibold">{t("room.gameOver")}</h2>
+        <Link to={`/room/${roomName}/summary`}>
+          {t("room.reviewGame")} &rarr;
+        </Link>
       </>
     );
   }
   if (isSingleLongFormClue) {
-    return (
-      <div className="text-slate-300 italic">Let's go to the final clue!</div>
-    );
+    return <div className="text-slate-300 italic">{t("room.goToFinal")}</div>;
   }
   if (boardController) {
     if (boardController.userId === userId) {
-      return <strong className="text-center">You control the board.</strong>;
+      return <strong className="text-center">{t("room.youControl")}</strong>;
     }
     return (
       <strong className="text-center">
-        {boardController.name} has control of the board.
+        {t("room.hasControl", { name: boardController.name })}
       </strong>
     );
   }

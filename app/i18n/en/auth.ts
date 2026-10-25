@@ -1,0 +1,62 @@
+/** English messages: auth (log in, sign up, passwords, account actions).
+ * Keys start with "auth.". */
+export const auth = {
+  "auth.login.metaTitle": "Login",
+  "auth.login.title": "Log in",
+  "auth.login.intro":
+    "Log in to upload unlisted or private games, edit games, delete games, and save your settings across all games.",
+  "auth.login.submit": "Log in",
+  "auth.login.forgotPassword": "Forgot password?",
+  "auth.login.noAccount": "Don't have an account?",
+  "auth.login.signUpLink": "Sign up",
+  "auth.login.invalidCredentials": "Invalid email or password",
+  "auth.signup.metaTitle": "Sign up",
+  "auth.signup.title": "Sign up",
+  "auth.signup.intro":
+    "Sign up to upload unlisted or private games, edit games, delete games, and save your settings across all games.",
+  "auth.signup.submit": "Sign up",
+  "auth.signup.haveAccount": "Have an account?",
+  "auth.signup.logInLink": "Log in",
+  "auth.signup.userExists":
+    "User already exists with this email, sign in instead",
+  "auth.signup.created":
+    "Created user account! Check your email for a verification link.",
+  "auth.or": "or",
+  "auth.emailAddress": "Email address",
+  "auth.emailPlaceholder": "Email",
+  "auth.password": "Password",
+  "auth.passwordPlaceholder": "Password",
+  "auth.continueWithGoogle": "Continue with Google",
+  "auth.continueWithDiscord": "Continue with Discord",
+  "auth.unknownError": "Unknown error",
+  "auth.passwordTooShort": "Password must be at least 6 characters",
+  "auth.passwordsDontMatch": "Passwords do not match",
+  "auth.invalidEmail": "Please enter a valid email address",
+  "auth.forgot.metaTitle": "Forgot password",
+  "auth.forgot.title": "Forgot password",
+  "auth.forgot.intro":
+    "Enter your email address and we'll send you a link to reset your password.",
+  "auth.forgot.sent":
+    "If an account exists for that email, you'll receive a password reset link shortly.",
+  "auth.forgot.submit": "Send reset link",
+  "auth.forgot.backToLogin": "Back to login",
+  "auth.reset.metaTitle": "Reset password",
+  "auth.reset.title": "Reset password",
+  "auth.reset.success": "Your password has been reset successfully.",
+  "auth.reset.goToProfile": "Go to profile",
+  "auth.reset.intro": "Enter your new password below.",
+  "auth.reset.newPassword": "New password",
+  "auth.reset.confirmPassword": "Confirm new password",
+  "auth.reset.confirmPlaceholder": "Confirm password",
+  "auth.reset.submit": "Reset password",
+  "auth.reset.invalidLink":
+    "Reset link is invalid or expired. Request a new password reset link.",
+  "auth.reset.failed": "Failed to reset password",
+  "auth.account.currentPasswordRequired": "Current password is required",
+  "auth.account.currentPasswordIncorrect": "Current password is incorrect",
+  "auth.account.updatePasswordFailed": "Failed to update password",
+  "auth.account.updateEmailFailed": "Failed to update email",
+  "auth.account.typeEmailToConfirm": "Please type your email to confirm",
+  "auth.account.emailMismatch": "Email does not match",
+  "auth.account.deleteFailed": "Failed to delete account",
+} as const;

@@ -9,6 +9,8 @@ import {
   roomEventToAction,
 } from "~/engine/room-event";
 import { GameState, stateFromGame } from "~/engine/state";
+import { createT, getRequestLocale, useTranslation } from "~/i18n";
+import { metaT } from "~/i18n/meta";
 import { getValidAuthSession } from "~/models/auth";
 import { getGame } from "~/models/game.server";
 import { getRoomEvents } from "~/models/room-event.server";
@@ -21,18 +23,24 @@ import { getBattingAverage, getCoryat } from "./coryat";
 import GameSummary from "./summary";
 import { useRoomEventRevalidation } from "./use-room-event-revalidation";
 
-export const meta: Route.MetaFunction = ({ loaderData }) => {
+export const meta: Route.MetaFunction = ({ loaderData, matches }) => {
   try {
-    return [{ title: "Summary: " + loaderData?.game.title }];
+    const t = metaT(matches);
+    return [
+      {
+        title: t("summary.metaTitle", { title: loaderData?.game.title ?? "" }),
+      },
+    ];
   } catch {
     return [];
   }
 };
 
 export async function loader({ request, params }: Route.LoaderArgs) {
+  const t = createT(getRequestLocale(request));
   const roomName = params.roomName;
   if (!roomName) {
-    throw new Response("room name not found in URL params", { status: 404 });
+    throw new Response(t("room.error.noRoomInUrl"), { status: 404 });
   }
 
   const roomParts = roomName.split("-");
@@ -43,12 +51,12 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   const accessToken = authSession?.accessToken;
   const room = await getRoom(roomId, accessToken);
   if (!room || room.name !== roomWord) {
-    throw new Response("room not found", { status: 404 });
+    throw new Response(t("room.error.roomNotFound"), { status: 404 });
   }
 
   const game = await getGame(room.game_id, userId);
   if (!game) {
-    throw new Response("game not found", { status: 404 });
+    throw new Response(t("room.error.gameNotFound"), { status: 404 });
   }
 
   const roomEvents = await getRoomEvents(room.id, accessToken);
@@ -90,6 +98,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 }
 
 export default function PlayGame({ loaderData }: Route.ComponentProps) {
+  const { t, intlLocale } = useTranslation();
   useRoomEventRevalidation(loaderData.roomId);
 
   const state = applyRoomEventsToState(
@@ -113,7 +122,13 @@ export default function PlayGame({ loaderData }: Route.ComponentProps) {
       <div
         className={`mx-auto flex w-full max-w-screen-lg flex-col gap-4 p-3 text-slate-100 sm:p-6 md:p-12`}
       >
-        <h2 className="text-2xl">Congrats, {winningPlayers.join(" and ")}!</h2>
+        <h2 className="text-2xl">
+          {t("summary.congrats", {
+            names: new Intl.ListFormat(intlLocale, {
+              type: "conjunction",
+            }).format(winningPlayers),
+          })}
+        </h2>
         {state.clockAccumulatedMs > 0 && (
           <ClockDisplay displayMs={state.clockAccumulatedMs} disabled />
         )}
@@ -129,7 +144,9 @@ export default function PlayGame({ loaderData }: Route.ComponentProps) {
         </div>
         {loaderData.sortedLeftPlayers.length > 0 && (
           <>
-            <h3 className="text-lg text-slate-400">Left the game</h3>
+            <h3 className="text-lg text-slate-400">
+              {t("summary.leftTheGame")}
+            </h3>
             <div className={PLAYER_TILE_GRID}>
               {loaderData.sortedLeftPlayers.map((p) => (
                 <PlayerScore
@@ -142,9 +159,9 @@ export default function PlayGame({ loaderData }: Route.ComponentProps) {
             </div>
           </>
         )}
-        <h3 className="text-lg">Coryat Scores</h3>
+        <h3 className="text-lg">{t("summary.coryatScores")}</h3>
         <p>
-          <strong>Combined: </strong>
+          <strong>{t("summary.combined")} </strong>
           <Dollars amount={loaderData.combinedCoryat} />
         </p>
         <div className="flex flex-col gap-2 sm:grid sm:grid-cols-3">
@@ -152,19 +169,19 @@ export default function PlayGame({ loaderData }: Route.ComponentProps) {
             <span key={p.userId}>
               {p.name}: <Dollars amount={loaderData.coryats[i]} />
               {i >= leftPlayerOffset && (
-                <span className="text-slate-400"> (left)</span>
+                <span className="text-slate-400"> {t("summary.left")}</span>
               )}
             </span>
           ))}
         </div>
-        <h3 className="text-lg">Batting averages</h3>
+        <h3 className="text-lg">{t("summary.battingAverages")}</h3>
         <div className="flex flex-col gap-2 sm:grid sm:grid-cols-3">
           {allSorted.map((p, i) => (
             <span key={p.userId}>
               {p.name}: {loaderData.battingAverages[i][0]} /{" "}
               {loaderData.battingAverages[i][1]}
               {i >= leftPlayerOffset && (
-                <span className="text-slate-400"> (left)</span>
+                <span className="text-slate-400"> {t("summary.left")}</span>
               )}
             </span>
           ))}

@@ -17,6 +17,7 @@ import {
 } from "~/components/icons";
 import StyledLink from "~/components/link";
 import LocalDate from "~/components/local-date";
+import { useTranslation } from "~/i18n";
 import type { DbGame, GameVisibility } from "~/models/game.server";
 
 function ChangeVisibilityItem({
@@ -28,7 +29,7 @@ function ChangeVisibilityItem({
   gameId: string;
   visibility: GameVisibility;
 }) {
-  const visibilityStr = visibility.toLocaleLowerCase();
+  const { t } = useTranslation();
   return (
     <DropdownMenu.Item
       asChild
@@ -39,7 +40,7 @@ function ChangeVisibilityItem({
         <input type="hidden" readOnly name="visibility" value={visibility} />
         <DropdownMenu.Action>
           <GameVisibilityIcon variant="menu" visibility={visibility} />
-          <p className="pl-7">Make {visibilityStr}</p>
+          <p className="pl-7">{t(`profile.makeVisibility.${visibility}`)}</p>
         </DropdownMenu.Action>
       </fetcher.Form>
     </DropdownMenu.Item>
@@ -57,25 +58,26 @@ function DeleteGameModal({
   onClickClose: () => void;
   game: DbGame;
 }) {
+  const { t } = useTranslation();
   return (
     <Dialog
       isOpen={isOpen}
       title={
         <div className="flex items-center gap-4">
-          <ExclamationTriangle title="Warning" className="h-8 w-8" />
-          <p>Delete game</p>
+          <ExclamationTriangle title={t("home.warning")} className="h-8 w-8" />
+          <p>{t("profile.deleteGame")}</p>
         </div>
       }
       onClose={onClickClose}
-      description={`Are you sure you want to delete game "${game.title}"? This action cannot be undone.`}
+      description={t("profile.deleteGameDescription", { title: game.title })}
     >
       <fetcher.Form method="DELETE" action={`/game/${game.id}`}>
         <Dialog.Footer>
           <Button autoFocus onClick={onClickClose} type="button">
-            Cancel
+            {t("home.cancel")}
           </Button>
           <Button variant="danger" type="submit">
-            Delete game
+            {t("profile.deleteGame")}
           </Button>
         </Dialog.Footer>
       </fetcher.Form>
@@ -92,14 +94,15 @@ export function GameInfo({
   game: DbGame;
   fetcher: FetcherWithComponents<never>;
 }) {
+  const { t } = useTranslation();
   const url = BASE_URL + "/game/" + game.id + "/play";
 
   const [showModal, setShowModal] = React.useState(false);
 
   return (
     <li>
-      <StyledLink to={`/game/${game.id}/play`}>{game.title}</StyledLink> by{" "}
-      {game.author}{" "}
+      <StyledLink to={`/game/${game.id}/play`}>{game.title}</StyledLink>{" "}
+      {t("profile.byAuthor", { author: game.author })}{" "}
       <span className="text-sm text-slate-500">
         <LocalDate date={game.created_at} />
       </span>
@@ -123,7 +126,7 @@ export function GameInfo({
                   rel="noopener noreferrer"
                 >
                   <ArrowTopRightOnSquare className="absolute left-0 m-1 h-5 w-5" />
-                  <p className="pl-7">Game details</p>
+                  <p className="pl-7">{t("header.gameDetails")}</p>
                 </Link>
               </DropdownMenu.Item>
               {game.visibility === "PUBLIC" ? null : (
@@ -150,7 +153,7 @@ export function GameInfo({
               <DropdownMenu.Item asChild>
                 <Link to={`/game/${game.id}/json`} reloadDocument>
                   <ArrowDownTray className="absolute left-0 m-1 h-5 w-5" />
-                  <p className="pl-7">Download JSON file</p>
+                  <p className="pl-7">{t("profile.downloadJsonFile")}</p>
                 </Link>
               </DropdownMenu.Item>
               <DropdownMenu.Item
@@ -160,7 +163,7 @@ export function GameInfo({
               >
                 <DropdownMenu.Action onClick={() => setShowModal(true)}>
                   <Trash className="absolute left-0 m-1 h-5 w-5 text-red-600 group-hover:text-red-700" />
-                  <p className="pl-7">Delete game</p>
+                  <p className="pl-7">{t("profile.deleteGame")}</p>
                 </DropdownMenu.Action>
               </DropdownMenu.Item>
             </DropdownMenu.Content>

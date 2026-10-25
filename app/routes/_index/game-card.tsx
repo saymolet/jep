@@ -4,6 +4,7 @@ import { Link } from "react-router";
 import { GameVisibilityTag } from "~/components/game-visibility-icon";
 import { ArrowDownTray, LoadingSpinner } from "~/components/icons";
 import SolveIcon from "~/components/solve-icon";
+import { useTranslation } from "~/i18n";
 import type { DbGame } from "~/models/game.server";
 import { Solve } from "~/models/solves.server";
 import {
@@ -24,6 +25,7 @@ export default function GameCard({
   solve?: Solve;
   loggedIn?: boolean;
 }) {
+  const { t } = useTranslation();
   const [loading, setLoading] = React.useState(false);
   const solved = solve?.solved_at !== null;
   const to =
@@ -103,7 +105,7 @@ export default function GameCard({
             {downloadStatus === "downloaded" && (
               <ArrowDownTray
                 className="h-4 w-4 text-slate-400"
-                title="Downloaded for offline play"
+                title={t("home.downloadedOffline")}
               />
             )}
             {game.visibility !== "PUBLIC" && (
