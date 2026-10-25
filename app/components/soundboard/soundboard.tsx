@@ -170,9 +170,10 @@ function SoundboardButton({
           onKeyDown={stopEnter}
           className={clsx(
             "fixed left-3 z-30 flex h-12 w-12 touch-manipulation items-center justify-center rounded-full bg-blue-925/90 text-2xl shadow-lg ring-1 ring-white/30 transition hover:bg-blue-600 focus:ring-2 focus:ring-blue-400 focus:outline-none",
-            "bottom-[max(0.75rem,env(safe-area-inset-bottom))]",
-            promptOpen &&
-              "buzzbar:bottom-[calc(6.5rem+env(safe-area-inset-bottom))]",
+            // Above the question's countdown, and the BUZZ button on phones.
+            promptOpen
+              ? "bottom-20 buzzbar:bottom-[calc(7.75rem+env(safe-area-inset-bottom))]"
+              : "bottom-[max(0.75rem,env(safe-area-inset-bottom))]",
             open && "bg-blue-600",
           )}
         >

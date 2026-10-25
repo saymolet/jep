@@ -3,6 +3,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { createRoutesStub } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import SoundControl from "~/components/sound";
 import {
   ANN,
   BOB,
@@ -295,5 +296,25 @@ describe("Soundboard", () => {
     expect(panel.textContent).toContain("Вимкнути звукову панель");
     channel.receive({ sound: "tada", userId: BOB, name: "Bob" });
     expect(toasts()[0].textContent).toContain("Bob вмикає «Та-дам!»");
+  });
+
+  it("has a mute toggle in the sound settings, not in the compact control", () => {
+    act(() =>
+      root.render(
+        <I18nProvider locale="en">
+          <SoundControl />
+          <div data-testid="compact">
+            <SoundControl showLabel={false} showSlider={false} />
+          </div>
+        </I18nProvider>,
+      ),
+    );
+    const toggles = container.querySelectorAll<HTMLInputElement>(
+      'input[type="checkbox"]',
+    );
+    expect(toggles).toHaveLength(1);
+    expect(container.textContent).toContain("Mute soundboard on this device");
+    act(() => toggles[0].click());
+    expect(localStorage.getItem("jep-soundboard-mute")).toBe("1");
   });
 });
