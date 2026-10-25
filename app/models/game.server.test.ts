@@ -231,15 +231,17 @@ describe("getPublicGameSitemapEntries", () => {
 describe("getGame", () => {
   /** A query builder whose calls are recorded and which resolves to data. */
   function query(data: unknown) {
+    const calls: unknown[][] = [];
     const q = {
-      calls: [] as unknown[][],
+      calls,
       then: (resolve: (v: unknown) => void) => resolve({ data, error: null }),
-    } as Record<string, unknown> & { calls: unknown[][] };
-    for (const method of ["select", "eq", "order"]) {
-      q[method] = (...args: unknown[]) => {
-        q.calls.push([method, ...args]);
-        return q;
-      };
+      select: (...args: unknown[]) => record("select", args),
+      eq: (...args: unknown[]) => record("eq", args),
+      order: (...args: unknown[]) => record("order", args),
+    };
+    function record(method: string, args: unknown[]) {
+      calls.push([method, ...args]);
+      return q;
     }
     return q;
   }

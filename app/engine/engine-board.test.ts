@@ -336,39 +336,29 @@ describe("replaying an uneven board from room events", () => {
     });
   }
 
-  it("rebuilds a finished uneven round", () => {
+  it("rebuilds an uneven round played to its end", () => {
     const actions = [
-      join(P1),
-      join(P2),
-      start(),
-      ...answerAll(RAGGED_ROUND_0.slice(0, 4)).flatMap((a) =>
-        a.type === ActionType.Buzz
-          ? [
-              a,
-              buzz(
-                P2.userId,
-                (a.payload as { i: number }).i,
-                (a.payload as { j: number }).j,
-                CLUE_TIMEOUT_MS + 1,
-              ),
-            ]
-          : [a],
-      ),
+      ...SOLO,
+      ...answerAll(RAGGED_ROUND_0),
+      start(1),
+      ...answer(1, 0),
     ];
     const live = run(actions, stateFromGame(RAGGED_GAME));
     const replayed = applyRoomEventsToState(
       stateFromGame(RAGGED_GAME),
       toEvents(actions),
     );
-    expect(live.numAnswered).toBe(4);
-    expect(replayed.numAnswered).toBe(4);
+    expect(replayed.type).toBe(GameState.ShowBoard);
+    expect(replayed.round).toBe(1);
+    expect(replayed.numAnswered).toBe(1);
+    expect(replayed.numCluesInBoard).toBe(3);
     expect(replayed.players.get(P1.userId)?.score).toBe(
       live.players.get(P1.userId)?.score,
     );
-    expect(
-      replayed.isAnswered[0].map((row) => row.map((c) => c.isAnswered)),
-    ).toStrictEqual(
-      live.isAnswered[0].map((row) => row.map((c) => c.isAnswered)),
-    );
+    const answered = (s: State) =>
+      s.isAnswered.map((round) =>
+        round.map((row) => row.map((c) => c.isAnswered)),
+      );
+    expect(answered(replayed)).toStrictEqual(answered(live));
   });
 });
