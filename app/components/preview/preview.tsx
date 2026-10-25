@@ -10,6 +10,7 @@ import Link from "~/components/link";
 import { EditPlayerForm, PlayerIcon } from "~/components/player";
 import { AvatarPicker } from "~/components/player/avatar-picker";
 import SoundControl from "~/components/sound";
+import { TeamPicker } from "~/components/team/team";
 import {
   UndoArmingContext,
   UndoCheckButton,
@@ -21,6 +22,7 @@ import { Action, GameState, useEngineContext } from "~/engine";
 import { useTranslation } from "~/i18n";
 import { Board } from "~/models/convert.server";
 import type { PlayerColor } from "~/models/player-color";
+import type { TeamId } from "~/models/team";
 import { getPlayerColor } from "~/utils";
 import { useJoinAvatar } from "~/utils/avatar-storage";
 import useSoloAction from "~/utils/use-solo-action";
@@ -50,6 +52,8 @@ export function JoinGameDialog({
 } & RoomProps) {
   const { t } = useTranslation();
   const [avatar, setAvatar] = useJoinAvatar();
+  const { teamNames } = useEngineContext();
+  const [team, setTeam] = React.useState<TeamId | null>(null);
   return (
     <Dialog
       isOpen={type !== GameState.GameOver && !watching}
@@ -80,6 +84,15 @@ export function JoinGameDialog({
         </div>
         <AvatarPicker value={avatar} onChange={setAvatar} />
       </div>
+      <div className="mb-4 flex flex-col gap-2">
+        <p className="text-slate-300">{t("team.pickOptional")}</p>
+        <TeamPicker
+          value={team}
+          onChange={setTeam}
+          players={players}
+          teamNames={teamNames}
+        />
+      </div>
       <Dialog.Footer>
         {onWatch ? (
           // Watching sends nothing: the visitor only reads the room.
@@ -94,6 +107,7 @@ export function JoinGameDialog({
             <input type="hidden" name="color" value={playerColor} />
           )}
           {avatar ? <input type="hidden" name="avatar" value={avatar} /> : null}
+          {team ? <input type="hidden" name="team" value={team} /> : null}
           <Button variant="primary" type="submit">
             {t("room.joinGame")}
           </Button>

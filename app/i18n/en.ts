@@ -16,6 +16,7 @@ import {
   settings,
   siq,
   summary,
+  team,
   upload,
   uploadHelp,
   watch,
@@ -46,4 +47,5 @@ export const en = {
   ...settings,
   ...random,
   ...watch,
+  ...team,
 } as const satisfies Messages;

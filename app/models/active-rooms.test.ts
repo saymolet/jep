@@ -48,6 +48,28 @@ describe("summarizeActiveRoom", () => {
     });
   });
 
+  it("lists team totals when the room plays in teams", () => {
+    const summary = summarizeActiveRoom(
+      MOCK_GAME,
+      ROOM,
+      [
+        event(ActionType.Join, { userId: "a", name: "Ann", team: "blue" }),
+        event(ActionType.Join, { userId: "b", name: "Bob" }),
+        event(ActionType.SetTeam, { userId: "b", team: "red" }),
+        event(ActionType.RenameTeam, {
+          userId: "b",
+          team: "red",
+          name: "Foxes",
+        }),
+      ],
+      NOW,
+    );
+    expect(summary?.teams).toStrictEqual([
+      { team: "red", name: "Foxes", score: 0 },
+      { team: "blue", score: 0 },
+    ]);
+  });
+
   it("includes emoji avatars but not photos (to keep the list small)", () => {
     const summary = summarizeActiveRoom(
       MOCK_GAME,

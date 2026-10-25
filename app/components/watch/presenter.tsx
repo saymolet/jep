@@ -9,10 +9,18 @@ import { PlayerIcon, PlayerScore } from "~/components/player";
 import { PROMPT_STATES } from "~/components/prompt/prompt";
 import { QrCode } from "~/components/qr-code";
 import SoundControl from "~/components/sound";
+import { getTeamName, TeamSwatch } from "~/components/team/team";
 import { GameState, useEngineContext } from "~/engine";
 import type { Player } from "~/engine";
+import {
+  getTeamStandings,
+  getWinningTeams,
+  isTeamMode,
+  type TeamStanding,
+} from "~/engine/teams";
 import { useTranslation } from "~/i18n";
 import type { Game } from "~/models/convert.server";
+import { TEAM_COLORS } from "~/models/team";
 import { formatDollars, getPlayerColor } from "~/utils";
 import { useFullscreen } from "~/utils/use-fullscreen";
 import { useWakeLock } from "~/utils/use-wake-lock";
@@ -137,6 +145,52 @@ function PlayerList({ players }: { players: Player[] }) {
   );
 }
 
+/** useTeamStandings is the team standings, or null when no one has a team. */
+function useTeamStandings(): TeamStanding[] | null {
+  const { players, leftPlayers, teamNames } = useEngineContext();
+  if (!isTeamMode({ players, leftPlayers })) return null;
+  return getTeamStandings({ players, leftPlayers, teamNames });
+}
+
+/** TeamTotals shows every team's total in big type, highest first. */
+function TeamTotals({ standings }: { standings: TeamStanding[] }) {
+  const { t } = useTranslation();
+  return (
+    <ol
+      className="flex flex-col gap-2"
+      aria-label={t("team.teams")}
+      data-testid="presenter-teams"
+    >
+      {standings.map((s) => {
+        const name = getTeamName(t, s.team, s.name);
+        return (
+          <li
+            key={s.team}
+            className="flex min-w-0 items-center gap-3 rounded-2xl border-l-8 bg-white/5 px-3 py-2"
+            style={{ borderColor: TEAM_COLORS[s.team] }}
+            aria-label={t("team.score", {
+              name,
+              score: formatDollars(s.score),
+            })}
+          >
+            <span className="min-w-0 grow truncate text-2xl font-bold lg:text-3xl">
+              {name}
+            </span>
+            <span
+              className={clsx(
+                "shrink-0 font-inter text-3xl font-bold lg:text-4xl",
+                s.score < 0 ? "text-red-400" : "text-white",
+              )}
+            >
+              {formatDollars(s.score)}
+            </span>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
 /** Lobby is the round preview: a big QR code to join, and who is in. */
 function Lobby({ joinUrl, game }: { joinUrl: string; game: Game }) {
   const { t } = useTranslation();
@@ -174,11 +228,39 @@ function GameOverScreen() {
   const { players } = useEngineContext();
   const winners = getWinners(players);
   const standings = sortByScore(players);
+  const teamStandings = useTeamStandings();
+  const winningTeams = teamStandings ? getWinningTeams(teamStandings) : [];
   return (
     <div className="flex grow flex-col items-center justify-center gap-6 overflow-y-auto p-6 text-center">
       <h2 className="font-korinna text-5xl font-bold text-white uppercase text-shadow-md lg:text-7xl">
         {t("watch.status.gameOver")}
       </h2>
+      {winningTeams.length > 0 ? (
+        <p
+          className="flex flex-wrap items-center justify-center gap-3 text-4xl font-bold text-yellow-300 lg:text-6xl"
+          data-testid="presenter-winning-team"
+        >
+          <span aria-hidden>🏆</span>
+          {winningTeams.map((s) => (
+            <TeamSwatch key={s.team} team={s.team} className="h-10 w-10" />
+          ))}
+          <span>
+            {winningTeams.length === 1
+              ? t("team.winner", {
+                  name: getTeamName(
+                    t,
+                    winningTeams[0].team,
+                    winningTeams[0].name,
+                  ),
+                })
+              : t("team.tie", {
+                  names: winningTeams
+                    .map((s) => getTeamName(t, s.team, s.name))
+                    .join(", "),
+                })}
+          </span>
+        </p>
+      ) : null}
       {winners.length > 0 ? (
         <>
           <div className="flex flex-wrap justify-center gap-6">
@@ -237,6 +319,7 @@ export function Presenter({ game, joinUrl }: { game: Game; joinUrl: string }) {
   useWakeLock();
 
   const sorted = sortByScore(players);
+  const teamStandings = useTeamStandings();
   const promptOpen = PROMPT_STATES.has(type);
   const lobby = type === GameState.PreviewRound;
   const gameOver = type === GameState.GameOver;
@@ -293,7 +376,8 @@ export function Presenter({ game, joinUrl }: { game: Game; joinUrl: string }) {
       <div className="flex min-h-0 grow flex-col gap-4 p-4 pt-0 lg:flex-row">
         <main className="flex min-h-0 min-w-0 grow flex-col">{main}</main>
         <aside className="flex shrink-0 flex-col gap-4 lg:w-80 xl:w-96">
-          <div className="min-h-0 grow overflow-y-auto">
+          <div className="flex min-h-0 grow flex-col gap-4 overflow-y-auto">
+            {teamStandings ? <TeamTotals standings={teamStandings} /> : null}
             <PlayerList players={sorted} />
           </div>
           {lobby ? null : (
