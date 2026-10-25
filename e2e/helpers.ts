@@ -209,12 +209,18 @@ export async function stubExternalMedia(page: Page) {
   );
 }
 
-/** Click a clue on the board, retrying until its prompt opens. */
+/** Click a clue on the board, retrying until its prompt opens (the "buzz in"
+ * hint on desktops, the big BUZZ button on phones). */
 export async function openClue(page: Page, clueButton: Locator) {
+  const opened = page
+    .getByText(/buzz in/i)
+    .or(page.getByTestId("buzz-bar"))
+    .filter({ visible: true })
+    .first();
   // The board fill animation silently ignores clicks.
   await expect(async () => {
     await clueButton.click();
-    await expect(page.getByText(/buzz in/i)).toBeVisible({ timeout: 1_000 });
+    await expect(opened).toBeVisible({ timeout: 1_000 });
   }).toPass({ timeout: 10_000 });
 }
 

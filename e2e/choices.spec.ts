@@ -102,14 +102,19 @@ test.describe("multiple choice questions (solo)", () => {
         await expect(item).toBeInViewport({ ratio: 1 });
       }
 
-      // Tap the question to buzz once the read time is over, then tap an
-      // option: big, full-width tap targets.
-      await expect(async () => {
-        await page.getByText("Who painted this portrait?").tap();
-        await expect(page.getByText("Pick your answer")).toBeVisible({
-          timeout: 1_000,
-        });
-      }).toPass({ timeout: 15_000 });
+      // The big BUZZ button doesn't cover the options.
+      const buzzer = page.getByTestId("buzz-bar").getByRole("button");
+      const buzzerTop = (await buzzer.boundingBox())!.y;
+      const lastOption = (await choices.locator("li").last().boundingBox())!;
+      expect(lastOption.y + lastOption.height).toBeLessThanOrEqual(buzzerTop);
+
+      // Tap BUZZ once the read time is over, then tap an option: big,
+      // full-width tap targets.
+      await expect(buzzer).toHaveAttribute("data-state", "open", {
+        timeout: 15_000,
+      });
+      await buzzer.tap();
+      await expect(page.getByText("Pick your answer")).toBeVisible();
       const button = page.getByRole("button", { name: "B: Leonardo da Vinci" });
       const box = await button.boundingBox();
       expect(box!.width).toBeGreaterThan(viewport.width * 0.8);
