@@ -1,8 +1,10 @@
 import { expect, test } from "@playwright/test";
 
+import { goto } from "./helpers";
+
 test.describe("landing page", () => {
   test("guest user can upload a game", async ({ page }) => {
-    await page.goto("/");
+    await goto(page, "/");
     await page.getByRole("button", { name: /upload/i }).click();
 
     const fileInput = page.locator("input[type=file]");
@@ -17,7 +19,7 @@ test.describe("landing page", () => {
   });
 
   test("can search for games", async ({ page }) => {
-    await page.goto("/");
+    await goto(page, "/");
 
     const searchInput = page.getByPlaceholder("Search games...");
     // Use pressSequentially to simulate real typing, which triggers

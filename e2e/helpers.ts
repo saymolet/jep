@@ -1,12 +1,51 @@
 import path from "path";
 
 import { expect } from "@playwright/test";
-import type { Locator, Page } from "@playwright/test";
+import type { Locator, Page, Response } from "@playwright/test";
+
+/** Wait until React has hydrated the page (root.tsx sets `data-hydrated` on
+ * <html>). Before that, server-rendered buttons have no event handlers and
+ * clicks on them are silently lost. */
+export async function waitForHydration(page: Page) {
+  await page.locator("html[data-hydrated]").waitFor({ state: "attached" });
+}
+
+/** waitForHydrationAfter waits for hydration after a full page load, unless
+ * the response isn't a page that hydrates (an error status or a non-HTML
+ * resource). */
+async function waitForHydrationAfter(page: Page, response: Response | null) {
+  if (!response || !response.ok()) return;
+  const contentType = response.headers()["content-type"] ?? "";
+  if (!contentType.includes("text/html")) return;
+  await waitForHydration(page);
+}
+
+/** page.goto that also waits for React to hydrate the page. Use it instead of
+ * page.goto whenever the test interacts with the page afterwards. */
+export async function goto(
+  page: Page,
+  url: string,
+  options?: Parameters<Page["goto"]>[1],
+) {
+  const response = await page.goto(url, options);
+  await waitForHydrationAfter(page, response);
+  return response;
+}
+
+/** page.reload that also waits for React to hydrate the page. */
+export async function reload(
+  page: Page,
+  options?: Parameters<Page["reload"]>[0],
+) {
+  const response = await page.reload(options);
+  await waitForHydrationAfter(page, response);
+  return response;
+}
 
 /** Navigate to a mock game route, join, start round 1, and wait for the board
  *  fill animation to complete. */
 export async function startMockGame(page: Page, route = "/mock") {
-  await page.goto(route);
+  await goto(page, route);
   await page.getByRole("button", { name: /join game/i }).click();
   await page.getByRole("button", { name: /start round/i }).click();
 }
@@ -180,4 +219,23 @@ export async function pickEmoji(page: Page, emoji: string) {
       timeout: 1_000,
     });
   }).toPass({ timeout: 10_000 });
+}
+
+/** React reports a hydration mismatch as "Hydration failed..." in development
+ * and as minified errors #418 / #423 / #425 in production builds. */
+const HYDRATION_ERROR = /hydrat|Minified React error #4(1[89]|2[0-5])\b/i;
+
+/** Collect hydration errors reported on the page from now on. Call it before
+ * navigating; assert the returned list stays empty. */
+export function trackHydrationErrors(page: Page): string[] {
+  const errors: string[] = [];
+  page.on("pageerror", (error) => {
+    if (HYDRATION_ERROR.test(error.message)) errors.push(error.message);
+  });
+  page.on("console", (message) => {
+    if (message.type() === "error" && HYDRATION_ERROR.test(message.text())) {
+      errors.push(message.text());
+    }
+  });
+  return errors;
 }

@@ -1,10 +1,10 @@
 import { expect, test } from "@playwright/test";
 
-import { playOneClue, startMockGame } from "./helpers";
+import { goto, playOneClue, startMockGame } from "./helpers";
 
 test.describe("solo game", () => {
   test("can play through a mock game clue", async ({ page }) => {
-    await page.goto("/mock");
+    await goto(page, "/mock");
 
     // Join the game from the preview dialog
     await page.getByRole("button", { name: /join game/i }).click();

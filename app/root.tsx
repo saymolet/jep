@@ -115,7 +115,19 @@ export async function loader({ request }: Route.LoaderArgs) {
   }
 }
 
+/** useMarkHydrated sets `data-hydrated` on <html> once React has hydrated the
+ * page, i.e. once buttons and forms have their event handlers. The root's
+ * effects run after all of its children's, so this is the last effect of the
+ * hydration commit. E2E tests wait for it before interacting (see
+ * `e2e/helpers.ts`). */
+function useMarkHydrated() {
+  React.useEffect(() => {
+    document.documentElement.dataset.hydrated = "true";
+  }, []);
+}
+
 export default function App({ loaderData }: Route.ComponentProps) {
+  useMarkHydrated();
   const location = useLocation();
   const matches = useMatches();
   const publicGamePreview = matches.some(
@@ -204,6 +216,7 @@ const errorHeader = (
 );
 
 function ErrorDocument({ children }: { children: React.ReactNode }) {
+  useMarkHydrated();
   return (
     <html>
       <head>

@@ -5,12 +5,13 @@ import {
   expect as authedExpect,
   TEST_EMAIL,
 } from "./fixtures";
+import { goto } from "./helpers";
 
 test.describe("auth (unauthenticated)", () => {
   test("redirects to login when visiting /profile unauthenticated", async ({
     page,
   }) => {
-    await page.goto("/profile");
+    await goto(page, "/profile");
 
     // Should redirect to /login with redirectTo param
     await expect(page).toHaveURL(/\/login\?redirectTo=%2Fprofile/);
@@ -21,7 +22,7 @@ test.describe("auth (unauthenticated)", () => {
   });
 
   test("shows error for invalid credentials", async ({ page }) => {
-    await page.goto("/login");
+    await goto(page, "/login");
 
     await page.getByLabel(/email address/i).fill("fake@example.com");
     await page.locator("input#password").fill("wrongpassword");
@@ -40,7 +41,7 @@ authedTest.describe("auth (authenticated)", () => {
   authedTest(
     "can visit /profile without redirect",
     async ({ authedPage: page }) => {
-      await page.goto("/profile");
+      await goto(page, "/profile");
 
       // Should stay on /profile (not redirected to /login)
       await authedExpect(page).toHaveURL(/\/profile/);
@@ -53,7 +54,7 @@ authedTest.describe("auth (authenticated)", () => {
   authedTest(
     "header shows profile link instead of login",
     async ({ authedPage: page }) => {
-      await page.goto("/");
+      await goto(page, "/");
 
       // AccountButton renders as a Link with aria-label="Profile"
       await authedExpect(
@@ -70,7 +71,7 @@ authedTest.describe("auth (authenticated)", () => {
   authedTest(
     "visiting /login redirects away when already authenticated",
     async ({ authedPage: page }) => {
-      await page.goto("/login");
+      await goto(page, "/login");
 
       // The login loader redirects authenticated users to /
       await authedExpect(page).not.toHaveURL(/\/login/);

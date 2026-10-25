@@ -1,7 +1,13 @@
 import path from "path";
 
 import { expect, test } from "./fixtures";
-import { pickEmoji, uploadGame, waitForConnected } from "./helpers";
+import {
+  goto,
+  pickEmoji,
+  reload,
+  uploadGame,
+  waitForConnected,
+} from "./helpers";
 
 const AVATAR_PNG = path.resolve("e2e/assets/avatar.png");
 
@@ -10,9 +16,9 @@ test.describe("avatars in a room", () => {
     authedPage: page,
     browser,
   }) => {
-    await page.goto("/profile");
+    await goto(page, "/profile");
     const gameId = await uploadGame(page);
-    await page.goto(`/game/${gameId}/play`);
+    await goto(page, `/game/${gameId}/play`);
     await expect(page).toHaveURL(/\/room\/\d+-\w+$/);
     const roomPath = new URL(page.url()).pathname;
     await waitForConnected(page);
@@ -47,7 +53,7 @@ test.describe("avatars in a room", () => {
     // A second player sees the photo and joins with an emoji.
     const context = await browser.newContext();
     const guest = await context.newPage();
-    await guest.goto(roomPath);
+    await goto(guest, roomPath);
     await waitForConnected(guest);
     await expect(guest.getByRole("dialog").locator(photo)).toBeVisible();
     await pickEmoji(guest, "🐸");
@@ -77,7 +83,7 @@ test.describe("avatars in a room", () => {
           resp.request().method() === "POST",
       );
 
-    await page.goto("/profile");
+    await goto(page, "/profile");
     const openPicker = async () => {
       await expect(async () => {
         await page.getByRole("button", { name: "Change avatar" }).click();
@@ -104,7 +110,7 @@ test.describe("avatars in a room", () => {
     await pickEmoji(page, "🦄");
     await save;
 
-    await page.reload();
+    await reload(page);
     await openPicker();
     await expect(unicorn).toHaveAttribute("aria-pressed", "true");
 
@@ -112,7 +118,7 @@ test.describe("avatars in a room", () => {
     save = saved();
     await remove.click();
     await save;
-    await page.reload();
+    await reload(page);
     await openPicker();
     await expect(unicorn).toHaveAttribute("aria-pressed", "false");
   });

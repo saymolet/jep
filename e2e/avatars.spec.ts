@@ -1,12 +1,12 @@
 import { expect, test } from "@playwright/test";
 
-import { pickEmoji } from "./helpers";
+import { goto, pickEmoji } from "./helpers";
 
 test.describe("avatars", () => {
   test("join with an emoji avatar, then change it in game", async ({
     page,
   }) => {
-    await page.goto("/mock");
+    await goto(page, "/mock");
     await pickEmoji(page, "🦊");
     await page.getByRole("button", { name: /join game/i }).click();
 
@@ -28,7 +28,7 @@ test.describe("avatars", () => {
     await expect(icons.filter({ hasText: "🦊" })).toHaveCount(0);
 
     // The pick is remembered on this device for the next join.
-    await page.goto("/mock");
+    await goto(page, "/mock");
     await expect(
       page.getByRole("button", { name: "Avatar 🐙" }),
     ).toHaveAttribute("aria-pressed", "true");
