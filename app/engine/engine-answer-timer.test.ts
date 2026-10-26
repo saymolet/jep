@@ -52,6 +52,15 @@ const settings = (
   type: ActionType.SetSettings,
   payload: { userId, answerTimeSec, autoWrongOnTimeout },
 });
+/** A change by the site admin, as the settings route inserts it. */
+const adminSettings = (
+  userId: string,
+  answerTimeSec: unknown,
+  autoWrongOnTimeout: unknown = true,
+): TestAction => ({
+  type: ActionType.SetSettings,
+  payload: { userId, answerTimeSec, autoWrongOnTimeout, admin: true },
+});
 const choose = ([i, j]: [number, number], ts = 0): TestAction => ({
   type: ActionType.ChooseClue,
   payload: { userId: P1.userId, i, j },
@@ -150,6 +159,31 @@ describe("SetSettings (answer timer)", () => {
       expected: { answerTimeSec: 0, autoWrongOnTimeout: true },
     },
     {
+      name: "the admin changes the settings without playing",
+      actions: [...LOBBY, adminSettings("admin-visitor", 15, false)],
+      expected: { answerTimeSec: 15, autoWrongOnTimeout: false },
+    },
+    {
+      name: "the admin changes the settings while playing",
+      actions: [...LOBBY, adminSettings(P1.userId, 20)],
+      expected: { answerTimeSec: 20, autoWrongOnTimeout: true },
+    },
+    {
+      name: "the admin can't change them while a question is open",
+      actions: [
+        ...LOBBY,
+        start,
+        choose(NORMAL),
+        adminSettings("admin-visitor", 60),
+      ],
+      expected: { answerTimeSec: 0, autoWrongOnTimeout: true },
+    },
+    {
+      name: "the admin's values are validated too",
+      actions: [...LOBBY, adminSettings("admin-visitor", 7)],
+      expected: { answerTimeSec: 0, autoWrongOnTimeout: true },
+    },
+    {
       name: "the settings can change on the board between questions",
       actions: [...LOBBY, start, settings(P2.userId, 15, false)],
       expected: { answerTimeSec: 15, autoWrongOnTimeout: false },
@@ -193,6 +227,22 @@ describe("SetSettings (answer timer)", () => {
       expect(timer(run(tc.actions, choiceState))).toEqual(tc.expected);
     });
   }
+
+  it("rejects an admin flag other than true", () => {
+    const state = run(LOBBY, choiceState);
+    expect(() =>
+      gameEngine(state, {
+        type: ActionType.SetSettings,
+        payload: {
+          userId: "admin-visitor",
+          answerTimeSec: 10,
+          autoWrongOnTimeout: true,
+          admin: "yes",
+        },
+        ts: 0,
+      }),
+    ).toThrow();
+  });
 
   it("rejects a malformed payload", () => {
     const state = run(LOBBY, choiceState);

@@ -91,6 +91,8 @@ export const room: Dictionary<typeof en> = {
     "команду можна змінити лише між питаннями",
   "room.error.settingsBetweenQuestions":
     "налаштування можна змінити лише між питаннями",
+  "room.error.settingsAdminOnly":
+    "час на відповідь може змінювати лише адміністратор",
   "room.error.notOnTeam": "перейменувати можна лише свою команду",
   "room.error.teamNameTooLong": "назва команди задовга",
   "room.error.gameIsOver": "гру вже закінчено",
@@ -103,11 +105,14 @@ export const room: Dictionary<typeof en> = {
   "room.startNewRoom": "Створити нову кімнату",
   "room.answerTime": "Час на відповідь",
   "room.answerTimeHelp":
-    "Скільки часу має гравець, щоб відповісти й оцінити відповідь. Будь-який гравець може змінити це між питаннями.",
+    "Скільки часу має гравець, щоб відповісти й оцінити відповідь. Його можна змінити між питаннями.",
   "room.answerTimeOff": "Вимк.",
   "room.answerTimeSeconds": "{seconds} с",
   "room.answerTimeAutoWrong": "Зараховувати як неправильну, коли час вийде",
   "room.answerTimeSettings": "Налаштування часу на відповідь",
   "room.answerTimeBetweenQuestions":
     "Час на відповідь можна змінити між питаннями",
+  "room.answerTimeAdminOnly": "Змінити це може лише адміністратор.",
+  "room.answerTimeReadOnly":
+    "Час на відповідь: {value}. Змінити це може лише адміністратор.",
 };

@@ -8,7 +8,8 @@ const USER = "user-1";
 const OTHER = "user-2";
 
 const mocks = vi.hoisted(() => ({
-  createRoomEvent: vi.fn(),
+  createRoomEventAsServer: vi.fn(),
+  getAdmin: vi.fn(),
   getRoomEvents: vi.fn(),
   getRoom: vi.fn(),
   getGame: vi.fn(),
@@ -18,8 +19,9 @@ const mocks = vi.hoisted(() => ({
 vi.mock("~/models/auth", () => ({
   getValidAuthSession: mocks.getValidAuthSession,
 }));
+vi.mock("~/admin/auth.server", () => ({ getAdmin: mocks.getAdmin }));
 vi.mock("~/models/room-event.server", () => ({
-  createRoomEvent: mocks.createRoomEvent,
+  createRoomEventAsServer: mocks.createRoomEventAsServer,
   getRoomEvents: mocks.getRoomEvents,
 }));
 vi.mock("~/models/room.server", () => ({ getRoom: mocks.getRoom }));
@@ -79,6 +81,8 @@ beforeEach(() => {
   mocks.getRoom.mockResolvedValue(ROOM);
   mocks.getGame.mockResolvedValue(MOCK_GAME);
   mocks.getRoomEvents.mockResolvedValue(toEvents(LOBBY));
+  // Logged in as admin unless a test says otherwise.
+  mocks.getAdmin.mockResolvedValue({ until: Infinity, key: "k", csrf: "c" });
 });
 
 describe("settings route", () => {
@@ -88,11 +92,15 @@ describe("settings route", () => {
       answerTimeSec: "15",
       autoWrongOnTimeout: "false",
     });
-    expect(mocks.createRoomEvent).toHaveBeenCalledWith(
+    expect(mocks.createRoomEventAsServer).toHaveBeenCalledWith(
       ROOM.id,
       ActionType.SetSettings,
-      { userId: USER, answerTimeSec: 15, autoWrongOnTimeout: false },
-      undefined,
+      {
+        userId: USER,
+        answerTimeSec: 15,
+        autoWrongOnTimeout: false,
+        admin: true,
+      },
     );
   });
 
@@ -102,11 +110,10 @@ describe("settings route", () => {
       answerTimeSec: "0",
       autoWrongOnTimeout: "true",
     });
-    expect(mocks.createRoomEvent).toHaveBeenCalledWith(
+    expect(mocks.createRoomEventAsServer).toHaveBeenCalledWith(
       ROOM.id,
       ActionType.SetSettings,
-      { userId: USER, answerTimeSec: 0, autoWrongOnTimeout: true },
-      undefined,
+      { userId: USER, answerTimeSec: 0, autoWrongOnTimeout: true, admin: true },
     );
   });
 
@@ -116,7 +123,7 @@ describe("settings route", () => {
       await expect(
         call("5", { userId: USER, answerTimeSec, autoWrongOnTimeout: "true" }),
       ).rejects.toMatchObject({ status: 400 });
-      expect(mocks.createRoomEvent).not.toHaveBeenCalled();
+      expect(mocks.createRoomEventAsServer).not.toHaveBeenCalled();
     },
   );
 
@@ -128,19 +135,45 @@ describe("settings route", () => {
         autoWrongOnTimeout: "true",
       }),
     ).rejects.toMatchObject({ status: 403 });
-    expect(mocks.createRoomEvent).not.toHaveBeenCalled();
+    expect(mocks.createRoomEventAsServer).not.toHaveBeenCalled();
   });
 
-  it("refuses people who are not playing", async () => {
+  it("refuses players who are not the admin", async () => {
+    mocks.getAdmin.mockResolvedValue(null);
+    const response = await call("5", {
+      userId: USER,
+      answerTimeSec: "10",
+      autoWrongOnTimeout: "true",
+    }).catch((e: unknown) => e);
+    if (!(response instanceof Response)) {
+      throw new Error("expected a Response to be thrown");
+    }
+    expect(response.status).toBe(403);
+    expect(await response.text()).toBe(
+      "only the admin can change the answer time",
+    );
+    expect(mocks.createRoomEventAsServer).not.toHaveBeenCalled();
+    // Refused before anything is read from the database.
+    expect(mocks.getRoom).not.toHaveBeenCalled();
+  });
+
+  it("lets the admin change the settings without playing", async () => {
     mocks.getRoomEvents.mockResolvedValue(toEvents(LOBBY.slice(1)));
-    await expect(
-      call("5", {
+    await call("5", {
+      userId: USER,
+      answerTimeSec: "20",
+      autoWrongOnTimeout: "true",
+    });
+    expect(mocks.createRoomEventAsServer).toHaveBeenCalledWith(
+      ROOM.id,
+      ActionType.SetSettings,
+      {
         userId: USER,
-        answerTimeSec: "10",
-        autoWrongOnTimeout: "true",
-      }),
-    ).rejects.toMatchObject({ status: 403 });
-    expect(mocks.createRoomEvent).not.toHaveBeenCalled();
+        answerTimeSec: 20,
+        autoWrongOnTimeout: true,
+        admin: true,
+      },
+    );
   });
 
   it("refuses changes while a question is open", async () => {
@@ -152,10 +185,11 @@ describe("settings route", () => {
         autoWrongOnTimeout: "true",
       }),
     ).rejects.toMatchObject({ status: 409 });
-    expect(mocks.createRoomEvent).not.toHaveBeenCalled();
+    expect(mocks.createRoomEventAsServer).not.toHaveBeenCalled();
   });
 
-  it("returns the action for solo play", async () => {
+  it("returns the action for solo play, admin or not", async () => {
+    mocks.getAdmin.mockResolvedValue(null);
     const result = await call("-1", {
       userId: USER,
       answerTimeSec: "30",
@@ -165,6 +199,6 @@ describe("settings route", () => {
       type: ActionType.SetSettings,
       payload: { userId: USER, answerTimeSec: 30, autoWrongOnTimeout: true },
     });
-    expect(mocks.createRoomEvent).not.toHaveBeenCalled();
+    expect(mocks.createRoomEventAsServer).not.toHaveBeenCalled();
   });
 });
