@@ -189,3 +189,4 @@ themes (Classic / Своя Игра / Dark).
   on the room channel; floating 🎺 button for players, toasts for players, spectators and
   the TV, send/receive cooldowns and overlap cap, per-device "Mute soundboard", ducking
   during questions with audio/video. No migration, no new dependencies.
+- **2026-10-26** — Board fill now starts before paint (no flash of the full board, no taps on cells about to hide); the board sets `aria-busy` while hidden or filling, and e2e helpers wait for it.

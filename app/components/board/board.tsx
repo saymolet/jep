@@ -20,6 +20,7 @@ const WAGER_SFX = "/sounds/wager.mp3";
 /** BoardComponent is purely presentational and renders the board. */
 export function BoardComponent({
   board,
+  busy = false,
   hasBoardControl,
   isAnswered,
   isCategoryRevealed,
@@ -30,6 +31,8 @@ export function BoardComponent({
   tbodyRef,
 }: {
   board: Board;
+  /** See {@link BoardLayout}. */
+  busy?: boolean;
   hasBoardControl: boolean;
   isAnswered: (i: number, j: number) => boolean;
   isCategoryRevealed: (j: number) => boolean;
@@ -55,7 +58,7 @@ export function BoardComponent({
   }
 
   return (
-    <BoardLayout columns={board.categoryNames.length}>
+    <BoardLayout busy={busy} columns={board.categoryNames.length}>
       <thead>
         <tr className="h-1">
           {board.categories.map((category, j) => {
@@ -248,6 +251,7 @@ export function ConnectedBoardComponent({
   return (
     <BoardComponent
       board={board}
+      busy={animating || !shouldShowBoard}
       tbodyRef={tbodyRef}
       hasBoardControl={!animating && hasBoardControl}
       isAnswered={isAnswered}

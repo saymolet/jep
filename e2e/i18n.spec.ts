@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { goto, reload, trackHydrationErrors } from "./helpers";
+import { goto, reload, startMockGame, trackHydrationErrors } from "./helpers";
 
 test.describe("language", () => {
   test("is English by default", async ({ page }) => {
@@ -47,12 +47,10 @@ test.describe("language", () => {
     await context.addCookies([
       { name: "lang", value: "uk", url: "http://localhost" },
     ]);
-    await goto(page, "/mock");
-    await page.getByRole("button", { name: "Приєднатися" }).click();
-    const startRound = page.getByRole("button", { name: "Почати раунд" });
-    await startRound.click();
-    await expect(startRound).toBeHidden();
-    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await startMockGame(page, "/mock", {
+      join: "Приєднатися",
+      start: "Почати раунд",
+    });
 
     const clueButton = page.getByRole("button", { name: "$ 200" }).first();
     await expect(async () => {
