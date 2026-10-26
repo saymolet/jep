@@ -101,7 +101,8 @@ Difficulty estimates from the original planning discussion.
 - [x] Answer timer (per-question timer, F12a) — optional room setting Off / 10–60 s +
       "mark wrong when time runs out"; countdown for everyone from the event that gave the
       player their turn (server clock estimate), "Time's up!" + sound; only the answering
-      player's own device marks the answer wrong; finals excluded — see
+      player's own device marks the answer wrong; finals excluded; in rooms **only the site
+      admin** may change it (read-only for players, enforced by the route and RLS) — see
       [features/14-answer-timer.md](./features/14-answer-timer.md) — ⭐⭐ medium
 
 - [x] Soundboard (F12b) — players tap reaction sounds (applause, drumroll, ta-da, wrong,
@@ -222,3 +223,10 @@ auto-reconnect · host controls from phone ·
   reports moderation, game delete removes its unshared media, orphaned media cleanup).
   Migration `20261026033929_admin_panel.sql` (three service-role-only SQL functions:
   `admin_stats`, `admin_media_objects`, `admin_recent_rooms`). No new dependencies.
+- **2026-10-26** — Feature 14 follow-up on `feat/admin-timer`: only the site admin (admin
+  session from `/admin`) may change a room's answer timer — playing or not; players see the
+  value read-only ("Only the admin can change this"), solo play unchanged. The settings route
+  answers 403 to everyone else and inserts `set_settings` with the service role; the engine
+  accepts the server's `admin: true` events (old player events stay valid). Migration
+  `20261026123109_room_events_settings_admin_only.sql` (room_events insert policy rejects
+  `set_settings` from anon/authenticated). No new dependencies.

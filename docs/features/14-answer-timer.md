@@ -2,7 +2,8 @@
 
 **Branch:** `feat/answer-timer`
 **Status:** ✅ implemented & tested
-**Migration:** none
+**Migration:** none (follow-up `feat/admin-timer`:
+`20261026123109_room_events_settings_admin_only.sql`, see "Only the admin changes it")
 **New dependencies:** none
 
 ## Goal
@@ -17,10 +18,14 @@ player's own device that marks the answer wrong.
 
 1. **Round preview dialog** (before every round): **Answer time** — **Off** (default) /
    **10 s** / **15 s** / **20 s** / **30 s** / **60 s**, and the checkbox **Mark wrong when
-   time runs out** (on by default; greyed out while the timer is Off). Any player can change
-   it; everyone sees the change at once; the last change wins.
-2. **Between questions:** the header next to **Pause** shows **⏱ Off** / **⏱ 15 s**; tapping
-   it opens the same settings. It is disabled while a question is open (like Pause).
+   time runs out** (on by default; greyed out while the timer is Off). In a room **only the
+   site admin** can change it (log in at `/admin` on the same device first); everyone else
+   sees the current values greyed out with "Only the admin can change this." Everyone sees
+   the change at once; the last change wins. In solo play the player changes it.
+2. **Between questions:** the header next to **Pause** shows **⏱ Off** / **⏱ 15 s**. For the
+   admin it is a button that opens the same settings (disabled while a question is open, like
+   Pause) — also when the admin only watches the room. For players it only shows the value
+   (tooltip "Answer time: 15 s. Only the admin can change this.").
 3. **During a turn** (the buzz winner, the receiver of a cat-in-the-bag question, the player
    answering a Double Down, the buzz winner picking a multiple choice option): everyone —
    the answering player, the other players, spectators and the TV page — sees a yellow bar
@@ -37,7 +42,47 @@ player's own device that marks the answer wrong.
 
 ## Design decisions
 
-- **Room event `set_settings`** `{ userId, answerTimeSec, autoWrongOnTimeout }` — route
+### Only the admin changes it (follow-up `feat/admin-timer`)
+
+The owner asked that only the admin may change the answer time. "Admin" is the site admin of
+feature 18: a visitor whose signed session cookie holds a valid admin session (`getAdmin`).
+
+- **Route** `POST /room/:roomId/settings`: before anything else, no admin session → **403**
+  "only the admin can change the answer time" (a room action, so no redirect to the admin
+  login like `requireAdmin`). With `ADMIN_PASSWORD` unset nobody is admin, so rooms keep the
+  default (Off). The admin **needn't be a player** (they may be watching, or only set it up
+  before the players join): the "must be a player" check is gone for this route; the userId
+  must still be the visitor's own (`requireSessionUserId`) and the question-open / game-over
+  checks stay. No CSRF token: the admin session cookie is `SameSite=Lax` (no cross-site POST
+  carries it) and the room page must not learn anything about the admin session.
+- **Database:** `room_events` takes inserts from the browser key (anon/authenticated), so a
+  modified client could insert `set_settings` directly. Migration
+  `20261026123109_room_events_settings_admin_only.sql` changes the insert policy "Enable
+  insert for all users" to `with check (type <> 'set_settings')` — every other type is
+  accepted exactly as before. The route inserts the event with the service role
+  (`createRoomEventAsServer` in `room-event.server.ts`; every other route still uses
+  `createRoomEvent`). Realtime still delivers it: postgres_changes checks the _subscriber's_
+  select policy (unchanged, `true`), not the inserter's role.
+- **Engine:** the route adds `admin: true` to the payload; only the server can write such an
+  event now. The engine accepts a change with `admin: true` from anyone, and without the flag
+  only from a player — so events already in the database (from players, before this change)
+  replay exactly as before (no retroactive filtering), and solo play (the player, no flag) is
+  unchanged.
+- **Solo play** (room −1) has no room events and no other people: the player still changes
+  the setting, admin or not.
+- **UI:** the room loader returns `isAdmin` (a boolean only — never the password or session
+  details), passed down `GameComponent` → `AnswerTimerControl` / `Preview` →
+  `AnswerTimerSettings`. Non-admins: disabled radios + checkbox showing the current values and
+  "Only the admin can change this." in the round preview; in the header a plain "⏱ 15 s"
+  (not a button) with a tooltip and a screen-reader hint. The admin sees the ⏱ button even
+  when not playing. The TV page has no settings controls, so it needs no flag. The flag comes
+  from the loader, so the server and the browser render the same thing (no hydration
+  mismatch). Logging in at `/admin` takes effect on the room page after a reload.
+
+### Original design
+
+- **Room event `set_settings`** `{ userId, answerTimeSec, autoWrongOnTimeout }` (+ `admin:
+true` since the follow-up above; the player rules below are from before it) — route
   `POST /room/:roomId/settings` (zod form parsing, `requireSessionUserId`, must be a player,
   409 while a question is open / after game over, 400 for values not offered, returns the
   Action for solo roomId −1). The engine re-validates on replay: unknown values, non-players,
@@ -136,6 +181,18 @@ player's own device that marks the answer wrong.
   auto-mark off: "Time's up!" on both, "Mark your answer now.", nothing sent (still the
   host's turn, no −$200).
 
+- Follow-up `feat/admin-timer`: engine cases (admin without playing, admin playing, admin
+  blocked during a question, admin values validated, malformed flag); route (403 for
+  non-admins before any database read, admin without playing, admin flag and service-role
+  insert, solo without admin); components (read-only values + hint EN/UK, no request on a
+  click, admin without playing saves, solo editable; header control: button for the admin,
+  read-only value + tooltip EN/UK for players, button in solo); e2e
+  `e2e/admin-timer-room.spec.ts` (two non-admin players see disabled controls and get 403 from
+  the route; the admin logs in at `/admin`, watches the room, sets 15 s and both players see
+  it, then the read-only "⏱ 15 s" in the header; the anon key can't insert `set_settings`
+  (RLS 42501) but still inserts other types); `e2e/answer-timer-room.spec.ts` now logs the
+  host in as admin first.
+
 ### Manual test script
 
 1. Open a game in a room on a laptop and on a phone, join with both. In the round preview
@@ -153,3 +210,7 @@ player's own device that marks the answer wrong.
 7. A multiple choice question with the timer: don't pick; at 0 it counts as wrong with no
    option marked, and the other player can buzz.
 8. Switch to УКР: "Час на відповідь", "Залишилося 8 секунд", "Час вийшов!".
+9. Admin only (follow-up): with `ADMIN_PASSWORD` set, open a room on a phone and join: the
+   round preview shows the answer time greyed out with "Only the admin can change this."
+   and the header shows a plain "⏱ Off". On the laptop log in at `/admin`, open the room
+   link, **Just watch**, tap **⏱ Off** and pick **15 s**: the phone shows 15 s at once.
