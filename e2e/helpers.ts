@@ -44,10 +44,26 @@ export async function reload(
 
 /** Navigate to a mock game route, join, start round 1, and wait for the board
  *  fill animation to complete. */
-export async function startMockGame(page: Page, route = "/mock") {
+/** The board is shown and done filling in (`aria-busy` is set while it is
+ * hidden behind the round preview or animating; cells ignore clicks then). */
+export async function waitForBoardReady(page: Page) {
+  await expect(page.locator("table").first()).toBeVisible({ timeout: 15_000 });
+  await expect(page.locator('table[aria-busy="true"]')).toHaveCount(0, {
+    timeout: 15_000,
+  });
+}
+
+export async function startMockGame(
+  page: Page,
+  route = "/mock",
+  {
+    join = /join game/i,
+    start = /start round/i,
+  }: { join?: string | RegExp; start?: string | RegExp } = {},
+) {
   await goto(page, route);
-  await page.getByRole("button", { name: /join game/i }).click();
-  const startRound = page.getByRole("button", { name: /start round/i });
+  await page.getByRole("button", { name: join }).click();
+  const startRound = page.getByRole("button", { name: start });
   // The button appears once the Join event gives this player board control,
   // and the dialog can re-render (replacing the button) right as it's
   // clicked, losing the click under load. Click again until the dialog
@@ -66,6 +82,7 @@ export async function startMockGame(page: Page, route = "/mock") {
   // restores focus to the element focused before it opened. Wait for that so
   // it can't steal focus from whatever the test focuses next.
   await expect(page.getByRole("dialog")).toHaveCount(0, { timeout: 15_000 });
+  await waitForBoardReady(page);
 }
 
 /** Play through a clue using only keyboard inputs.
@@ -143,6 +160,7 @@ export async function waitForConnected(page: Page) {
 }
 
 export async function playOneClue(page: Page) {
+  await waitForBoardReady(page);
   const clueButton = page.getByRole("button", { name: "$ 200" }).first();
 
   // The board fill animation silently ignores clicks, so retry clicking
@@ -221,6 +239,7 @@ export async function stubExternalMedia(page: Page) {
 /** Click a clue on the board, retrying until its prompt opens (the "buzz in"
  * hint on desktops, the big BUZZ button on phones). */
 export async function openClue(page: Page, clueButton: Locator) {
+  await waitForBoardReady(page);
   const opened = page
     .getByText(/buzz in/i)
     .or(page.getByTestId("buzz-bar"))

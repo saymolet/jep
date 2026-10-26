@@ -27,6 +27,7 @@ afterEach(() => {
 async function renderBoard(
   name: string,
   isAnswered: (i: number, j: number) => boolean = () => false,
+  { busy }: { busy?: boolean } = {},
 ) {
   const game = await getMockGame(name);
   const onClickClue = vi.fn();
@@ -34,6 +35,7 @@ async function renderBoard(
     root.render(
       <BoardComponent
         board={game.boards[0]}
+        busy={busy}
         hasBoardControl
         isAnswered={isAnswered}
         isCategoryRevealed={() => true}
@@ -60,6 +62,18 @@ function grid() {
 }
 
 describe("BoardComponent", () => {
+  it("marks the board busy while it isn't ready to play", async () => {
+    await renderBoard("default", undefined, { busy: true });
+    expect(container.querySelector("table")?.getAttribute("aria-busy")).toBe(
+      "true",
+    );
+
+    await renderBoard("default", undefined, { busy: false });
+    expect(container.querySelector("table")?.getAttribute("aria-busy")).toBe(
+      "false",
+    );
+  });
+
   it("renders empty cells below shorter categories", async () => {
     // Short (3 questions), Full (5), Middle (4).
     await renderBoard("ragged");

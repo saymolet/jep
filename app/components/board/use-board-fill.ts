@@ -2,6 +2,14 @@ import * as React from "react";
 
 import { generateGrid } from "~/utils";
 
+// Start the fill before the browser paints. With a passive effect, the frame
+// in which the board first becomes visible was painted fully revealed (the
+// effect hadn't hidden the cells yet), so players saw a flash and a tap in
+// that frame landed on a cell that was about to disappear. Layout effects
+// don't run on the server, so fall back to a passive effect there.
+const useIsomorphicLayoutEffect =
+  typeof window === "undefined" ? React.useEffect : React.useLayoutEffect;
+
 interface BoardCell {
   i: number;
   j: number;
@@ -106,7 +114,7 @@ export function useBoardFill(
   );
   const [animating, setAnimating] = React.useState(false);
 
-  React.useEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     let cancelled = false;
     const timeouts: ReturnType<typeof setTimeout>[] = [];
 

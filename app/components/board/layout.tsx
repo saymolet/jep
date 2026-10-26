@@ -124,15 +124,22 @@ export function BoardScroller({
 }
 
 export function BoardLayout({
+  busy = false,
   children,
   columns,
 }: {
+  /** The board isn't ready to play: hidden behind the round preview or still
+   * filling in. Exposed as aria-busy for assistive tech (and tests). */
+  busy?: boolean;
   children: React.ReactNode;
   columns: number;
 }) {
   return (
     <BoardScroller columns={columns}>
-      <table className="h-1 w-full table-fixed bg-blue-bright text-white">
+      <table
+        aria-busy={busy}
+        className="h-1 w-full table-fixed bg-blue-bright text-white"
+      >
         {children}
       </table>
     </BoardScroller>
