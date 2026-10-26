@@ -107,6 +107,11 @@ export const room: Dictionary<typeof en> = {
   "room.alreadyPlaying":
     "У цю гру вже грають. Приєднуйся до кімнати, де триває гра, або створи власну.",
   "room.startNewRoom": "Створити нову кімнату",
+  "room.create.intro":
+    "Налаштуй таймери нової кімнати. Усі бачитимуть їх перед кожним раундом, а змінити їх можна й пізніше — між питаннями.",
+  "room.create.lastUsed": "Підставлено таймери твоєї останньої кімнати.",
+  "room.create.submit": "Створити кімнату",
+  "room.create.defaults": "Типові значення",
   "room.timers.title": "Таймери кімнати",
   "room.timers.readTime": "Час на читання (до відкриття кнопок)",
   "room.timers.auto": "Авто",

@@ -315,7 +315,7 @@ describe("buzz window", () => {
       room_id: 1,
       ts: new Date(1_000 * (id + 1)).toISOString(),
       type: a.type,
-      payload: a.payload as DbRoomEvent["payload"],
+      payload: JSON.parse(JSON.stringify(a.payload ?? null)),
     }));
     const a = applyRoomEventsToState(stateFromGame(GAME), events);
     const b = applyRoomEventsToState(stateFromGame(GAME), events);
@@ -344,7 +344,7 @@ describe("buzz window", () => {
       room_id: 1,
       ts: new Date(1_000 * (id + 1)).toISOString(),
       type: a.type,
-      payload: a.payload as DbRoomEvent["payload"],
+      payload: JSON.parse(JSON.stringify(a.payload ?? null)),
     }));
     const state = applyRoomEventsToState(stateFromGame(GAME), events);
     expect(roomTimers(state)).toEqual(DEFAULT_ROOM_TIMERS);

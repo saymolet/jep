@@ -1,0 +1,29 @@
+{
+  "title": "Room timers test",
+  "author": "Test",
+  "copyright": "",
+  "note": "",
+  "boards": [
+    {
+      "categoryNames": ["Timers"],
+      "categories": [
+        {
+          "name": "Timers",
+          "clues": [
+            {
+              "clue": "A clock with no hands",
+              "answer": "Sundial",
+              "value": 200
+            },
+            {
+              "clue": "It counts down to zero",
+              "answer": "Timer",
+              "value": 400,
+              "wagerable": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

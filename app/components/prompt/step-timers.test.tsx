@@ -129,7 +129,10 @@ function annWagering(wagerTimeSec: number) {
 }
 
 /** Both players wagered on the Final and write their answers. */
-function finalAnswers(finalAnswerTimeSec: number, ...extra: object[][]) {
+function finalAnswers(
+  finalAnswerTimeSec: number,
+  ...extra: { type: ActionType; payload?: unknown }[][]
+) {
   return play(
     STEPS.join,
     timers({ finalAnswerTimeSec }),
@@ -151,7 +154,7 @@ function finalAnswers(finalAnswerTimeSec: number, ...extra: object[][]) {
     STEPS.chooseFinal,
     STEPS.wagerAnnFinal,
     STEPS.wagerBobFinal,
-    ...(extra as (typeof STEPS.join)[]),
+    ...extra,
   );
 }
 

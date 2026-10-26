@@ -94,6 +94,11 @@ export const room = {
   "room.alreadyPlaying":
     "This game is already being played. Join a room in progress or start your own.",
   "room.startNewRoom": "Start a new room",
+  "room.create.intro":
+    "Set the timers for the new room. Everyone sees them before every round, and you can still change them between questions.",
+  "room.create.lastUsed": "Your last room's timers are filled in.",
+  "room.create.submit": "Create the room",
+  "room.create.defaults": "Use the defaults",
   "room.timers.title": "Room timers",
   "room.timers.readTime": "Reading time (before the buzzers open)",
   "room.timers.auto": "Auto",

@@ -1,7 +1,11 @@
 import { z } from "zod";
 
-import { isAnswerTimeSec } from "~/engine/answer-timer";
 import {
+  DEFAULT_AUTO_WRONG_ON_TIMEOUT,
+  isAnswerTimeSec,
+} from "~/engine/answer-timer";
+import {
+  DEFAULT_ROOM_TIMERS,
   isBuzzWindowSec,
   isFinalAnswerTimeSec,
   isReadTimeSec,
@@ -86,5 +90,43 @@ export function toSettingsFormData(
     buzzWindowSec: values.buzzWindowSec.toString(),
     finalAnswerTimeSec: values.finalAnswerTimeSec.toString(),
     wagerTimeSec: values.wagerTimeSec.toString(),
+  };
+}
+
+/** DEFAULT_ROOM_SETTINGS are a new room's settings (today's behaviour). */
+export const DEFAULT_ROOM_SETTINGS: RoomSettingsValues = {
+  answerTimeSec: 0,
+  autoWrongOnTimeout: DEFAULT_AUTO_WRONG_ON_TIMEOUT,
+  ...DEFAULT_ROOM_TIMERS,
+};
+
+/** validRoomSettings keeps the valid values of stored settings (e.g. the
+ * admin's last-used ones) and uses the defaults for the rest. */
+export function validRoomSettings(
+  stored: Partial<RoomSettingsValues> | null | undefined,
+): RoomSettingsValues {
+  const d = DEFAULT_ROOM_SETTINGS;
+  if (!stored) return d;
+  return {
+    answerTimeSec: isAnswerTimeSec(stored.answerTimeSec)
+      ? stored.answerTimeSec
+      : d.answerTimeSec,
+    autoWrongOnTimeout:
+      typeof stored.autoWrongOnTimeout === "boolean"
+        ? stored.autoWrongOnTimeout
+        : d.autoWrongOnTimeout,
+    readTimeSec:
+      stored.readTimeSec !== undefined && isReadTimeSec(stored.readTimeSec)
+        ? stored.readTimeSec
+        : d.readTimeSec,
+    buzzWindowSec: isBuzzWindowSec(stored.buzzWindowSec)
+      ? stored.buzzWindowSec
+      : d.buzzWindowSec,
+    finalAnswerTimeSec: isFinalAnswerTimeSec(stored.finalAnswerTimeSec)
+      ? stored.finalAnswerTimeSec
+      : d.finalAnswerTimeSec,
+    wagerTimeSec: isWagerTimeSec(stored.wagerTimeSec)
+      ? stored.wagerTimeSec
+      : d.wagerTimeSec,
   };
 }
