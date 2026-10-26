@@ -61,7 +61,7 @@ feature 18: a visitor whose signed session cookie holds a valid admin session (`
   insert for all users" to `with check (type <> 'set_settings')` — every other type is
   accepted exactly as before. The route inserts the event with the service role
   (`createRoomEventAsServer` in `room-event.server.ts`; every other route still uses
-  `createRoomEvent`). Realtime still delivers it: postgres_changes checks the _subscriber's_
+  `createRoomEvent`). Realtime still delivers it: postgres*changes checks the \_subscriber's*
   select policy (unchanged, `true`), not the inserter's role.
 - **Engine:** the route adds `admin: true` to the payload; only the server can write such an
   event now. The engine accepts a change with `admin: true` from anyone, and without the flag
