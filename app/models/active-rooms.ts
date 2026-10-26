@@ -1,6 +1,6 @@
 import { parseUtcMs } from "~/engine/engine";
 import { applyRoomEventsToState } from "~/engine/room-event";
-import { GameState, stateFromGame } from "~/engine/state";
+import { GameState, type State, stateFromGame } from "~/engine/state";
 import { getTeamStandings, isTeamMode } from "~/engine/teams";
 import { createT, type TFunction } from "~/i18n";
 import { parseAvatar } from "~/models/avatar";
@@ -55,6 +55,17 @@ export function summarizeActiveRoom(
   return {
     id: room.id,
     roomName: `${room.id}-${room.name}`,
+    ...summarizePlayers(state),
+    minutesAgo: Math.max(0, Math.floor((now - lastActivity) / 60_000)),
+  };
+}
+
+/** summarizePlayers describes a room's players (and team totals in team
+ * mode) for a rooms list. */
+export function summarizePlayers(
+  state: Pick<State, "players" | "leftPlayers" | "teamNames">,
+): Pick<ActiveRoom, "players" | "teams"> {
+  return {
     players: Array.from(state.players.values()).map((p) => {
       const avatar = parseAvatar(p.avatar);
       return {
@@ -72,7 +83,6 @@ export function summarizeActiveRoom(
           })),
         }
       : {}),
-    minutesAgo: Math.max(0, Math.floor((now - lastActivity) / 60_000)),
   };
 }
 
@@ -81,5 +91,8 @@ export function summarizeActiveRoom(
 export function formatTimeAgo(minutes: number, t: TFunction = createT("en")) {
   if (minutes < 1) return t("home.timeAgo.justNow");
   if (minutes < 60) return t("home.timeAgo.minutes", { minutes });
-  return t("home.timeAgo.hours", { hours: Math.floor(minutes / 60) });
+  if (minutes < 24 * 60) {
+    return t("home.timeAgo.hours", { hours: Math.floor(minutes / 60) });
+  }
+  return t("home.timeAgo.days", { count: Math.floor(minutes / (24 * 60)) });
 }

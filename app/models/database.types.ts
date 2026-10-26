@@ -360,6 +360,15 @@ export type Database = {
           id: number;
         }[];
       };
+      user_rooms_in_progress: {
+        Args: { max_count: number; since: string; user_ids: string[] };
+        Returns: {
+          game_id: string;
+          last_activity: string;
+          room_id: number;
+          room_name: string;
+        }[];
+      };
     };
     Enums: {
       game_visibility: "PUBLIC" | "PRIVATE" | "UNLISTED";

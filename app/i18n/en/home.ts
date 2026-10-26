@@ -17,4 +17,10 @@ export const home = {
   "home.timeAgo.justNow": "just now",
   "home.timeAgo.minutes": "{minutes} min ago",
   "home.timeAgo.hours": "{hours} h ago",
+  "home.timeAgo.days": { one: "{count} day ago", other: "{count} days ago" },
+  "home.yourGames": "Your games in progress",
+  "home.yourScore": "Your score",
+  "home.yourRank": "#{rank} of {total}",
+  "home.yourRoomActivity": "Room {room} · active {ago}",
+  "home.continue": "Continue",
 } as const;

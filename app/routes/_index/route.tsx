@@ -13,13 +13,15 @@ import { DefaultErrorBoundary } from "~/components/error";
 import { FormStateMessage, hasDetails } from "~/components/form-state-message";
 import { LoadingSpinner } from "~/components/icons";
 import Main from "~/components/main";
+import { MyRoomsList } from "~/components/my-rooms";
 import Search from "~/components/search";
 import Upload from "~/components/upload";
 import { useTranslation } from "~/i18n";
 import { getValidAuthSession } from "~/models/auth";
 import { getGames } from "~/models/game.server";
+import { getMyRoomsInProgress } from "~/models/my-rooms.server";
 import { getSolvesForUser, Solve } from "~/models/solves.server";
-import { getSessionFormState } from "~/session.server";
+import { getSessionFormState, getUserSession } from "~/session.server";
 import useDebounce from "~/utils/use-debounce";
 import useInfiniteScroll from "~/utils/use-scroll";
 
@@ -33,10 +35,20 @@ export async function loader({ request }: Route.LoaderArgs) {
   const pageStr = searchParams.get("page");
   const page = pageStr ? Number(pageStr) : 1;
 
-  const serverGames = await getGames(
-    { page, search: searchParams.get("q") },
-    authSession?.accessToken,
-  );
+  // "Your games in progress": the user's own ids only (account and guest
+  // cookie), on the first page (infinite scroll loads further pages here).
+  const [serverGames, myRooms] = await Promise.all([
+    getGames({ page, search: searchParams.get("q") }, authSession?.accessToken),
+    page === 1
+      ? getMyRoomsInProgress(
+          [authSession?.userId, await getUserSession(request)],
+          {
+            accessToken: authSession?.accessToken,
+            accountId: authSession?.userId,
+          },
+        )
+      : [],
+  ]);
 
   const userId = authSession?.userId;
   const solves = userId
@@ -45,7 +57,10 @@ export async function loader({ request }: Route.LoaderArgs) {
 
   const [formState, headers] = await getSessionFormState(request);
 
-  return data({ serverGames, formState, authSession, solves }, { headers });
+  return data(
+    { serverGames, formState, authSession, solves, myRooms },
+    { headers },
+  );
 }
 
 export default function Index({ loaderData }: Route.ComponentProps) {
@@ -118,6 +133,7 @@ export default function Index({ loaderData }: Route.ComponentProps) {
 
   return (
     <Main>
+      <MyRoomsList rooms={loaderData.myRooms} />
       <Form method="GET" ref={searchFormRef}>
         <Search
           name="q"
