@@ -91,6 +91,15 @@ export const ClueSchema = z
       .int("secretValue must be a whole number")
       .positive("secretValue must be positive")
       .optional(),
+    /** Seconds to "read" the question before the buzzers open, used by a
+     * room's "Auto" reading time (default: estimated from the text and
+     * media). Imported from SIGame display-time hints. */
+    readTimeSec: z
+      .number()
+      .int("readTimeSec must be a whole number")
+      .min(0, "readTimeSec must be from 0 to 60")
+      .max(60, "readTimeSec must be from 0 to 60")
+      .optional(),
   })
   .refine(
     (clue) =>

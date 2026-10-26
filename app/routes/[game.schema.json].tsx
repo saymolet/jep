@@ -134,6 +134,13 @@ const SCHEMA = {
                         description:
                           "What the secret question is worth (default: value). Requires secret: true.",
                       },
+                      readTimeSec: {
+                        type: "integer",
+                        minimum: 0,
+                        maximum: 60,
+                        description:
+                          'Seconds to show the question before the buzzers open, when the room\'s reading time is "Auto" (default: from the text and media). Imported from SIGame display times.',
+                      },
                     },
                     required: ["clue", "answer", "value"],
                   },

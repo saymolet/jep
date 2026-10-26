@@ -169,6 +169,15 @@ export default function Help() {
           <li>{rich("uploadHelp.secretWorksWith", { code })}</li>
         </ul>
         <CodeBlock text={SECRET_SAMPLE} />
+        <h2 className="mb-4 text-xl font-semibold">
+          {t("uploadHelp.readTimeTitle")}
+        </h2>
+        <p className="mb-4">
+          {rich("uploadHelp.readTimeIntro", {
+            code,
+            b: (c) => <strong>{c}</strong>,
+          })}
+        </p>
         <h1 className="mb-4 text-2xl font-semibold">
           {t("uploadHelp.typeTitle")}
         </h1>
@@ -205,6 +214,7 @@ interface Clue {
   secret?: boolean; // cat in the bag: handed to another player; default false
   secretTopic?: string; // shown when handed over; default: the category name
   secretValue?: number; // worth this instead of value
+  readTimeSec?: number; // 0-60: seconds before the buzzers open ("Auto" reading time)
 }
 
 interface MediaBlock {

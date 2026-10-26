@@ -43,6 +43,7 @@ function insertedRow(clue: Clue): DbClue {
     secret: insert.secret ?? null,
     secret_topic: insert.secret_topic ?? null,
     secret_value: insert.secret_value ?? null,
+    read_time_sec: insert.read_time_sec ?? null,
   };
 }
 
@@ -191,6 +192,31 @@ describe("clue secret DB mapping", () => {
     const back = dbClueToClue({ ...insertedRow(clue), secret_value: -5 });
     expect(back.secret).toBe(true);
     expect(back.secretValue).toBeUndefined();
+  });
+});
+
+describe("clue reading time DB mapping", () => {
+  it("round-trips the reading time hint", () => {
+    const clue: Clue = {
+      clue: "Look",
+      answer: "A",
+      value: 200,
+      readTimeSec: 8,
+    };
+    expect(clueToDbClue(clue, 7)).toMatchObject({ read_time_sec: 8 });
+    expect(dbClueToClue(insertedRow(clue)).readTimeSec).toBe(8);
+  });
+
+  it("stores no hint as null and reads it back as undefined", () => {
+    const clue: Clue = { clue: "Look", answer: "A", value: 200 };
+    expect(clueToDbClue(clue, 7)).toMatchObject({ read_time_sec: null });
+    expect(dbClueToClue(insertedRow(clue)).readTimeSec).toBeUndefined();
+  });
+
+  it.each([-1, 61, 2.5])("ignores an invalid stored value %s", (value) => {
+    const clue: Clue = { clue: "Look", answer: "A", value: 200 };
+    const back = dbClueToClue({ ...insertedRow(clue), read_time_sec: value });
+    expect(back.readTimeSec).toBeUndefined();
   });
 });
 

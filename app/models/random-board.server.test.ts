@@ -78,6 +78,7 @@ function dbClue(id: number, categoryId: number, value: number, extra = {}) {
     secret: null,
     secret_topic: null,
     secret_value: null,
+    read_time_sec: null,
     ...extra,
   };
 }

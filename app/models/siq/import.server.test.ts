@@ -255,6 +255,32 @@ describe("importSiq (v4 fixture)", async () => {
 });
 
 describe("importSiq edge cases", () => {
+  it("turns display time hints into the question's reading time", async () => {
+    const xml = v5Xml(
+      v5Question('<item duration="00:00:07">Q</item>') +
+        v5Question('<item duration="00:02:00">Long</item>') +
+        v5Question("<item>No hint</item>"),
+    );
+    const { game } = await importSiq(zipFiles({ "content.xml": xml }), {
+      store: fakeStore(),
+    });
+    expect(GameSchema.safeParse(game).success).toBe(true);
+    expect(clue(game, 0, 0, 0).readTimeSec).toBe(7);
+    // Capped at the 60 s Jep! allows.
+    expect(clue(game, 0, 0, 1).readTimeSec).toBe(60);
+    expect(clue(game, 0, 0, 2).readTimeSec).toBeUndefined();
+  });
+
+  it("reads v4 atom times (rounded)", async () => {
+    const xml = `<package name="P" version="4"><rounds><round name="R"><themes><theme name="T"><questions>
+      <question price="100"><scenario><atom time="4.6">Q</atom></scenario><right><answer>A</answer></right></question>
+    </questions></theme></themes></round></rounds></package>`;
+    const { game } = await importSiq(zipFiles({ "content.xml": xml }), {
+      store: fakeStore(),
+    });
+    expect(clue(game, 0, 0, 0).readTimeSec).toBe(5);
+  });
+
   it("splits a round with more than 12 themes and renames duplicates", async () => {
     const themes = Array.from(
       { length: 14 },

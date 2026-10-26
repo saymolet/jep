@@ -211,6 +211,12 @@ async function convertQuestion(
     return { clue, warnings };
   }
 
+  // The pack's display time for the question becomes its reading time for a
+  // room's "Auto" setting (Jep!'s reading time is 0–60 s).
+  if (question.displayTimeSec !== undefined) {
+    clue.readTimeSec = Math.min(60, Math.round(question.displayTimeSec));
+  }
+
   const choices = convertChoices(question, t);
   if (choices && "error" in choices) {
     warnings.push(t("siq.warn.at", { where, reason: choices.error }));

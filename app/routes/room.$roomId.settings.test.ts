@@ -127,6 +127,88 @@ describe("settings route", () => {
     },
   );
 
+  it("saves the room timers", async () => {
+    await call("5", {
+      userId: USER,
+      answerTimeSec: "0",
+      autoWrongOnTimeout: "true",
+      readTimeSec: "0",
+      buzzWindowSec: "3",
+      finalAnswerTimeSec: "60",
+      wagerTimeSec: "15",
+    });
+    expect(mocks.createRoomEventAsServer).toHaveBeenCalledWith(
+      ROOM.id,
+      ActionType.SetSettings,
+      {
+        userId: USER,
+        answerTimeSec: 0,
+        autoWrongOnTimeout: true,
+        readTimeSec: 0,
+        buzzWindowSec: 3,
+        finalAnswerTimeSec: 60,
+        wagerTimeSec: 15,
+        admin: true,
+      },
+    );
+  });
+
+  it("saves the Auto reading time as null", async () => {
+    await call("5", {
+      userId: USER,
+      answerTimeSec: "0",
+      autoWrongOnTimeout: "true",
+      readTimeSec: "auto",
+    });
+    expect(mocks.createRoomEventAsServer).toHaveBeenCalledWith(
+      ROOM.id,
+      ActionType.SetSettings,
+      {
+        userId: USER,
+        answerTimeSec: 0,
+        autoWrongOnTimeout: true,
+        readTimeSec: null,
+        admin: true,
+      },
+    );
+  });
+
+  it.each([
+    ["readTimeSec", "61"],
+    ["readTimeSec", "-1"],
+    ["readTimeSec", "1.5"],
+    ["readTimeSec", "never"],
+    ["buzzWindowSec", "4"],
+    ["buzzWindowSec", "0"],
+    ["finalAnswerTimeSec", "10"],
+    ["finalAnswerTimeSec", "600"],
+    ["wagerTimeSec", "20"],
+    ["wagerTimeSec", "abc"],
+  ])("rejects %s = %s", async (field, value) => {
+    await expect(
+      call("5", {
+        userId: USER,
+        answerTimeSec: "0",
+        autoWrongOnTimeout: "true",
+        [field]: value,
+      }),
+    ).rejects.toMatchObject({ status: 400 });
+    expect(mocks.createRoomEventAsServer).not.toHaveBeenCalled();
+  });
+
+  it("refuses timer changes from players who are not the admin", async () => {
+    mocks.getAdmin.mockResolvedValue(null);
+    await expect(
+      call("5", {
+        userId: USER,
+        answerTimeSec: "0",
+        autoWrongOnTimeout: "true",
+        buzzWindowSec: "3",
+      }),
+    ).rejects.toMatchObject({ status: 403 });
+    expect(mocks.createRoomEventAsServer).not.toHaveBeenCalled();
+  });
+
   it("refuses changes on behalf of someone else", async () => {
     await expect(
       call("5", {
@@ -150,7 +232,7 @@ describe("settings route", () => {
     }
     expect(response.status).toBe(403);
     expect(await response.text()).toBe(
-      "only the admin can change the answer time",
+      "only the admin can change the room timers",
     );
     expect(mocks.createRoomEventAsServer).not.toHaveBeenCalled();
     // Refused before anything is read from the database.

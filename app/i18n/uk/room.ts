@@ -92,7 +92,7 @@ export const room: Dictionary<typeof en> = {
   "room.error.settingsBetweenQuestions":
     "налаштування можна змінити лише між питаннями",
   "room.error.settingsAdminOnly":
-    "час на відповідь може змінювати лише адміністратор",
+    "таймери кімнати може змінювати лише адміністратор",
   "room.error.kickAdminOnly":
     "гра вже почалася: тепер вигнати гравця може лише адміністратор",
   "room.error.kickPlayersOnly": "вигнати гравця можуть лише гравці цієї гри",
