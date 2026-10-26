@@ -10,6 +10,8 @@ import { PROMPT_STATES } from "~/components/prompt/prompt";
 import { QrCode } from "~/components/qr-code";
 import SoundControl from "~/components/sound";
 import { Soundboard } from "~/components/soundboard";
+import { ScoreChange } from "~/components/standings/standings";
+import { useRecentScoreChanges } from "~/components/standings/use-recent-score-changes";
 import { getTeamName, TeamSwatch } from "~/components/team/team";
 import { GameState, useEngineContext } from "~/engine";
 import type { Player } from "~/engine";
@@ -123,6 +125,7 @@ function JoinQr({
 function PlayerList({ players }: { players: Player[] }) {
   const { t } = useTranslation();
   const { boardControl } = useEngineContext();
+  const changes = useRecentScoreChanges();
   if (players.length === 0) {
     return <p className="text-slate-300">{t("watch.noPlayers")}</p>;
   }
@@ -139,6 +142,7 @@ function PlayerList({ players }: { players: Player[] }) {
             player={p}
             hasBoardControl={p.userId === boardControl}
             winning={players.length > 1 && p.score === best}
+            scoreChange={changes.get(p.userId)}
           />
         </li>
       ))}
@@ -156,6 +160,7 @@ function useTeamStandings(): TeamStanding[] | null {
 /** TeamTotals shows every team's total in big type, highest first. */
 function TeamTotals({ standings }: { standings: TeamStanding[] }) {
   const { t } = useTranslation();
+  const changes = useRecentScoreChanges();
   return (
     <ol
       className="flex flex-col gap-2"
@@ -185,6 +190,15 @@ function TeamTotals({ standings }: { standings: TeamStanding[] }) {
             >
               {formatDollars(s.score)}
             </span>
+            {changes.size > 0 ? (
+              <ScoreChange
+                size="lg"
+                amount={[...s.members, ...s.leftMembers].reduce(
+                  (sum, p) => sum + (changes.get(p.userId) ?? 0),
+                  0,
+                )}
+              />
+            ) : null}
           </li>
         );
       })}

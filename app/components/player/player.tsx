@@ -3,6 +3,7 @@ import * as React from "react";
 
 import { Dollars } from "~/components/dollars";
 import Popover from "~/components/popover";
+import { ScoreChange } from "~/components/standings/standings";
 import { getTeamName, TeamHeader } from "~/components/team/team";
 import { UndoArmingContext, UndoCheckConfirm } from "~/components/undo-check";
 import type { Player } from "~/engine";
@@ -33,6 +34,7 @@ export function PlayerScoreBox({
   scorePopoverKey,
   scorePopoverAutoOpen,
   pulse,
+  scoreChange,
 }: {
   player: Player;
   hasBoardControl: boolean;
@@ -48,6 +50,8 @@ export function PlayerScoreBox({
    * from the reveal screen follows the player to the board. */
   scorePopoverAutoOpen?: boolean;
   pulse?: ScorePulse;
+  /** A score change to show next to the score (the TV, after a question). */
+  scoreChange?: number;
 }) {
   const [popoverOpen, setPopoverOpen] = React.useState(false);
   const { setArmed } = React.useContext(UndoArmingContext);
@@ -95,7 +99,7 @@ export function PlayerScoreBox({
       {icon ?? <PlayerIcon player={player} size="tile" />}
       <div className="flex min-w-0 grow flex-col justify-center gap-1">
         {children}
-        <div className="flex items-center gap-2 text-lg sm:text-xl">
+        <div className="flex flex-wrap items-center gap-x-2 text-lg sm:text-xl">
           {scorePopover ? (
             <Popover
               content={scorePopover}
@@ -113,6 +117,9 @@ export function PlayerScoreBox({
             score
           )}
           {winning && <span>👑</span>}
+          {scoreChange !== undefined ? (
+            <ScoreChange amount={scoreChange} />
+          ) : null}
         </div>
       </div>
     </div>
@@ -131,6 +138,7 @@ export function PlayerScore({
   scorePopoverKey,
   scorePopoverAutoOpen,
   pulse,
+  scoreChange,
 }: {
   player: Player;
   hasBoardControl: boolean;
@@ -140,9 +148,11 @@ export function PlayerScore({
   scorePopoverKey?: boolean;
   scorePopoverAutoOpen?: boolean;
   pulse?: ScorePulse;
+  scoreChange?: number;
 }) {
   return (
     <PlayerScoreBox
+      scoreChange={scoreChange}
       hasBoardControl={hasBoardControl}
       player={player}
       winning={winning}
