@@ -44,10 +44,11 @@ export async function reload(
 
 /** Navigate to a mock game route, join, start round 1, and wait for the board
  *  fill animation to complete. */
-/** The board is shown and done filling in (`aria-busy` is set while it is
- * hidden behind the round preview or animating; cells ignore clicks then). */
+/** The board is shown and done filling in. The board table sets `aria-busy`
+ * while it is hidden behind the round preview or animating (cells ignore
+ * clicks then). A single long-form board renders no table, so this simply
+ * passes there. */
 export async function waitForBoardReady(page: Page) {
-  await expect(page.locator("table").first()).toBeVisible({ timeout: 15_000 });
   await expect(page.locator('table[aria-busy="true"]')).toHaveCount(0, {
     timeout: 15_000,
   });
