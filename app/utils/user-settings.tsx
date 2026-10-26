@@ -8,6 +8,8 @@ import { serializeLangCookie } from "~/i18n/resolve";
 import type { Avatar } from "~/models/avatar";
 import type { PlayerColor } from "~/models/player-color";
 import { type UserSettings, WagerHintsMode } from "~/models/user-settings";
+import { useTheme } from "~/theme/context";
+import { serializeThemeCookie, type Theme } from "~/theme/theme";
 
 const DEFAULT_SETTINGS: UserSettings = {};
 const DEFAULT_VOLUME = 0.5;
@@ -100,14 +102,12 @@ export function UserSettingsProvider({
     <UserSettingsContext.Provider value={value}>
       {children}
       <ToastPrimitive.Root
-        className="items-center rounded-md bg-slate-100 p-4 shadow-md data-[state=closed]:animate-hide data-[state=open]:animate-slide-in data-[swipe=cancel]:translate-x-0 data-[swipe=cancel]:transition-[transform_200ms_ease-out] data-[swipe=end]:animate-swipe-out data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)]"
+        className="items-center rounded-md bg-ink-100 p-4 shadow-md data-[state=closed]:animate-hide data-[state=open]:animate-slide-in data-[swipe=cancel]:translate-x-0 data-[swipe=cancel]:transition-[transform_200ms_ease-out] data-[swipe=end]:animate-swipe-out data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)]"
         open={toastOpen}
         onOpenChange={setToastOpen}
       >
         <ToastPrimitive.Description asChild>
-          <p className="text-sm text-slate-700">
-            {t("common.preferencesSaved")}
-          </p>
+          <p className="text-sm text-ink-700">{t("common.preferencesSaved")}</p>
         </ToastPrimitive.Description>
       </ToastPrimitive.Root>
     </UserSettingsContext.Provider>
@@ -228,5 +228,25 @@ export function useSetLanguage() {
       revalidatorRef.current.revalidate();
     },
     [changeLocale, saveSettings],
+  );
+}
+
+/** useSetTheme returns a function that switches the color theme: shown at
+ * once (the root re-renders `<html data-theme>`), remembered in the `theme`
+ * cookie (read by the server on the next request) and, when logged in, saved
+ * to the account settings. */
+export function useSetTheme() {
+  const { saveSettings } = useUserSettings();
+  const { changeTheme } = useTheme();
+
+  return React.useCallback(
+    (theme: Theme) => {
+      document.cookie = serializeThemeCookie(theme);
+      changeTheme?.(theme);
+      saveSettings((draft) => {
+        draft.theme = theme;
+      });
+    },
+    [changeTheme, saveSettings],
   );
 }

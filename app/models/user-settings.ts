@@ -6,6 +6,7 @@ import {
   coercePlayerColor,
   PLAYER_COLOR_HEX_REGEX,
 } from "~/models/player-color";
+import { THEMES } from "~/theme/theme";
 
 const soundSchema = z.object({
   /** Float between 0 and 1 (matches HTMLAudioElement.volume). Default: 0.5 */
@@ -51,6 +52,9 @@ export const userSettingsSchema = z.object({
   /** UI language picked with the language switcher. An unknown value is
    * dropped instead of invalidating all settings. */
   language: z.enum(LOCALES).optional().catch(undefined),
+  /** Color theme picked with the theme switcher (see `app/theme`). An unknown
+   * value is dropped instead of invalidating all settings. */
+  theme: z.enum(THEMES).optional().catch(undefined),
 });
 
 export type UserSettings = z.infer<typeof userSettingsSchema>;

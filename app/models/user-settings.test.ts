@@ -46,3 +46,23 @@ describe("parseUserSettings language", () => {
     });
   });
 });
+
+describe("parseUserSettings theme", () => {
+  it("keeps a supported theme", () => {
+    expect(parseUserSettings({ theme: "dark" })).toEqual({ theme: "dark" });
+    expect(parseUserSettings({ theme: "system" })).toEqual({
+      theme: "system",
+    });
+  });
+
+  it("drops an unknown theme without losing the other settings", () => {
+    expect(parseUserSettings({ theme: "neon", language: "uk" })).toEqual({
+      theme: undefined,
+      language: "uk",
+    });
+  });
+
+  it("still parses settings saved before the theme setting existed", () => {
+    expect(parseUserSettings({ language: "en" })).toEqual({ language: "en" });
+  });
+});

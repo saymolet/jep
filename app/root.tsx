@@ -31,6 +31,16 @@ import { resolveLocale, serializeLangCookie } from "~/i18n/resolve";
 import { getValidAuthSession } from "~/models/auth";
 import { getUserByEmail } from "~/models/user";
 import { parseUserSettings } from "~/models/user-settings.server";
+import { ThemeProvider } from "~/theme/context";
+import {
+  DEFAULT_THEME,
+  isTheme,
+  parseThemeCookie,
+  resolveTheme,
+  serializeThemeCookie,
+  type Theme,
+  type ThemeSource,
+} from "~/theme/theme";
 import { redactAnalyticsEvent } from "~/utils/analytics";
 import { getSearchMetadata, NO_INDEX_DIRECTIVES } from "~/utils/seo";
 import { UserSettingsProvider } from "~/utils/user-settings";
@@ -126,6 +136,10 @@ export async function loader({ request }: Route.LoaderArgs) {
       request,
       userSettings?.language,
     );
+    const { theme, source: themeSource } = resolveTheme({
+      cookie: request.headers.get("Cookie"),
+      account: userSettings?.theme,
+    });
     return {
       user,
       userSettings,
@@ -133,9 +147,14 @@ export async function loader({ request }: Route.LoaderArgs) {
       showAnalytics,
       locale,
       localeSource,
+      theme,
+      themeSource,
     };
   } catch {
     const { locale, source: localeSource } = requestLocale(request);
+    const { theme, source: themeSource } = resolveTheme({
+      cookie: request.headers.get("Cookie"),
+    });
     return {
       user: undefined,
       userSettings: undefined,
@@ -143,6 +162,8 @@ export async function loader({ request }: Route.LoaderArgs) {
       showAnalytics,
       locale,
       localeSource,
+      theme,
+      themeSource,
     };
   }
 }
@@ -166,6 +187,26 @@ function useLocaleState(loaderLocale: Locale, localeSource: string) {
   return [locale, setLocale] as const;
 }
 
+/** useThemeState keeps the color theme: the root loader's, or the one just
+ * picked with the switcher (shown at once). */
+function useThemeState(loaderTheme: Theme, themeSource: ThemeSource) {
+  const [theme, setTheme] = React.useState(loaderTheme);
+  React.useEffect(() => {
+    setTheme(loaderTheme);
+  }, [loaderTheme]);
+
+  // The theme came from the account (e.g. logging in on a new device):
+  // remember it in the cookie too, so pages without the account (error
+  // pages, the next visit before logging in) keep it.
+  React.useEffect(() => {
+    if (themeSource === "account") {
+      document.cookie = serializeThemeCookie(loaderTheme);
+    }
+  }, [loaderTheme, themeSource]);
+
+  return [theme, setTheme] as const;
+}
+
 /** useMarkHydrated sets `data-hydrated` on <html> once React has hydrated the
  * page, i.e. once buttons and forms have their event handlers. The root's
  * effects run after all of its children's, so this is the last effect of the
@@ -182,6 +223,10 @@ export default function App({ loaderData }: Route.ComponentProps) {
   const [locale, setLocale] = useLocaleState(
     loaderData.locale,
     loaderData.localeSource,
+  );
+  const [theme, setTheme] = useThemeState(
+    loaderData.theme,
+    loaderData.themeSource,
   );
   const SITE_DESCRIPTION = createT(locale)("common.siteDescription");
   const location = useLocation();
@@ -222,7 +267,7 @@ export default function App({ loaderData }: Route.ComponentProps) {
   };
 
   return (
-    <html lang={locale}>
+    <html lang={locale} data-theme={theme}>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width,initial-scale=1" />
@@ -255,18 +300,23 @@ export default function App({ loaderData }: Route.ComponentProps) {
             className={`fixed right-0 bottom-0 z-50 m-0 flex w-96 max-w-full list-none flex-col gap-3 p-[var(--viewport-padding)] outline-none [--viewport-padding:_25px]`}
           />
           <I18nProvider locale={locale} onChangeLocale={setLocale}>
-            <UserSettingsProvider
-              initialSettings={loaderData.userSettings}
-              loggedIn={!!loaderData.user}
-            >
-              {chromeless ? null : (
-                <Header user={loaderData.user} BASE_URL={loaderData.BASE_URL} />
-              )}
-              <Outlet />
-              {chromeless ? null : <Footer />}
-              <ScrollRestoration />
-              <Scripts />
-            </UserSettingsProvider>
+            <ThemeProvider theme={theme} onChangeTheme={setTheme}>
+              <UserSettingsProvider
+                initialSettings={loaderData.userSettings}
+                loggedIn={!!loaderData.user}
+              >
+                {chromeless ? null : (
+                  <Header
+                    user={loaderData.user}
+                    BASE_URL={loaderData.BASE_URL}
+                  />
+                )}
+                <Outlet />
+                {chromeless ? null : <Footer />}
+                <ScrollRestoration />
+                <Scripts />
+              </UserSettingsProvider>
+            </ThemeProvider>
           </I18nProvider>
         </ToastPrimitive.Provider>
       </body>
@@ -275,7 +325,7 @@ export default function App({ loaderData }: Route.ComponentProps) {
 }
 
 const errorHeader = (
-  <nav className="bg-blue-bright p-4">
+  <nav className="bg-header p-4">
     <a href="/">
       <h1 className="font-korinna text-2xl font-bold text-white text-shadow-md">
         Jep!
@@ -283,6 +333,23 @@ const errorHeader = (
     </a>
   </nav>
 );
+
+/** useErrorTheme is the color theme for error pages: the root loader's when
+ * it ran. Otherwise (e.g. a 404, where no loader runs) the server renders
+ * Classic and the browser switches to the `theme` cookie after hydration. */
+function useErrorTheme(): Theme {
+  const rootData = useRouteLoaderData("root");
+  const loaderTheme: unknown =
+    typeof rootData === "object" && rootData !== null && "theme" in rootData
+      ? rootData.theme
+      : undefined;
+  const [cookieTheme, setCookieTheme] = React.useState<Theme>();
+  React.useEffect(() => {
+    setCookieTheme(parseThemeCookie(document.cookie));
+  }, []);
+  if (isTheme(loaderTheme)) return loaderTheme;
+  return cookieTheme ?? DEFAULT_THEME;
+}
 
 /** useErrorLocale is the UI language for error pages: the root loader's when
  * it ran, English otherwise. */
@@ -298,9 +365,10 @@ function useErrorLocale(): Locale {
 function ErrorDocument({ children }: { children: React.ReactNode }) {
   useMarkHydrated();
   const locale = useErrorLocale();
+  const theme = useErrorTheme();
   const t = createT(locale);
   return (
-    <html lang={locale}>
+    <html lang={locale} data-theme={theme}>
       <head>
         <title>{t("common.errorTitle")}</title>
         <meta charSet="utf-8" />
