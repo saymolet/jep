@@ -5,6 +5,7 @@ import type { Page } from "@playwright/test";
 
 import { expect, test } from "./fixtures";
 import {
+  clickStartRound,
   goto,
   openClue,
   stubExternalMedia,
@@ -75,7 +76,7 @@ test.describe("multiple choice questions in a room", () => {
       timeout: 10_000,
     });
 
-    await host.getByRole("button", { name: /start round/i }).click();
+    await clickStartRound(host);
 
     // Capitals $200: Sydney / Canberra (correct) / Melbourne / Perth.
     await openClue(host, host.getByRole("button", { name: "$ 200" }).first());

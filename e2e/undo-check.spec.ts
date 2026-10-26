@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import type { Page } from "@playwright/test";
 
-import { goto } from "./helpers";
+import { clickStartRound, goto } from "./helpers";
 
 /** Optional directory for step-by-step screenshots (set UNDO_SHOTS_DIR). */
 const shotsDir = process.env.UNDO_SHOTS_DIR;
@@ -20,7 +20,7 @@ async function playClueAndCheckCorrect(page: Page) {
   await goto(page, "/mock");
 
   await page.getByRole("button", { name: /join game/i }).click();
-  await page.getByRole("button", { name: /start round/i }).click();
+  await clickStartRound(page);
 
   await playNextClueCorrect(page);
 }

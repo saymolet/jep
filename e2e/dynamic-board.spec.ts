@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 
-import { openClue, startMockGame } from "./helpers";
+import { clickStartRound, openClue, startMockGame } from "./helpers";
 
 /** The clue button at row i, column j of the game board. */
 function cell(page: Page, i: number, j: number) {
@@ -67,7 +67,7 @@ test.describe("boards with uneven categories", () => {
       timeout: 10_000,
     });
     await expect(page.getByText("$6,200").first()).toBeVisible();
-    await page.getByRole("button", { name: /start round/i }).click();
+    await clickStartRound(page);
     await expect(page.getByRole("columnheader")).toHaveCount(2);
     await expect(page.getByTestId("empty-cell")).toHaveCount(1);
   });

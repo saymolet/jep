@@ -1,7 +1,7 @@
 import type { Page } from "@playwright/test";
 
 import { expect, test } from "./fixtures";
-import { goto, uploadGame, waitForConnected } from "./helpers";
+import { clickStartRound, goto, uploadGame, waitForConnected } from "./helpers";
 
 async function join(page: Page) {
   await page.getByRole("button", { name: /join game/i }).click();
@@ -62,7 +62,7 @@ test.describe("soundboard in a room", () => {
     });
 
     // The round starts: the board is on screen for everyone.
-    await host.getByRole("button", { name: /start round/i }).click();
+    await clickStartRound(host);
     await expect(guest.getByRole("dialog")).toHaveCount(0, {
       timeout: 10_000,
     });
@@ -130,13 +130,7 @@ test.describe("soundboard button placement", () => {
     await expect(host).toHaveURL(/\/room\/\d+-\w+$/);
     await waitForConnected(host);
     await join(host);
-    const start = host.getByRole("button", { name: /start round/i });
-    await expect(async () => {
-      if (await start.isVisible()) {
-        await start.click({ timeout: 2_000 });
-      }
-      await expect(start).toBeHidden({ timeout: 5_000 });
-    }).toPass({ timeout: 30_000 });
+    await clickStartRound(host);
 
     const button = host.getByTestId("soundboard-button");
     await expect(button).toBeVisible();

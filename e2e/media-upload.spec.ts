@@ -3,6 +3,7 @@ import path from "path";
 
 import { expect, test } from "./fixtures";
 import {
+  clickStartRound,
   goto,
   openClue,
   stubExternalMedia,
@@ -55,7 +56,7 @@ test.describe("uploaded media questions", () => {
     await expect(page).toHaveURL(/\/room\/\d+-\w+$/);
     await waitForConnected(page);
     await page.getByRole("button", { name: /join game/i }).click();
-    await page.getByRole("button", { name: /start round/i }).click();
+    await clickStartRound(page);
 
     await openClue(page, page.getByRole("button", { name: "$ 200" }).nth(1));
     await expect(page.locator("audio")).toHaveAttribute(

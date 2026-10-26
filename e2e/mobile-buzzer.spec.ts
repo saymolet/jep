@@ -6,7 +6,12 @@ import {
   type Page,
 } from "@playwright/test";
 
-import { goto, startMockGame, stubExternalMedia } from "./helpers";
+import {
+  clickStartRound,
+  goto,
+  startMockGame,
+  stubExternalMedia,
+} from "./helpers";
 
 // Chromium with the iPhone 13 screen, touch and mobile viewport (WebKit isn't
 // installed for the e2e suite).
@@ -155,10 +160,7 @@ test.describe("mobile buzzer (iPhone 13)", () => {
     ]);
     await goto(page, "/mock");
     await page.getByRole("button", { name: "Приєднатися" }).click();
-    const startRound = page.getByRole("button", { name: "Почати раунд" });
-    await startRound.click();
-    await expect(startRound).toBeHidden({ timeout: 15_000 });
-    await expect(page.getByRole("dialog")).toHaveCount(0, { timeout: 15_000 });
+    await clickStartRound(page, "Почати раунд");
 
     await tapClue(page, page.getByRole("button", { name: "$ 200" }).first());
     const bar = buzzBar(page);

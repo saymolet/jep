@@ -1,7 +1,13 @@
 import type { Page } from "@playwright/test";
 
 import { expect, test } from "./fixtures";
-import { goto, playOneClue, uploadGame, waitForConnected } from "./helpers";
+import {
+  clickStartRound,
+  goto,
+  playOneClue,
+  uploadGame,
+  waitForConnected,
+} from "./helpers";
 
 async function join(page: Page) {
   const joinButton = page.getByRole("button", { name: /join game/i });
@@ -55,11 +61,7 @@ test.describe("live standings", () => {
     await waitForConnected(guest);
     await join(guest);
 
-    await expect(async () => {
-      const start = host.getByRole("button", { name: /start round/i });
-      if (await start.isVisible()) await start.click({ timeout: 2_000 });
-      await expect(start).toBeHidden({ timeout: 3_000 });
-    }).toPass({ timeout: 20_000 });
+    await clickStartRound(host);
     await answerFirstClueRight(host);
 
     // The guest opens the standings: the host leads with +$200.
@@ -118,11 +120,7 @@ test.describe("your games in progress", () => {
     expect(roomB).not.toBe(roomA);
     await waitForConnected(guest);
     await join(guest);
-    await expect(async () => {
-      const start = guest.getByRole("button", { name: /start round/i });
-      if (await start.isVisible()) await start.click({ timeout: 2_000 });
-      await expect(start).toBeHidden({ timeout: 3_000 });
-    }).toPass({ timeout: 20_000 });
+    await clickStartRound(guest);
     await playOneClue(guest);
     await expect(guest).toHaveURL(/\/summary$/, { timeout: 15_000 });
 
