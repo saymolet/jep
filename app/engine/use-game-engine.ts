@@ -8,6 +8,7 @@ import { getSupabase } from "~/supabase";
 import { noteServerTime } from "~/utils/server-clock";
 import { SOUNDBOARD_EVENT } from "~/utils/soundboard/messages";
 
+import { canSkipOpenClue, getAdminStep } from "./admin";
 import type { Action } from "./engine";
 import {
   gameEngine,
@@ -124,6 +125,15 @@ export function stateToGameEngine(
 
   const scoreChanges = getScoreChanges(state);
 
+  let numSkipped = 0;
+  for (const rows of state.isAnswered) {
+    for (const row of rows) {
+      for (const cell of row) {
+        if (cell.skipped) numSkipped += 1;
+      }
+    }
+  }
+
   const clueKey = `${state.round},${
     state.activeClue ? state.activeClue[0] : -1
   },${state.activeClue ? state.activeClue[1] : -1}`;
@@ -183,6 +193,21 @@ export function stateToGameEngine(
     scoreChanges,
     /** Changes when a new question changes scores ("" before any). */
     scoreChangesKey: scoreChangesKey(state, scoreChanges),
+    /** Score changes made by the site admin, oldest first. */
+    scoreAdjustments: state.scoreAdjustments,
+    /** How many questions the site admin skipped so far (all rounds). */
+    numSkipped,
+    /** The site admin skipped the active question. */
+    activeClueSkipped: state.activeClue
+      ? (state.isAnswered
+          .at(state.round)
+          ?.at(state.activeClue[0])
+          ?.at(state.activeClue[1])?.skipped ?? false)
+      : false,
+    /** What the game waits for from a player (the admin panel). */
+    adminStep: getAdminStep(state),
+    /** The open question may be skipped by the admin. */
+    canSkipOpenClue: canSkipOpenClue(state),
   };
 }
 

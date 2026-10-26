@@ -62,6 +62,7 @@ export const play = {
   "play.next.noOneCanWager": "No one has enough money to wager on this clue.",
   "play.next.playerCantWager":
     "{name} does not have enough money to wager on this clue.",
+  "play.next.skipped": "The admin skipped this question.",
   "play.next.noOneWon": "No one won the clue.",
   "play.next.unknownPlayer": "Unknown player",
   "play.next.backToBoard": "Back to board",

@@ -3,7 +3,7 @@ import { z } from "zod";
 import { ActionType } from "~/engine";
 import { createT, getRequestLocale } from "~/i18n";
 import { getValidAuthSession } from "~/models/auth";
-import { createRoomEvent } from "~/models/room-event.server";
+import { createRoomEventAsServer } from "~/models/room-event.server";
 import { getRoom } from "~/models/room.server";
 import { requireSessionUserId } from "~/session.server";
 import { parseFormData } from "~/utils/http.server";
@@ -45,18 +45,13 @@ export async function action({ request, params }: Route.ActionArgs) {
     throw new Response(t("room.error.roomNotFound"), { status: 404 });
   }
 
-  await createRoomEvent(
-    room.id,
-    ActionType.CorrectCheck,
-    {
-      round,
-      i,
-      j,
-      userId,
-      correct,
-    },
-    authSession?.accessToken,
-  );
+  await createRoomEventAsServer(room.id, ActionType.CorrectCheck, {
+    round,
+    i,
+    j,
+    userId,
+    correct,
+  });
 
   return null;
 }

@@ -1,14 +1,17 @@
 import { z } from "zod";
 
+import { adminTag, authorizeRoomActor } from "~/admin/room-actor.server";
 import { ActionType } from "~/engine";
 import { applyRoomEventsToState } from "~/engine/room-event";
 import { GameState, stateFromGame } from "~/engine/state";
 import { createT, getRequestLocale } from "~/i18n";
 import { getValidAuthSession } from "~/models/auth";
 import { getGame } from "~/models/game.server";
-import { createRoomEvent, getRoomEvents } from "~/models/room-event.server";
+import {
+  createRoomEventAsServer,
+  getRoomEvents,
+} from "~/models/room-event.server";
 import { getRoom } from "~/models/room.server";
-import { requireSessionUserId } from "~/session.server";
 import { parseFormData } from "~/utils/http.server";
 
 import type { Route } from "./+types/room.$roomId.pass-clue";
@@ -42,7 +45,13 @@ export async function action({ request, params }: Route.ActionArgs) {
   }
 
   const authSession = await getValidAuthSession(request);
-  await requireSessionUserId(request, userId, authSession);
+  const byAdmin = await authorizeRoomActor(
+    request,
+    formData,
+    userId,
+    authSession,
+    t,
+  );
   const room = await getRoom(roomId, authSession?.accessToken);
   if (!room) {
     throw new Response(t("room.error.roomNotFound"), { status: 404 });
@@ -79,12 +88,13 @@ export async function action({ request, params }: Route.ActionArgs) {
     });
   }
 
-  await createRoomEvent(
-    room.id,
-    ActionType.PassClue,
-    { i, j, userId, toUserId },
-    authSession?.accessToken,
-  );
+  await createRoomEventAsServer(room.id, ActionType.PassClue, {
+    i,
+    j,
+    userId,
+    toUserId,
+    ...adminTag(byAdmin),
+  });
 
   return null;
 }

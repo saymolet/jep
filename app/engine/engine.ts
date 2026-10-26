@@ -7,6 +7,7 @@ import { cyrb53 } from "~/utils";
 import { isChoiceIndex, isCorrectChoice } from "~/utils/choices";
 
 import {
+  isAdjustScoreAction,
   isAdminAction,
   isAnswerAction,
   isBuzzAction,
@@ -21,19 +22,23 @@ import {
   isRestoreAction,
   isSetSettingsAction,
   isSetTeamAction,
+  isSkipClueAction,
   isTransferPlayerAction,
 } from "./actions";
 import { isAnswerTimeSec } from "./answer-timer";
+import { canSkipClue } from "./skip";
 import {
   type CheckCorrection,
   type ClueAnswer,
   GAME_OVER_CORRECTION_GRACE_MS,
   GameState,
+  type QuestionRef,
   State,
   canCorrectCheck,
   getClueValue,
   getClueValueForRound,
   getCountedChecks,
+  getLastFinishedQuestion,
   getNumCluesInBoard,
   isAutoCheckedClue,
   isSecretClue,
@@ -112,6 +117,16 @@ export enum ActionType {
    * change them (payload `admin: true`, inserted by the server); events from
    * before that rule (from a player, without the flag) stay valid. */
   SetSettings = "set_settings",
+  /** SkipClue (site admin only, payload `admin: true`, inserted by the
+   * server) ends the open question at once — in any state before its answer
+   * is shown to everyone — or marks an unplayed question on the board as
+   * played without opening it. Nobody's score changes for the skip, board
+   * control stays, and the game goes on as after a normal question. */
+  SkipClue = "skip_clue",
+  /** AdjustScore (site admin only, payload `admin: true`, inserted by the
+   * server) adds points to a player's score or sets it to an exact value,
+   * any time before game over. It doesn't change the game's flow. */
+  AdjustScore = "adjust_score",
   /** Restore replaces the entire state (used for restoring saved solo games). */
   Restore = "restore",
 }
@@ -215,6 +230,20 @@ export function getHighestClueValue(board: Board | undefined) {
     }
   }
   return max;
+}
+
+/** getWagerRange is the smallest and largest wager a player with `score`
+ * may place on a wagerable clue: the Final (long form) from $0 up to their
+ * score, a Double Down from $5 up to their score or the board's highest
+ * value, whichever is more. */
+export function getWagerRange(
+  board: Board | undefined,
+  clue: Pick<Clue, "longForm">,
+  score: number,
+) {
+  return clue.longForm
+    ? { min: 0, max: score }
+    : { min: 5, max: Math.max(score, getHighestClueValue(board)) };
 }
 
 function getNextBoardControl(draft: Draft<State>, userId: string) {
@@ -478,6 +507,62 @@ function applyCheckCorrection(
     correction.round === draft.round
       ? correctedClueBoardControl
       : getNextRoundBoardControl(draft, correctedClueBoardControl);
+}
+
+/** finishBoard moves on once every question of the round was played: to
+ * the next round's preview, or game over after the last round. */
+function finishBoard(draft: Draft<State>, ts: number) {
+  const newRound = draft.round + 1;
+  const board = draft.game.boards.at(newRound);
+
+  if (!board) {
+    pauseClock(draft, ts);
+    draft.type = GameState.GameOver;
+    draft.activeClue = null;
+    draft.boardControl = null;
+    draft.buzzes = new Map();
+    // The correction record survives game over so a player who was
+    // mid-correction when another player advanced can still finish
+    // (within GAME_OVER_CORRECTION_GRACE_MS).
+    draft.gameOverAt = ts;
+    draft.numExpectedWagers = 0;
+    return;
+  }
+
+  // Board control goes to the player with the lowest score. In the
+  // case of a tie, the player who most recently answered correctly
+  // gets control. Falls back to keeping the current controller.
+  const newBoardControl = getNextRoundBoardControl(draft, draft.boardControl);
+
+  draft.type = GameState.PreviewRound;
+  draft.activeClue = null;
+  draft.boardControl = newBoardControl;
+  draft.buzzes = new Map();
+  draft.numAnswered = 0;
+  draft.numCluesInBoard = getNumCluesInBoard(draft.game, newRound);
+  draft.numExpectedWagers = 0;
+  draft.round = newRound;
+}
+
+/** markSkipped marks question (i, j) of the current round as played and
+ * skipped by the admin. */
+function markSkipped(draft: Draft<State>, i: number, j: number) {
+  const cell = draft.isAnswered[draft.round][i][j];
+  cell.isAnswered = true;
+  cell.skipped = true;
+  cell.answerOrder = getNextAnswerOrder(draft.isAnswered);
+  draft.numAnswered += 1;
+}
+
+/** getScoreAdjustmentQuestion is the question an admin score change is
+ * shown with in the standings (see ScoreAdjustment): the open question, else
+ * the most recently finished one. */
+function getScoreAdjustmentQuestion(draft: Draft<State>): QuestionRef | null {
+  if (draft.activeClue) {
+    const [i, j] = draft.activeClue;
+    return { round: draft.round, i, j };
+  }
+  return getLastFinishedQuestion(draft);
 }
 
 /** isGameUnderway is true once the first question of the game was opened:
@@ -770,11 +855,11 @@ export function gameEngine(state: State, action: Action): State {
         resumeClock(draft, action.ts);
 
         // Validate wager amount
-        const minWager = clue.longForm ? 0 : 5;
-        const highestClueValue = getHighestClueValue(board);
-        const maxWager = clue.longForm
-          ? player.score
-          : Math.max(player.score, highestClueValue);
+        const { min: minWager, max: maxWager } = getWagerRange(
+          board,
+          clue,
+          player.score,
+        );
 
         if (wager < minWager) {
           throw new Error(`Wager must be at least $${minWager}`);
@@ -1198,39 +1283,7 @@ export function gameEngine(state: State, action: Action): State {
         draft.answerTimedOut = null;
 
         if (draft.numAnswered === draft.numCluesInBoard) {
-          const newRound = draft.round + 1;
-          const board = draft.game.boards.at(newRound);
-
-          if (!board) {
-            pauseClock(draft, action.ts);
-            draft.type = GameState.GameOver;
-            draft.activeClue = null;
-            draft.boardControl = null;
-            draft.buzzes = new Map();
-            // The correction record survives game over so a player who was
-            // mid-correction when another player advanced can still finish
-            // (within GAME_OVER_CORRECTION_GRACE_MS).
-            draft.gameOverAt = action.ts;
-            draft.numExpectedWagers = 0;
-            return;
-          }
-
-          // Board control goes to the player with the lowest score. In the
-          // case of a tie, the player who most recently answered correctly
-          // gets control. Falls back to keeping the current controller.
-          const newBoardControl = getNextRoundBoardControl(
-            draft,
-            draft.boardControl,
-          );
-
-          draft.type = GameState.PreviewRound;
-          draft.activeClue = null;
-          draft.boardControl = newBoardControl;
-          draft.buzzes = new Map();
-          draft.numAnswered = 0;
-          draft.numCluesInBoard = getNumCluesInBoard(draft.game, newRound);
-          draft.numExpectedWagers = 0;
-          draft.round = newRound;
+          finishBoard(draft, action.ts);
           return;
         }
 
@@ -1446,6 +1499,64 @@ export function gameEngine(state: State, action: Action): State {
         }
         draft.answerTimeSec = answerTimeSec;
         draft.autoWrongOnTimeout = autoWrongOnTimeout;
+      });
+    case ActionType.SkipClue:
+      // Ignored (not thrown) when malformed: a bad event must not break the
+      // room for everyone.
+      if (!isSkipClueAction(action)) {
+        return state;
+      }
+      return produce(state, (draft) => {
+        const { i, j } = action.payload;
+        if (!canSkipClue(draft, i, j)) {
+          return;
+        }
+        markSkipped(draft, i, j);
+
+        // From the board: played without opening it.
+        if (draft.type === GameState.ShowBoard) {
+          if (draft.numAnswered === draft.numCluesInBoard) {
+            draft.answerTimedOut = null;
+            finishBoard(draft, action.ts);
+          }
+          return;
+        }
+
+        // The open question: show the answer to everyone, as when nobody
+        // got it. Points already won or lost on it (a wrong answer before,
+        // Final answers already checked) stay; the skip itself gives and
+        // takes nothing, and board control stays where it was.
+        draft.type = GameState.RevealAnswerToAll;
+        draft.answerStartedAt = null;
+        draft.answerTimedOut = null;
+      });
+    case ActionType.AdjustScore:
+      if (!isAdjustScoreAction(action)) {
+        return state;
+      }
+      return produce(state, (draft) => {
+        const { userId, delta, score } = action.payload;
+        // Final results stay final.
+        if (draft.type === GameState.GameOver) {
+          return;
+        }
+        // A player who left still counts for their team and the summary.
+        const player =
+          draft.players.get(userId) ?? draft.leftPlayers.get(userId);
+        if (!player) {
+          return;
+        }
+        const change = score !== undefined ? score - player.score : delta;
+        if (!change) {
+          return;
+        }
+        player.score += change;
+        draft.scoreAdjustments.push({
+          userId,
+          delta: change,
+          question: getScoreAdjustmentQuestion(draft),
+          ts: action.ts,
+        });
       });
     case ActionType.Restore:
       if (!isRestoreAction(action)) {

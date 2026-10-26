@@ -121,4 +121,28 @@ describe("buildChartData", () => {
     expect(data).toHaveLength(2);
     expect(data[1][PLAYER2.userId]).toBe(200);
   });
+
+  it("moves the latest point with an admin score change", () => {
+    const data = buildChartData(
+      MOCK_GAME,
+      [PLAYER1, PLAYER2],
+      withTs([
+        ...PLAY_FIRST_CLUE,
+        {
+          type: ActionType.AdjustScore,
+          payload: { userId: PLAYER1.userId, delta: 500, admin: true },
+        },
+        // Ignored without the admin flag: no change.
+        {
+          type: ActionType.AdjustScore,
+          payload: { userId: PLAYER2.userId, delta: 500 },
+        },
+      ]),
+    );
+    expect(data).toHaveLength(2);
+    expect(data[1]).toMatchObject({
+      [PLAYER1.userId]: 500,
+      [PLAYER2.userId]: 200,
+    });
+  });
 });

@@ -5,6 +5,7 @@ export {
   QUANTIZATION_FACTOR_MS,
   gameEngine,
   getHighestClueValue,
+  getWagerRange,
   isGameUnderway,
 } from "./engine";
 export type { Action } from "./engine";

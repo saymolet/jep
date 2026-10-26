@@ -9,7 +9,6 @@ const OTHER = "user-2";
 const THIRD = "user-3";
 
 const mocks = vi.hoisted(() => ({
-  createRoomEvent: vi.fn(),
   createRoomEventAsServer: vi.fn(),
   getAdmin: vi.fn(),
   getRoomEvents: vi.fn(),
@@ -23,7 +22,6 @@ vi.mock("~/models/auth", () => ({
 }));
 vi.mock("~/admin/auth.server", () => ({ getAdmin: mocks.getAdmin }));
 vi.mock("~/models/room-event.server", () => ({
-  createRoomEvent: mocks.createRoomEvent,
   createRoomEventAsServer: mocks.createRoomEventAsServer,
   getRoomEvents: mocks.getRoomEvents,
 }));
@@ -134,7 +132,6 @@ describe("player route: kick", () => {
       ActionType.Kick,
       { userId: OTHER, name: "Other", color: undefined },
     );
-    expect(mocks.createRoomEvent).not.toHaveBeenCalled();
   });
 
   it.each([
@@ -148,7 +145,6 @@ describe("player route: kick", () => {
     expect(status).toBe(403);
     expect(text).toMatch(/only the admin can kick/);
     expect(mocks.createRoomEventAsServer).not.toHaveBeenCalled();
-    expect(mocks.createRoomEvent).not.toHaveBeenCalled();
   });
 
   it("answers in Ukrainian", async () => {
@@ -216,13 +212,12 @@ describe("player route: leave and join", () => {
     expect(mocks.getRoomEvents).not.toHaveBeenCalled();
   });
 
-  it("joining is still a normal insert, only as yourself", async () => {
+  it("joining goes through the server too, only as yourself", async () => {
     await call("POST", { userId: ME, name: "Me" });
-    expect(mocks.createRoomEvent).toHaveBeenCalledWith(
+    expect(mocks.createRoomEventAsServer).toHaveBeenCalledWith(
       ROOM.id,
       ActionType.Join,
       { userId: ME, name: "Me", color: undefined },
-      undefined,
     );
     await expect(
       call("POST", { userId: OTHER, name: "Other" }),
