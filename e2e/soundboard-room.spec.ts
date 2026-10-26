@@ -46,6 +46,12 @@ test.describe("soundboard in a room", () => {
 
     const guestContext = await browser.newContext();
     const guest = await guestContext.newPage();
+    // The soundboard samples the guest's browser downloads (after a tap).
+    const guestSamples = new Map<string, number>();
+    guest.on("response", (response) => {
+      const match = /\/sounds\/soundboard\/(\w+)\.mp3$/.exec(response.url());
+      if (match) guestSamples.set(match[1], response.status());
+    });
     await goto(guest, roomUrl);
     await waitForConnected(guest);
     await join(guest);
@@ -74,19 +80,25 @@ test.describe("soundboard in a room", () => {
     // The host plays applause: everyone sees "👏 <host>".
     await playSound(host, "Applause");
     const own = toast(host, "applause");
-    await expect(own).toBeVisible();
-    await expect(own).toContainText("👏");
+    // Toasts last 2.5 s and the first sound also starts loading the samples,
+    // so on a busy machine separate assertions could straddle the toast's
+    // lifetime. Read emoji and name in one in-page evaluation as it appears.
     // The visible text is "<emoji> <name>"; the name is its second part.
-    // Read it with a retrying assertion and textContent: innerText depends on
-    // layout and could read empty while the toast scales in.
-    const ownName = own.locator("span").nth(1);
-    await expect(ownName).toHaveText(/\S/);
-    const hostName = ((await ownName.textContent()) ?? "").trim();
+    const [emoji, hostName] = await own.evaluate((el) =>
+      Array.from(el.querySelectorAll("span"), (s) =>
+        (s.textContent ?? "").trim(),
+      ),
+    );
+    expect(emoji).toContain("👏");
+    expect(hostName).toMatch(/\S/);
     const guestToast = toast(guest, "applause");
     await expect(guestToast).toBeVisible({ timeout: 10_000 });
     await expect(guestToast.locator("span").nth(1)).toHaveText(hostName);
     // The guest tapped the page (Join), so the sound played there.
     await expect(guestToast).toHaveAttribute("data-played", "true");
+    // It played the real recording: the guest downloaded the samples.
+    await expect.poll(() => guestSamples.get("applause")).toBe(200);
+    await expect.poll(() => guestSamples.size).toBe(9);
     await expect(toast(spectator, "applause")).toBeVisible({ timeout: 10_000 });
 
     // The guest mutes the soundboard on their device: the toast still shows,
