@@ -1,4 +1,6 @@
-import { test, expect } from "./fixtures";
+import { createClient } from "@supabase/supabase-js";
+
+import { expect, TEST_EMAIL, test } from "./fixtures";
 import { goto, reload } from "./helpers";
 
 /** Wait for a debounced settings POST to complete. */
@@ -7,6 +9,26 @@ function waitForSettingsSave(page: import("@playwright/test").Page) {
     (resp) =>
       resp.url().includes("/settings") && resp.request().method() === "POST",
   );
+}
+
+/** The theme stored on the shared test account (read with the service role,
+ * as global setup does). Asserting the stored value avoids depending on which
+ * debounced settings POST happens to be in flight. */
+async function accountTheme(): Promise<unknown> {
+  const supabase = createClient(
+    process.env.SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } },
+  );
+  const { data } = await supabase
+    .from("accounts")
+    .select("settings")
+    .eq("email", TEST_EMAIL)
+    .single();
+  const settings: unknown = data?.settings;
+  return settings && typeof settings === "object" && "theme" in settings
+    ? settings.theme
+    : undefined;
 }
 
 test.describe("settings persistence", () => {
@@ -106,10 +128,9 @@ test.describe("settings persistence", () => {
     const group = page.getByRole("group", { name: "Theme" });
     await expect(group).toBeVisible();
 
-    const save = waitForSettingsSave(page);
     await group.getByRole("button", { name: "Dark" }).click();
     await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
-    await save;
+    await expect.poll(accountTheme, { timeout: 10_000 }).toBe("dark");
 
     // A new device: no theme cookie, so the theme comes from the account.
     await page.context().clearCookies({ name: "theme" });
@@ -121,9 +142,8 @@ test.describe("settings persistence", () => {
     );
 
     // Put the shared test user back on Classic.
-    const reset = waitForSettingsSave(page);
     await group.getByRole("button", { name: "Classic" }).click();
-    await reset;
     await expect(page.locator("html")).toHaveAttribute("data-theme", "classic");
+    await expect.poll(accountTheme, { timeout: 10_000 }).toBe("classic");
   });
 });
