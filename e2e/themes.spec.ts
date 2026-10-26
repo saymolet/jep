@@ -36,7 +36,9 @@ test.describe("themes", () => {
     await goto(page, "/");
 
     await page.getByRole("button", { name: "Theme: Classic" }).click();
-    await page.getByRole("menuitemradio", { name: "Dark" }).click();
+    await page
+      .getByRole("menuitemradio", { name: "Dark", exact: true })
+      .click();
 
     // Applied at once, without a reload.
     await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
@@ -53,7 +55,9 @@ test.describe("themes", () => {
 
     // Back to Classic.
     await page.getByRole("button", { name: "Theme: Dark" }).click();
-    await page.getByRole("menuitemradio", { name: "Classic" }).click();
+    await page
+      .getByRole("menuitemradio", { name: "Classic", exact: true })
+      .click();
     await expect(page.locator("html")).toHaveAttribute("data-theme", "classic");
     await expect.poll(() => pageBackground(page)).toBe(CLASSIC_PAGE);
     expect(await themeCookie(page)).toBe("classic");
@@ -84,9 +88,11 @@ test.describe("themes", () => {
     await goto(page, "/");
     await page.getByRole("button", { name: "Тема: Класична" }).click();
     await expect(
-      page.getByRole("menuitemradio", { name: "Класична" }),
+      page.getByRole("menuitemradio", { name: "Класична", exact: true }),
     ).toHaveAttribute("aria-checked", "true");
-    await page.getByRole("menuitemradio", { name: "Темна" }).click();
+    await page
+      .getByRole("menuitemradio", { name: "Темна", exact: true })
+      .click();
     await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
     await expect(
       page.getByRole("button", { name: "Тема: Темна" }),
@@ -94,7 +100,7 @@ test.describe("themes", () => {
     await expect(page.getByRole("menuitemradio")).toHaveCount(0);
     await page.getByRole("button", { name: "Тема: Темна" }).click();
     await expect(
-      page.getByRole("menuitemradio", { name: "Системна" }),
+      page.getByRole("menuitemradio", { name: "Системна", exact: true }),
     ).toBeVisible();
   });
 });
