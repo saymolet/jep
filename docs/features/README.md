@@ -20,3 +20,4 @@ See the backlog in [../README.md](../README.md#feature-backlog).
 - [12 — Mobile-first buzzer](./12-mobile-buzzer.md)
 - [15 — Soundboard](./15-soundboard.md)
 - [18 — Admin panel](./18-admin.md)
+- [20 — Admin interventions](./20-admin-interventions.md)

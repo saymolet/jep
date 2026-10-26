@@ -115,6 +115,9 @@ the others. Game over counts as underway.
   can no longer reset anyone's points; a forged `change_name` could still rename someone, and a
   forged `buzz`/`check` could still cheat. Moving every room event behind the server would be a
   larger change (all routes + realtime echo) — possible follow-up.
+  **Closed by feature 20:** every room event is now inserted by the server and the browser
+  key can't insert any (`20261026180715_room_events_server_only.sql`, see
+  [20-admin-interventions.md](./20-admin-interventions.md)).
 
 ### Room cleanup
 

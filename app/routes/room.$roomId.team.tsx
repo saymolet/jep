@@ -6,7 +6,10 @@ import { GameState, stateFromGame } from "~/engine/state";
 import { createT, getRequestLocale } from "~/i18n";
 import { getValidAuthSession } from "~/models/auth";
 import { getGame } from "~/models/game.server";
-import { createRoomEvent, getRoomEvents } from "~/models/room-event.server";
+import {
+  createRoomEventAsServer,
+  getRoomEvents,
+} from "~/models/room-event.server";
 import { getRoom } from "~/models/room.server";
 import { TEAM_IDS } from "~/models/team";
 import { requireSessionUserId } from "~/session.server";
@@ -66,12 +69,7 @@ export async function action({ request, params }: Route.ActionArgs) {
     });
   }
 
-  await createRoomEvent(
-    room.id,
-    ActionType.SetTeam,
-    { userId, team },
-    authSession?.accessToken,
-  );
+  await createRoomEventAsServer(room.id, ActionType.SetTeam, { userId, team });
 
   return null;
 }

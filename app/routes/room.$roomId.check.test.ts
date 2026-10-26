@@ -7,7 +7,8 @@ import type { DbRoomEvent } from "~/models/room-event.server";
 const USER = "user-1";
 
 const mocks = vi.hoisted(() => ({
-  createRoomEvent: vi.fn(),
+  createRoomEventAsServer: vi.fn(),
+  getAdmin: vi.fn(),
   getRoomEvents: vi.fn(),
   getRoom: vi.fn(),
   getGame: vi.fn(),
@@ -18,9 +19,10 @@ vi.mock("~/models/auth", () => ({
   getValidAuthSession: mocks.getValidAuthSession,
 }));
 vi.mock("~/models/room-event.server", () => ({
-  createRoomEvent: mocks.createRoomEvent,
+  createRoomEventAsServer: mocks.createRoomEventAsServer,
   getRoomEvents: mocks.getRoomEvents,
 }));
+vi.mock("~/admin/auth.server", () => ({ getAdmin: mocks.getAdmin }));
 vi.mock("~/models/room.server", () => ({ getRoom: mocks.getRoom }));
 vi.mock("~/models/game.server", () => ({ getGame: mocks.getGame }));
 vi.mock("~/session.server", () => ({
@@ -90,11 +92,10 @@ describe("check route", () => {
       choice: "1",
       result: "incorrect",
     });
-    expect(mocks.createRoomEvent).toHaveBeenCalledWith(
+    expect(mocks.createRoomEventAsServer).toHaveBeenCalledWith(
       ROOM.id,
       ActionType.Check,
       { i: 0, j: 0, userId: USER, correct: true, choice: 1 },
-      undefined,
     );
   });
 
@@ -106,11 +107,10 @@ describe("check route", () => {
       choice: "0",
       result: "correct",
     });
-    expect(mocks.createRoomEvent).toHaveBeenCalledWith(
+    expect(mocks.createRoomEventAsServer).toHaveBeenCalledWith(
       ROOM.id,
       ActionType.Check,
       { i: 0, j: 0, userId: USER, correct: false, choice: 0 },
-      undefined,
     );
   });
 
@@ -120,7 +120,7 @@ describe("check route", () => {
     ).rejects.toMatchObject({
       status: 400,
     });
-    expect(mocks.createRoomEvent).not.toHaveBeenCalled();
+    expect(mocks.createRoomEventAsServer).not.toHaveBeenCalled();
   });
 
   it("rejects a pick on a question without choices", async () => {
@@ -130,7 +130,7 @@ describe("check route", () => {
     ).rejects.toMatchObject({
       status: 400,
     });
-    expect(mocks.createRoomEvent).not.toHaveBeenCalled();
+    expect(mocks.createRoomEventAsServer).not.toHaveBeenCalled();
   });
 
   it("rejects a check on behalf of another player", async () => {
@@ -139,16 +139,15 @@ describe("check route", () => {
     ).rejects.toMatchObject({
       status: 403,
     });
-    expect(mocks.createRoomEvent).not.toHaveBeenCalled();
+    expect(mocks.createRoomEventAsServer).not.toHaveBeenCalled();
   });
 
   it("keeps the self-check for normal questions", async () => {
     await callAction("5", { i: "0", j: "1", userId: USER, result: "correct" });
-    expect(mocks.createRoomEvent).toHaveBeenCalledWith(
+    expect(mocks.createRoomEventAsServer).toHaveBeenCalledWith(
       ROOM.id,
       ActionType.Check,
       { i: 0, j: 1, userId: USER, correct: true },
-      undefined,
     );
     expect(mocks.getGame).not.toHaveBeenCalled();
   });
@@ -174,11 +173,10 @@ describe("check route", () => {
       result: "correct",
       timedOut: "true",
     });
-    expect(mocks.createRoomEvent).toHaveBeenCalledWith(
+    expect(mocks.createRoomEventAsServer).toHaveBeenCalledWith(
       ROOM.id,
       ActionType.Check,
       { i: 0, j: 0, userId: USER, correct: false, timedOut: true },
-      undefined,
     );
   });
 

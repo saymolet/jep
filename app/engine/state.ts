@@ -34,6 +34,30 @@ export interface ClueAnswer {
   answeredBy: Map<string, boolean>;
   /** Global order in which this clue was answered. 0 = unanswered. */
   answerOrder: number;
+  /** The site admin skipped this question (ActionType.SkipClue): it counts
+   * as played, without points for anyone for the skip itself. */
+  skipped?: boolean;
+}
+
+/** QuestionRef names a question of the game: round and board cell. */
+export interface QuestionRef {
+  round: number;
+  i: number;
+  j: number;
+}
+
+/** ScoreAdjustment is a score change made by the site admin
+ * (ActionType.AdjustScore). */
+export interface ScoreAdjustment {
+  userId: string;
+  /** The change (an exact score set by the admin is stored as the
+   * difference). Never 0. */
+  delta: number;
+  /** The question the change is shown with in the standings: the open
+   * question, else the most recently finished one, else null (before any
+   * question). See getScoreChanges in standings.ts. */
+  question: QuestionRef | null;
+  ts: number;
 }
 
 export interface CheckCorrection {
@@ -92,6 +116,9 @@ export interface State {
   /** Custom team names set by a member (teams without one use their default,
    * translated name). Older saved solo states have none. */
   readonly teamNames: Map<TeamId, string>;
+  /** Score changes made by the site admin, oldest first (rooms only: solo
+   * play has no admin). */
+  readonly scoreAdjustments: ScoreAdjustment[];
 
   // per round state
   readonly activeClue: [number, number] | null;
@@ -146,6 +173,7 @@ export function stateFromGame(game: Game) {
     isAnswered: [],
     checkCorrection: null,
     teamNames: new Map(),
+    scoreAdjustments: [],
     numAnswered: 0,
     numCluesInBoard: getNumCluesInBoard(game, 0),
     numExpectedWagers: 0,
@@ -193,6 +221,26 @@ export function newAnswerGrid(board: Board): ClueAnswer[][] {
       }),
     ),
   );
+}
+
+/** getLastFinishedQuestion is the most recently finished question (highest
+ * answer order, in any round), or null before any. */
+export function getLastFinishedQuestion(
+  state: Pick<State, "isAnswered">,
+): QuestionRef | null {
+  let best: QuestionRef | null = null;
+  let bestOrder = 0;
+  state.isAnswered.forEach((rows, round) =>
+    rows.forEach((row, i) =>
+      row.forEach((cell, j) => {
+        if (cell.isAnswered && cell.answerOrder > bestOrder) {
+          bestOrder = cell.answerOrder;
+          best = { round, i, j };
+        }
+      }),
+    ),
+  );
+  return best;
 }
 
 /** getPlayer looks up a player in both active and left player maps. */

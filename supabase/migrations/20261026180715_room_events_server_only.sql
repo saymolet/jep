@@ -1,0 +1,22 @@
+-- Every room event is inserted by the server (feature 20, admin interventions).
+--
+-- Until now room_events accepted inserts from the anon and authenticated roles
+-- (the browser key) for every type except set_settings, kick, leave and
+-- transfer_player (migrations 20261026123109_room_events_settings_admin_only
+-- and 20261026172752_room_events_seats_server_only). A modified client could
+-- therefore still insert a `join`, `change_name`, `buzz`, `check`, `answer`, …
+-- for any userId, skipping every check of the routes (e.g. mark someone
+-- else's answer, rename someone, or forge the new admin interventions).
+--
+-- The browser never inserts into room_events itself: every room action goes
+-- through a server route (app/routes/room.$roomId.*.tsx), which checks who is
+-- asking (the visitor's own userId, or the site admin) and then inserts the
+-- event with the service role (createRoomEventAsServer), which bypasses RLS.
+-- So the insert policy now rejects every insert from the browser key.
+--
+-- Additive and backward compatible: no data changes, events already in the
+-- table stay as they are (and replay as before), the select policy and the
+-- realtime publication are untouched (realtime checks the subscriber's select
+-- policy, so service-role inserts are still delivered to every client).
+alter policy "Enable insert for all users" on public.room_events
+  with check (false);

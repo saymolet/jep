@@ -1,6 +1,13 @@
 import type { TeamId } from "~/models/team";
 
-import { type Player, type State, getClueValueForRound } from "./state";
+import {
+  type Player,
+  type QuestionRef,
+  type ScoreAdjustment,
+  type State,
+  getClueValueForRound,
+  getLastFinishedQuestion,
+} from "./state";
 import { getTeamStandings, isTeamMode } from "./teams";
 
 /** ScoreChanges is how much each player's score changed on the most recent
@@ -13,68 +20,83 @@ export const NO_SCORE_CHANGES: ScoreChanges = new Map();
 export type ScoreChangesInput = Pick<
   State,
   "isAnswered" | "activeClue" | "round" | "game" | "wagers"
->;
+> &
+  Partial<Pick<State, "scoreAdjustments">>;
+
+function sameQuestion(a: QuestionRef | null, b: QuestionRef | null) {
+  return (
+    a === b || (!!a && !!b && a.round === b.round && a.i === b.i && a.j === b.j)
+  );
+}
+
+/** The admin's score changes shown with `question` (see ScoreAdjustment). */
+function adjustmentsFor(
+  state: ScoreChangesInput,
+  question: QuestionRef | null,
+): ScoreAdjustment[] {
+  return (state.scoreAdjustments ?? []).filter((a) =>
+    sameQuestion(a.question, question),
+  );
+}
 
 /** getLastScoredClue finds "the previous question" for the score changes:
  *
  * - the open question, as soon as someone has been checked on it (a wrong
  *   answer before someone else buzzes in, or Final answers being checked one
- *   by one), so the change always explains the current score;
+ *   by one) or the admin changed a score during it, so the change always
+ *   explains the current score;
  * - otherwise the most recently finished question (highest answer order, in
  *   any round).
  *
  * Returns null before any question was scored. */
 export function getLastScoredClue(
   state: ScoreChangesInput,
-): { round: number; i: number; j: number } | null {
+): QuestionRef | null {
   if (state.activeClue) {
     const [i, j] = state.activeClue;
+    const open = { round: state.round, i, j };
     const cell = state.isAnswered.at(state.round)?.at(i)?.at(j);
-    if (cell && cell.answeredBy.size > 0) {
-      return { round: state.round, i, j };
+    if (
+      cell &&
+      (cell.answeredBy.size > 0 || adjustmentsFor(state, open).length > 0)
+    ) {
+      return open;
     }
   }
-
-  let best: { round: number; i: number; j: number } | null = null;
-  let bestOrder = 0;
-  state.isAnswered.forEach((rows, round) =>
-    rows.forEach((row, i) =>
-      row.forEach((cell, j) => {
-        if (cell.isAnswered && cell.answerOrder > bestOrder) {
-          bestOrder = cell.answerOrder;
-          best = { round, i, j };
-        }
-      }),
-    ),
-  );
-  return best;
+  return getLastFinishedQuestion(state);
 }
 
 /** getScoreChanges is each player's score change on the previous question
  * (see getLastScoredClue): +value for a right answer, −value for a wrong one
- * (the wager on wagerable questions, the secret value on secret ones). The
+ * (the wager on wagerable questions, the secret value on secret ones), plus
+ * the admin's score changes made during or after that question (before the
+ * next one opened; before any question, the admin's changes so far). The
  * score before that question is `score - change`. Check corrections and
  * guest→account transfers update the underlying checks, so they are
  * reflected too. */
 export function getScoreChanges(state: ScoreChangesInput): ScoreChanges {
   const last = getLastScoredClue(state);
-  if (!last) return NO_SCORE_CHANGES;
-  const { round, i, j } = last;
-  const cell = state.isAnswered[round][i][j];
   const changes = new Map<string, number>();
-  for (const [userId, correct] of cell.answeredBy) {
-    let value: number;
-    try {
-      value = getClueValueForRound(state, round, [i, j], userId);
-    } catch {
-      continue;
+  if (last) {
+    const { round, i, j } = last;
+    const cell = state.isAnswered[round][i][j];
+    for (const [userId, correct] of cell.answeredBy) {
+      let value: number;
+      try {
+        value = getClueValueForRound(state, round, [i, j], userId);
+      } catch {
+        continue;
+      }
+      changes.set(
+        userId,
+        (changes.get(userId) ?? 0) + (correct ? value : -value),
+      );
     }
-    changes.set(
-      userId,
-      (changes.get(userId) ?? 0) + (correct ? value : -value),
-    );
   }
-  return changes;
+  for (const { userId, delta } of adjustmentsFor(state, last)) {
+    changes.set(userId, (changes.get(userId) ?? 0) + delta);
+  }
+  return changes.size ? changes : NO_SCORE_CHANGES;
 }
 
 /** rankByScore gives each item its standard competition rank ("1224"): the
@@ -172,8 +194,11 @@ export function scoreChangesKey(
   state: ScoreChangesInput,
   changes: ScoreChanges,
 ): string {
+  if (changes.size === 0) return "";
   const last = getLastScoredClue(state);
-  if (!last || changes.size === 0) return "";
   const parts = Array.from(changes, ([id, c]) => `${id}:${c}`).sort();
-  return `${last.round},${last.i},${last.j}|${parts.join(",")}`;
+  const where = last ? `${last.round},${last.i},${last.j}` : "-";
+  // Every admin change counts, even one that cancels out another.
+  const numAdjustments = adjustmentsFor(state, last).length;
+  return `${where}|${parts.join(",")}${numAdjustments ? `|${numAdjustments}` : ""}`;
 }

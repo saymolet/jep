@@ -1,7 +1,7 @@
 import { ActionType } from "~/engine";
 import { createT, getRequestLocale } from "~/i18n";
 import { getValidAuthSession } from "~/models/auth";
-import { createRoomEvent } from "~/models/room-event.server";
+import { createRoomEventAsServer } from "~/models/room-event.server";
 import { getRoom } from "~/models/room.server";
 
 import type { Route } from "./+types/room.$roomId.pause";
@@ -23,12 +23,7 @@ export async function action({ request, params }: Route.ActionArgs) {
     throw new Response(t("room.error.roomNotFound"), { status: 404 });
   }
 
-  await createRoomEvent(
-    room.id,
-    ActionType.TogglePause,
-    null,
-    authSession?.accessToken,
-  );
+  await createRoomEventAsServer(room.id, ActionType.TogglePause, null);
 
   return null;
 }

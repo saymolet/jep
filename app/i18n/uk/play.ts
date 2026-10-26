@@ -66,6 +66,7 @@ export const play: Dictionary<typeof en> = {
     "Ні в кого не вистачає грошей на ставку на це питання.",
   "play.next.playerCantWager":
     "Гравцю {name} не вистачає грошей на ставку на це питання.",
+  "play.next.skipped": "Адміністратор пропустив це питання.",
   "play.next.noOneWon": "Ніхто не взяв це питання.",
   "play.next.unknownPlayer": "Невідомий гравець",
   "play.next.backToBoard": "До табло",

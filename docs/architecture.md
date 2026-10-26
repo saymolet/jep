@@ -71,10 +71,13 @@ checks every `app/routes/admin*.tsx` module automatically.
   realtime INSERTs, catch-up fetches (on SUBSCRIBED, +3 s, visibility/online) and the
   room loader's snapshot after every own action (fetcher revalidation); all are merged
   by id via `mergeRoomEvents`, rebuilding state if one arrives out of order.
-- Who may insert which event: the browser key (anon/authenticated) may insert every
-  `room_events` type except `set_settings`, `kick`, `leave` and `transfer_player` (RLS insert
-  policy). Those are inserted by the server with the service role
-  (`createRoomEventAsServer`) after the route's checks; admin-only ones carry `admin: true`.
+- Who may insert which event: only the server. The browser key (anon/authenticated) may not
+  insert into `room_events` at all (RLS insert policy `with check (false)`, feature 20);
+  every room action goes through a route (`app/routes/room.$roomId.*.tsx`) that checks who is
+  asking — the visitor's own userId (`requireSessionUserId`) or the site admin
+  (`getAdmin`, `authorizeRoomActor`) — and inserts with the service role
+  (`createRoomEventAsServer`). Events by the site admin carry `admin: true` (see
+  [features/20-admin-interventions.md](./features/20-admin-interventions.md)).
   Seats are keyed by userId, locked once the game is underway (`isGameUnderway`), and a
   Join never resets a seat (see [features/19-seat-lock-cleanup.md](./features/19-seat-lock-cleanup.md)).
 - Presence: the same room channel carries Realtime presence. Each client may announce a role

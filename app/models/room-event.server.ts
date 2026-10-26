@@ -29,39 +29,14 @@ export async function getRoomEvents(
 
 /* Writes */
 
-export async function createRoomEvent(
-  roomId: number,
-  type: ActionType,
-  payload?: Json,
-  accessToken?: AuthSession["accessToken"],
-) {
-  const client = getSupabase(accessToken);
-  const { data, error } = await client
-    .from<"room_events", RoomEventTable>("room_events")
-    .insert<RoomEventTable["Insert"]>({
-      room_id: roomId,
-      type,
-      payload,
-    })
-    .select();
-
-  if (error !== null) {
-    throw new Error(error.message);
-  }
-
-  const roomEvent = data.at(0);
-  if (!roomEvent) {
-    throw new Error("room event not created");
-  }
-  return roomEvent;
-}
-
-/** createRoomEventAsServer inserts a room event with the service role, for
- * event types the browser key may not insert (RLS rejects `set_settings`,
- * `kick`, `leave` and `transfer_player` from anon/authenticated, see the
- * room_events_settings_admin_only and room_events_seats_server_only
- * migrations). Only call it after the route checked who may send the event.
- * Realtime still delivers the insert to every subscriber. */
+/** createRoomEventAsServer inserts a room event with the service role. It is
+ * the only way room events are written: the browser key may not insert into
+ * room_events at all (RLS, see the room_events_server_only migration), so
+ * every room action goes through a server route that first checks who is
+ * asking (the visitor's own userId via requireSessionUserId, or the site
+ * admin via getAdmin). Only call it after such a check. Realtime still
+ * delivers the insert to every subscriber (it checks the subscriber's select
+ * policy, not the inserter's role). */
 export async function createRoomEventAsServer(
   roomId: number,
   type: ActionType,

@@ -12,7 +12,7 @@ import {
 } from "recharts";
 
 import { Action, gameEngine } from "~/engine";
-import { isCorrectCheckAction } from "~/engine/actions";
+import { isAdjustScoreAction, isCorrectCheckAction } from "~/engine/actions";
 import {
   Player,
   getNumCluesInBoard,
@@ -153,6 +153,16 @@ export function buildChartData(
           const player = getPlayer(wipState, userId);
           lastPoint[userId] = player?.score ?? 0;
         }
+      }
+    }
+
+    // An admin score change belongs to the previous question (like in the
+    // live standings), so it moves that player's latest point.
+    if (isAdjustScoreAction(re) && wipState !== prevState) {
+      const { userId } = re.payload;
+      const player = getPlayer(wipState, userId);
+      if (player) {
+        data[data.length - 1][userId] = player.score;
       }
     }
   }

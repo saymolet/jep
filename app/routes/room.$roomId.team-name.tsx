@@ -6,7 +6,10 @@ import { GameState, stateFromGame } from "~/engine/state";
 import { createT, getRequestLocale } from "~/i18n";
 import { getValidAuthSession } from "~/models/auth";
 import { getGame } from "~/models/game.server";
-import { createRoomEvent, getRoomEvents } from "~/models/room-event.server";
+import {
+  createRoomEventAsServer,
+  getRoomEvents,
+} from "~/models/room-event.server";
 import { getRoom } from "~/models/room.server";
 import { normalizeTeamName, TEAM_IDS } from "~/models/team";
 import { requireSessionUserId } from "~/session.server";
@@ -67,12 +70,11 @@ export async function action({ request, params }: Route.ActionArgs) {
     throw new Response(t("room.error.gameIsOver"), { status: 409 });
   }
 
-  await createRoomEvent(
-    room.id,
-    ActionType.RenameTeam,
-    { userId, team, name },
-    authSession?.accessToken,
-  );
+  await createRoomEventAsServer(room.id, ActionType.RenameTeam, {
+    userId,
+    team,
+    name,
+  });
 
   return null;
 }

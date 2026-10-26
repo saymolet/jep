@@ -8,7 +8,8 @@ const USER = "user-1";
 const OTHER = "user-2";
 
 const mocks = vi.hoisted(() => ({
-  createRoomEvent: vi.fn(),
+  createRoomEventAsServer: vi.fn(),
+  getAdmin: vi.fn(),
   getRoomEvents: vi.fn(),
   getRoom: vi.fn(),
   getGame: vi.fn(),
@@ -19,9 +20,10 @@ vi.mock("~/models/auth", () => ({
   getValidAuthSession: mocks.getValidAuthSession,
 }));
 vi.mock("~/models/room-event.server", () => ({
-  createRoomEvent: mocks.createRoomEvent,
+  createRoomEventAsServer: mocks.createRoomEventAsServer,
   getRoomEvents: mocks.getRoomEvents,
 }));
+vi.mock("~/admin/auth.server", () => ({ getAdmin: mocks.getAdmin }));
 vi.mock("~/models/room.server", () => ({ getRoom: mocks.getRoom }));
 vi.mock("~/models/game.server", () => ({ getGame: mocks.getGame }));
 vi.mock("~/session.server", () => ({
@@ -95,21 +97,19 @@ beforeEach(() => {
 describe("team route", () => {
   it("puts you on a team", async () => {
     await setTeam("5", { userId: USER, team: "green" });
-    expect(mocks.createRoomEvent).toHaveBeenCalledWith(
+    expect(mocks.createRoomEventAsServer).toHaveBeenCalledWith(
       ROOM.id,
       ActionType.SetTeam,
       { userId: USER, team: "green" },
-      undefined,
     );
   });
 
   it("takes you off your team with an empty team", async () => {
     await setTeam("5", { userId: USER, team: "" });
-    expect(mocks.createRoomEvent).toHaveBeenCalledWith(
+    expect(mocks.createRoomEventAsServer).toHaveBeenCalledWith(
       ROOM.id,
       ActionType.SetTeam,
       { userId: USER, team: null },
-      undefined,
     );
   });
 
@@ -117,7 +117,7 @@ describe("team route", () => {
     await expect(
       setTeam("5", { userId: OTHER, team: "red" }),
     ).rejects.toMatchObject({ status: 403 });
-    expect(mocks.createRoomEvent).not.toHaveBeenCalled();
+    expect(mocks.createRoomEventAsServer).not.toHaveBeenCalled();
   });
 
   it("refuses players who are not in the game", async () => {
@@ -125,7 +125,7 @@ describe("team route", () => {
     await expect(
       setTeam("5", { userId: USER, team: "red" }),
     ).rejects.toMatchObject({ status: 403 });
-    expect(mocks.createRoomEvent).not.toHaveBeenCalled();
+    expect(mocks.createRoomEventAsServer).not.toHaveBeenCalled();
   });
 
   it("refuses team changes while a question is open", async () => {
@@ -133,7 +133,7 @@ describe("team route", () => {
     await expect(
       setTeam("5", { userId: USER, team: "blue" }),
     ).rejects.toMatchObject({ status: 409 });
-    expect(mocks.createRoomEvent).not.toHaveBeenCalled();
+    expect(mocks.createRoomEventAsServer).not.toHaveBeenCalled();
   });
 
   it("rejects unknown teams", async () => {
@@ -148,18 +148,17 @@ describe("team route", () => {
       type: ActionType.SetTeam,
       payload: { userId: USER, team: "yellow" },
     });
-    expect(mocks.createRoomEvent).not.toHaveBeenCalled();
+    expect(mocks.createRoomEventAsServer).not.toHaveBeenCalled();
   });
 });
 
 describe("team-name route", () => {
   it("renames your own team (normalized)", async () => {
     await renameTeam("5", { userId: USER, team: "red", name: "  The  Foxes " });
-    expect(mocks.createRoomEvent).toHaveBeenCalledWith(
+    expect(mocks.createRoomEventAsServer).toHaveBeenCalledWith(
       ROOM.id,
       ActionType.RenameTeam,
       { userId: USER, team: "red", name: "The Foxes" },
-      undefined,
     );
   });
 
@@ -167,27 +166,27 @@ describe("team-name route", () => {
     await expect(
       renameTeam("5", { userId: USER, team: "blue", name: "Losers" }),
     ).rejects.toMatchObject({ status: 403 });
-    expect(mocks.createRoomEvent).not.toHaveBeenCalled();
+    expect(mocks.createRoomEventAsServer).not.toHaveBeenCalled();
   });
 
   it("refuses to rename on behalf of someone else", async () => {
     await expect(
       renameTeam("5", { userId: OTHER, team: "blue", name: "Owls" }),
     ).rejects.toMatchObject({ status: 403 });
-    expect(mocks.createRoomEvent).not.toHaveBeenCalled();
+    expect(mocks.createRoomEventAsServer).not.toHaveBeenCalled();
   });
 
   it("rejects names that are too long", async () => {
     await expect(
       renameTeam("5", { userId: USER, team: "red", name: "x".repeat(25) }),
     ).rejects.toMatchObject({ status: 400 });
-    expect(mocks.createRoomEvent).not.toHaveBeenCalled();
+    expect(mocks.createRoomEventAsServer).not.toHaveBeenCalled();
   });
 
   it("allows renaming while a question is open", async () => {
     mocks.getRoomEvents.mockResolvedValue(toEvents(QUESTION_OPEN));
     await renameTeam("5", { userId: USER, team: "red", name: "Foxes" });
-    expect(mocks.createRoomEvent).toHaveBeenCalled();
+    expect(mocks.createRoomEventAsServer).toHaveBeenCalled();
   });
 
   it("returns the action for solo play", async () => {

@@ -91,6 +91,31 @@ const SetSettingsPayload = z.object({
   admin: z.literal(true).optional(),
 });
 const AdminFlagPayload = z.object({ admin: z.literal(true) });
+/** The largest score (and score change) the admin may set: far beyond any
+ * game, small enough to stay exact. */
+export const MAX_ADMIN_SCORE = 1_000_000;
+const AdminScoreAmount = z
+  .number()
+  .int()
+  .min(-MAX_ADMIN_SCORE)
+  .max(MAX_ADMIN_SCORE);
+const SkipCluePayload = z.object({
+  i: z.number().int(),
+  j: z.number().int(),
+  /** Only the server inserts skips, for the site admin. */
+  admin: z.literal(true),
+});
+const AdjustScorePayload = z
+  .object({
+    userId: z.string(),
+    /** Add this many points (negative: take them away)… */
+    delta: AdminScoreAmount.optional(),
+    /** …or set the score to exactly this. */
+    score: AdminScoreAmount.optional(),
+    /** Only the server inserts score changes, for the site admin. */
+    admin: z.literal(true),
+  })
+  .refine((p) => (p.delta === undefined) !== (p.score === undefined));
 const TransferPlayerPayload = z.object({
   oldUserId: z.string(),
   newUserId: z.string(),
@@ -289,6 +314,28 @@ export function isRestoreAction(action: Action): action is {
   return (
     action.type === ActionType.Restore &&
     RestorePayload.safeParse(action.payload).success
+  );
+}
+
+export function isSkipClueAction(action: Action): action is {
+  type: ActionType.SkipClue;
+  payload: { i: number; j: number; admin: true };
+  ts: number;
+} {
+  return (
+    action.type === ActionType.SkipClue &&
+    SkipCluePayload.safeParse(action.payload).success
+  );
+}
+
+export function isAdjustScoreAction(action: Action): action is {
+  type: ActionType.AdjustScore;
+  payload: { userId: string; delta?: number; score?: number; admin: true };
+  ts: number;
+} {
+  return (
+    action.type === ActionType.AdjustScore &&
+    AdjustScorePayload.safeParse(action.payload).success
   );
 }
 

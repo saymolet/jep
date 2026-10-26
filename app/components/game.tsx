@@ -1,6 +1,7 @@
 import * as React from "react";
 import { useNavigate } from "react-router";
 
+import { AdminControls, AdminToasts } from "~/components/admin-room";
 import { AnswerTimerControl } from "~/components/answer-timer-settings";
 import BoardComponent from "~/components/board";
 import Connection from "~/components/connection";
@@ -102,7 +103,8 @@ export default function GameComponent({
 }: {
   game: Game;
   /** The visitor is logged in as the site admin: they may change the room
-   * settings (answer timer), even without playing. */
+   * settings (answer timer) and use the admin controls (skip a question, do
+   * a stuck player's step, change scores), even without playing. */
   isAdmin?: boolean;
   name: string;
   playerColor?: PlayerColor;
@@ -207,6 +209,14 @@ export default function GameComponent({
       </div>
       <PausedOverlay roomId={roomId} canResume={isPlayer} />
       <Soundboard userId={userId} />
+      {/* Solo play (room -1) has no admin. */}
+      {isAdmin && roomId !== -1 ? (
+        <AdminControls
+          roomId={roomId}
+          raised={!isPlayer && watching && Boolean(onWatchingChange)}
+        />
+      ) : null}
+      <AdminToasts />
       {!isPlayer && watching && onWatchingChange ? (
         <>
           {/* Room for the floating bar below the page content. */}

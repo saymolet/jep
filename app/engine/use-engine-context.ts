@@ -45,6 +45,11 @@ export const GameEngineContext = React.createContext<
   soundboard: NO_BROADCAST,
   scoreChanges: NO_SCORE_CHANGES,
   scoreChangesKey: "",
+  scoreAdjustments: [],
+  numSkipped: 0,
+  activeClueSkipped: false,
+  adminStep: { kind: "none" },
+  canSkipOpenClue: false,
 });
 
 export function useEngineContext() {

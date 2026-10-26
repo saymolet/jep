@@ -263,6 +263,8 @@ export function deserializeState(
         }
       : null,
     teamNames: new Map(serialized.teamNames ?? []),
+    // Solo play has no admin, so there are never admin score changes.
+    scoreAdjustments: [],
     activeClue: serialized.activeClue,
     numAnswered: serialized.numAnswered,
     numCluesInBoard: serialized.numCluesInBoard,

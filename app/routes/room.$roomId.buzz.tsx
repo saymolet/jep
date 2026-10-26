@@ -1,11 +1,11 @@
 import { z } from "zod";
 
+import { adminTag, authorizeRoomActor } from "~/admin/room-actor.server";
 import { ActionType } from "~/engine";
 import { createT, getRequestLocale } from "~/i18n";
 import { getValidAuthSession } from "~/models/auth";
-import { createRoomEvent } from "~/models/room-event.server";
+import { createRoomEventAsServer } from "~/models/room-event.server";
 import { getRoom } from "~/models/room.server";
-import { requireSessionUserId } from "~/session.server";
 import { parseFormData } from "~/utils/http.server";
 
 import type { Route } from "./+types/room.$roomId.buzz";
@@ -36,23 +36,25 @@ export async function action({ request, params }: Route.ActionArgs) {
   }
 
   const authSession = await getValidAuthSession(request);
-  await requireSessionUserId(request, userId, authSession);
+  const byAdmin = await authorizeRoomActor(
+    request,
+    formData,
+    userId,
+    authSession,
+    t,
+  );
   const room = await getRoom(roomId, authSession?.accessToken);
   if (!room) {
     throw new Response(t("room.error.roomNotFound"), { status: 404 });
   }
 
-  await createRoomEvent(
-    room.id,
-    ActionType.Buzz,
-    {
-      i,
-      j,
-      userId,
-      deltaMs,
-    },
-    authSession?.accessToken,
-  );
+  await createRoomEventAsServer(room.id, ActionType.Buzz, {
+    i,
+    j,
+    userId,
+    deltaMs,
+    ...adminTag(byAdmin),
+  });
 
   return null;
 }

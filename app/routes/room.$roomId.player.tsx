@@ -7,7 +7,6 @@ import { createT, getRequestLocale } from "~/i18n";
 import { getValidAuthSession } from "~/models/auth";
 import { getGame } from "~/models/game.server";
 import {
-  createRoomEvent,
   createRoomEventAsServer,
   getRoomEvents,
 } from "~/models/room-event.server";
@@ -117,19 +116,15 @@ export async function action({ request, params }: Route.ActionArgs) {
     }
   }
 
-  await createRoomEvent(
-    room.id,
-    type,
-    {
-      userId,
-      name,
-      color,
-      ...(avatar !== undefined ? { avatar } : {}),
-      // Only Join carries a team (changes go through /team).
-      ...(team && request.method === "POST" ? { team } : {}),
-    },
-    authSession?.accessToken,
-  );
+  // Join / ChangeName only for the visitor's own userId (checked above).
+  await createRoomEventAsServer(room.id, type, {
+    userId,
+    name,
+    color,
+    ...(avatar !== undefined ? { avatar } : {}),
+    // Only Join carries a team (changes go through /team).
+    ...(team && request.method === "POST" ? { team } : {}),
+  });
 
   return null;
 }
