@@ -8,7 +8,18 @@ import type { RoomProps } from "~/components/game";
 import type { Action } from "~/engine";
 import { GameState, useEngineContext } from "~/engine";
 import { ANSWER_TIME_OPTIONS } from "~/engine/answer-timer";
+import {
+  BUZZ_WINDOW_OPTIONS,
+  FINAL_ANSWER_TIME_OPTIONS,
+  READ_TIME_OPTIONS,
+  WAGER_TIME_OPTIONS,
+} from "~/engine/room-timers";
 import { useTranslation } from "~/i18n";
+import {
+  READ_TIME_AUTO,
+  type RoomSettingsValues,
+  toSettingsFormData,
+} from "~/utils/room-timers-form";
 import useSoloAction from "~/utils/use-solo-action";
 
 const TIMER_SYMBOL = "⏱"; // ⏱
@@ -24,10 +35,37 @@ export function mayEditSettings(roomId: number, isAdmin = false) {
   return isAdmin || roomId === -1;
 }
 
-/** useAnswerTimerSetting is the room's answer timer setting (showing a
- * change right away while it is being saved) and a function to change it.
- * The admin (or the solo player) can change it between questions. */
-function useAnswerTimerSetting({
+/** settingsFromFormData reads the values a pending settings request sends
+ * (so a change shows right away while it is being saved). */
+function settingsFromFormData(
+  formData: FormData,
+  current: RoomSettingsValues,
+): RoomSettingsValues {
+  const num = (name: string, fallback: number) => {
+    const value = formData.get(name);
+    return value === null ? fallback : Number(value);
+  };
+  const read = formData.get("readTimeSec");
+  return {
+    answerTimeSec: num("answerTimeSec", current.answerTimeSec),
+    autoWrongOnTimeout: formData.get("autoWrongOnTimeout") === "true",
+    readTimeSec:
+      read === null
+        ? current.readTimeSec
+        : read === READ_TIME_AUTO
+          ? null
+          : Number(read),
+    buzzWindowSec: num("buzzWindowSec", current.buzzWindowSec),
+    finalAnswerTimeSec: num("finalAnswerTimeSec", current.finalAnswerTimeSec),
+    wagerTimeSec: num("wagerTimeSec", current.wagerTimeSec),
+  };
+}
+
+/** useRoomSettings is the room's settings (answer timer and room timers,
+ * showing a change right away while it is being saved) and a function to
+ * change them. The admin (or the solo player) can change them between
+ * questions. */
+function useRoomSettings({
   roomId,
   userId,
   isAdmin,
@@ -36,6 +74,10 @@ function useAnswerTimerSetting({
     activeClue,
     answerTimeSec,
     autoWrongOnTimeout,
+    readTimeSec,
+    buzzWindowSec,
+    finalAnswerTimeSec,
+    wagerTimeSec,
     players,
     soloDispatch,
     type,
@@ -43,13 +85,16 @@ function useAnswerTimerSetting({
   const fetcher = useFetcher<Action>();
   useSoloAction(fetcher, soloDispatch);
 
+  const current: RoomSettingsValues = {
+    answerTimeSec,
+    autoWrongOnTimeout,
+    readTimeSec,
+    buzzWindowSec,
+    finalAnswerTimeSec,
+    wagerTimeSec,
+  };
   const pending = fetcher.formData;
-  const seconds = pending
-    ? Number(pending.get("answerTimeSec"))
-    : answerTimeSec;
-  const autoWrong = pending
-    ? pending.get("autoWrongOnTimeout") === "true"
-    : autoWrongOnTimeout;
+  const values = pending ? settingsFromFormData(pending, current) : current;
 
   const editable = mayEditSettings(roomId, isAdmin);
   const betweenQuestions = activeClue === null && type !== GameState.GameOver;
@@ -59,53 +104,57 @@ function useAnswerTimerSetting({
     // The admin needn't play; in solo play the player sets it.
     (isAdmin || players.has(userId));
 
-  const save = (next: { seconds: number; autoWrong: boolean }) =>
+  const save = (next: RoomSettingsValues) =>
     fetcher.submit(
-      {
-        userId,
-        answerTimeSec: next.seconds.toString(),
-        autoWrongOnTimeout: next.autoWrong.toString(),
-      },
+      { userId, ...toSettingsFormData(next) },
       { method: "post", action: `/room/${roomId}/settings` },
     );
 
-  return { seconds, autoWrong, editable, canChange, save };
+  return { values, editable, canChange, save };
 }
 
-/** AnswerTimerSettings picks the answer time (Off / 10–60 s) and whether
- * running out of time marks the answer wrong. Read-only (the current values
- * shown, controls disabled) for everyone but the admin. */
-export function AnswerTimerSettings({
-  roomId,
-  userId,
-  isAdmin = false,
-}: RoomProps & SettingsAccessProps) {
-  const { t } = useTranslation();
-  const { seconds, autoWrong, editable, canChange, save } =
-    useAnswerTimerSetting({ roomId, userId, isAdmin });
+/** ChoiceGroup is a row of radio "chips" (one value of a setting). */
+function ChoiceGroup<T extends number | null>({
+  label,
+  options,
+  value,
+  format,
+  disabled,
+  onSelect,
+  testId,
+  help,
+}: {
+  label: string;
+  options: readonly T[];
+  value: T;
+  format: (option: T) => string;
+  disabled: boolean;
+  onSelect: (option: T) => void;
+  testId: string;
+  help?: string;
+}) {
   const labelId = React.useId();
-
   return (
-    <div className="flex flex-col gap-2" data-testid="answer-timer-settings">
+    <div className="flex flex-col gap-1.5" data-testid={testId}>
       <span id={labelId} className="text-sm text-white opacity-70">
-        {t("room.answerTime")}
+        {label}
       </span>
       <div
         role="radiogroup"
         aria-labelledby={labelId}
         className="flex flex-wrap gap-1"
       >
-        {ANSWER_TIME_OPTIONS.map((option) => {
-          const selected = option === seconds;
+        {options.map((option) => {
+          const selected = option === value;
           return (
             <button
-              key={option}
+              key={String(option)}
               type="button"
               role="radio"
               aria-checked={selected}
-              disabled={!canChange}
+              disabled={disabled}
               onClick={() => {
-                if (!selected) save({ seconds: option, autoWrong });
+                if (!selected) onSelect(option);
               }}
               className={clsx(
                 "min-w-12 rounded-lg border px-3 py-1.5 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50",
@@ -114,28 +163,129 @@ export function AnswerTimerSettings({
                   : "border-white/20 bg-white/10 text-slate-300 hover:bg-blue-600/20",
               )}
             >
-              {option === 0
-                ? t("room.answerTimeOff")
-                : t("room.answerTimeSeconds", { seconds: option })}
+              {format(option)}
             </button>
           );
         })}
       </div>
-      <label
-        className={clsx(
-          "flex items-center gap-2 text-sm text-slate-300",
-          seconds === 0 && "opacity-50",
-        )}
-      >
-        <input
-          type="checkbox"
-          className="h-4 w-4 accent-blue-600"
-          checked={autoWrong}
-          disabled={!canChange || seconds === 0}
-          onChange={(e) => save({ seconds, autoWrong: e.target.checked })}
+      {help ? <p className="text-xs text-slate-400">{help}</p> : null}
+    </div>
+  );
+}
+
+/** RoomTimersFields is the "Room timers" panel: answer time (+ marking wrong
+ * when it runs out), reading time, buzz window, Final answer time and wager
+ * time. Used in the admin's "new room" step, the round preview and the ⏱
+ * sheet. `disabled` shows the values read-only. */
+export function RoomTimersFields({
+  values,
+  onChange,
+  disabled,
+}: {
+  values: RoomSettingsValues;
+  onChange: (next: RoomSettingsValues) => void;
+  disabled: boolean;
+}) {
+  const { t } = useTranslation();
+  const seconds = (s: number) => t("room.answerTimeSeconds", { seconds: s });
+  const set = (patch: Partial<RoomSettingsValues>) =>
+    onChange({ ...values, ...patch });
+
+  return (
+    <div className="flex flex-col gap-4" data-testid="room-timers">
+      <div className="flex flex-col gap-2" data-testid="answer-timer-settings">
+        <ChoiceGroup
+          label={t("room.answerTime")}
+          options={ANSWER_TIME_OPTIONS}
+          value={values.answerTimeSec as (typeof ANSWER_TIME_OPTIONS)[number]}
+          format={(s) => (s === 0 ? t("room.answerTimeOff") : seconds(s))}
+          disabled={disabled}
+          onSelect={(answerTimeSec) => set({ answerTimeSec })}
+          testId="answer-time-options"
         />
-        {t("room.answerTimeAutoWrong")}
-      </label>
+        <label
+          className={clsx(
+            "flex items-center gap-2 text-sm text-slate-300",
+            values.answerTimeSec === 0 && "opacity-50",
+          )}
+        >
+          <input
+            type="checkbox"
+            className="h-4 w-4 accent-blue-600"
+            checked={values.autoWrongOnTimeout}
+            disabled={disabled || values.answerTimeSec === 0}
+            onChange={(e) => set({ autoWrongOnTimeout: e.target.checked })}
+          />
+          {t("room.answerTimeAutoWrong")}
+        </label>
+      </div>
+      <ChoiceGroup
+        label={t("room.timers.readTime")}
+        options={READ_TIME_OPTIONS}
+        value={values.readTimeSec as (typeof READ_TIME_OPTIONS)[number]}
+        format={(s) => (s === null ? t("room.timers.auto") : seconds(s))}
+        disabled={disabled}
+        onSelect={(readTimeSec) => set({ readTimeSec })}
+        testId="read-time-settings"
+        help={t("room.timers.readTimeHelp")}
+      />
+      <ChoiceGroup
+        label={t("room.timers.buzzWindow")}
+        options={BUZZ_WINDOW_OPTIONS}
+        value={values.buzzWindowSec as (typeof BUZZ_WINDOW_OPTIONS)[number]}
+        format={seconds}
+        disabled={disabled}
+        onSelect={(buzzWindowSec) => set({ buzzWindowSec })}
+        testId="buzz-window-settings"
+      />
+      <ChoiceGroup
+        label={t("room.timers.finalAnswerTime")}
+        options={FINAL_ANSWER_TIME_OPTIONS}
+        value={
+          values.finalAnswerTimeSec as (typeof FINAL_ANSWER_TIME_OPTIONS)[number]
+        }
+        format={seconds}
+        disabled={disabled}
+        onSelect={(finalAnswerTimeSec) => set({ finalAnswerTimeSec })}
+        testId="final-answer-time-settings"
+        help={t("room.timers.finalAnswerTimeHelp")}
+      />
+      <ChoiceGroup
+        label={t("room.timers.wagerTime")}
+        options={WAGER_TIME_OPTIONS}
+        value={values.wagerTimeSec as (typeof WAGER_TIME_OPTIONS)[number]}
+        format={(s) => (s === 0 ? t("room.timers.noLimit") : seconds(s))}
+        disabled={disabled}
+        onSelect={(wagerTimeSec) => set({ wagerTimeSec })}
+        testId="wager-time-settings"
+        help={t("room.timers.wagerTimeHelp")}
+      />
+    </div>
+  );
+}
+
+/** AnswerTimerSettings is the room's "Room timers" panel, connected to the
+ * room: changes are saved right away. Read-only (the current values shown,
+ * controls disabled) for everyone but the admin. */
+export function AnswerTimerSettings({
+  roomId,
+  userId,
+  isAdmin = false,
+  showTitle = true,
+}: RoomProps & SettingsAccessProps & { showTitle?: boolean }) {
+  const { t } = useTranslation();
+  const { values, editable, canChange, save } = useRoomSettings({
+    roomId,
+    userId,
+    isAdmin,
+  });
+
+  return (
+    <div className="flex flex-col gap-3">
+      {showTitle ? (
+        <span className="font-bold text-white">{t("room.timers.title")}</span>
+      ) : null}
+      <RoomTimersFields values={values} onChange={save} disabled={!canChange} />
       <p className="text-xs text-slate-400">
         {!editable
           ? t("room.answerTimeAdminOnly")
@@ -148,9 +298,9 @@ export function AnswerTimerSettings({
 }
 
 /** AnswerTimerControl is the room's header button showing the answer time
- * ("⏱ Off" / "⏱ 15 s"); it opens the answer time settings. Like Pause, it
- * is only available between questions. For everyone but the admin it only
- * shows the value ("Only the admin can change this"). */
+ * ("⏱ Off" / "⏱ 15 s"); it opens the room timers. Like Pause, it is only
+ * available between questions. For everyone but the admin it only shows the
+ * value ("Only the admin can change this"). */
 export function AnswerTimerControl({
   roomId,
   userId,
@@ -213,6 +363,7 @@ export function AnswerTimerControl({
           roomId={roomId}
           userId={userId}
           isAdmin={isAdmin}
+          showTitle={false}
         />
         <div className="mt-4">
           <Dialog.Footer>

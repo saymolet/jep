@@ -107,15 +107,27 @@ export const room: Dictionary<typeof en> = {
   "room.alreadyPlaying":
     "У цю гру вже грають. Приєднуйся до кімнати, де триває гра, або створи власну.",
   "room.startNewRoom": "Створити нову кімнату",
+  "room.timers.title": "Таймери кімнати",
+  "room.timers.readTime": "Час на читання (до відкриття кнопок)",
+  "room.timers.auto": "Авто",
+  "room.timers.readTimeHelp":
+    "Авто: залежно від довжини питання та медіа або час, заданий у грі.",
+  "room.timers.buzzWindow": "Час, щоб натиснути кнопку",
+  "room.timers.finalAnswerTime": "Час на відповідь у фіналі",
+  "room.timers.finalAnswerTimeHelp":
+    "Коли час вийде, надішлеться те, що встиг написати кожен гравець.",
+  "room.timers.wagerTime": "Час на ставку",
+  "room.timers.noLimit": "Без обмеження",
+  "room.timers.wagerTimeHelp":
+    "Коли час вийде, гравець ставить найменшу дозволену суму: $5 на подвійну ставку, $0 у фіналі.",
   "room.answerTime": "Час на відповідь",
   "room.answerTimeHelp":
-    "Скільки часу має гравець, щоб відповісти й оцінити відповідь. Його можна змінити між питаннями.",
+    "Час на відповідь — скільки часу має гравець, щоб відповісти й оцінити відповідь. Таймери можна змінити між питаннями.",
   "room.answerTimeOff": "Вимк.",
   "room.answerTimeSeconds": "{seconds} с",
   "room.answerTimeAutoWrong": "Зараховувати як неправильну, коли час вийде",
-  "room.answerTimeSettings": "Налаштування часу на відповідь",
-  "room.answerTimeBetweenQuestions":
-    "Час на відповідь можна змінити між питаннями",
+  "room.answerTimeSettings": "Таймери кімнати",
+  "room.answerTimeBetweenQuestions": "Таймери можна змінити між питаннями",
   "room.answerTimeAdminOnly": "Змінити це може лише адміністратор.",
   "room.answerTimeReadOnly":
     "Час на відповідь: {value}. Змінити це може лише адміністратор.",
