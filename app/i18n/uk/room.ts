@@ -93,6 +93,10 @@ export const room: Dictionary<typeof en> = {
     "налаштування можна змінити лише між питаннями",
   "room.error.settingsAdminOnly":
     "час на відповідь може змінювати лише адміністратор",
+  "room.error.kickAdminOnly":
+    "гра вже почалася: тепер вигнати гравця може лише адміністратор",
+  "room.error.kickPlayersOnly": "вигнати гравця можуть лише гравці цієї гри",
+  "room.error.kickBetweenQuestions": "вигнати гравця можна лише між питаннями",
   "room.error.notOnTeam": "перейменувати можна лише свою команду",
   "room.error.teamNameTooLong": "назва команди задовга",
   "room.error.gameIsOver": "гру вже закінчено",

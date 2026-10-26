@@ -57,9 +57,10 @@ export async function createRoomEvent(
 }
 
 /** createRoomEventAsServer inserts a room event with the service role, for
- * event types the browser key may not insert (RLS rejects `set_settings`
- * from anon/authenticated, see the room_events_settings_admin_only
- * migration). Only call it after the route checked who may send the event.
+ * event types the browser key may not insert (RLS rejects `set_settings`,
+ * `kick`, `leave` and `transfer_player` from anon/authenticated, see the
+ * room_events_settings_admin_only and room_events_seats_server_only
+ * migrations). Only call it after the route checked who may send the event.
  * Realtime still delivers the insert to every subscriber. */
 export async function createRoomEventAsServer(
   roomId: number,

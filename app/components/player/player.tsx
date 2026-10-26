@@ -7,7 +7,7 @@ import { ScoreChange } from "~/components/standings/standings";
 import { getTeamName, TeamHeader } from "~/components/team/team";
 import { UndoArmingContext, UndoCheckConfirm } from "~/components/undo-check";
 import type { Player } from "~/engine";
-import { GameState, useEngineContext } from "~/engine";
+import { GameState, isGameUnderway, useEngineContext } from "~/engine";
 import { getTeamStandings, isTeamMode } from "~/engine/teams";
 import { useTranslation } from "~/i18n";
 import { TEAM_COLORS } from "~/models/team";
@@ -259,7 +259,14 @@ function useCorrectionPulses() {
  * - Lets the current player undo their check on the latest clue by tapping
  *   their score
  */
-export function PlayerScores({ roomId, userId }: RoomProps) {
+export function PlayerScores({
+  roomId,
+  userId,
+  isAdmin = false,
+}: RoomProps & {
+  /** The site admin (admin session): may kick players during the game. */
+  isAdmin?: boolean;
+}) {
   const {
     players,
     leftPlayers,
@@ -305,13 +312,16 @@ export function PlayerScores({ roomId, userId }: RoomProps) {
   const onBoard =
     type === GameState.ShowBoard || type === GameState.PreviewRound;
 
-  // Kick others: only players, only before game starts
+  // Kick others: players only before the game is underway (seats are
+  // locked once the first question was opened); the site admin any time
+  // the board or round preview shows, playing or not. Solo play has no
+  // admin rule (roomId -1, nobody else to protect the seat from).
   const canKick =
-    yourPlayer !== undefined &&
     onBoard &&
-    numAnswered === 0 &&
-    round === 0 &&
-    players.size > 1;
+    players.size > 1 &&
+    (isAdmin ||
+      (yourPlayer !== undefined &&
+        !isGameUnderway({ type, round, numAnswered })));
 
   // Leave self: any time the board or round preview is showing
   const canLeave = onBoard && players.size > 1;

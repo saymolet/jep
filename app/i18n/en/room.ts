@@ -79,6 +79,11 @@ export const room = {
   "room.error.settingsBetweenQuestions":
     "settings can only be changed between questions",
   "room.error.settingsAdminOnly": "only the admin can change the answer time",
+  "room.error.kickAdminOnly":
+    "the game has started: only the admin can kick a player now",
+  "room.error.kickPlayersOnly": "only players in this game can kick a player",
+  "room.error.kickBetweenQuestions":
+    "a player can only be kicked between questions",
   "room.error.notOnTeam": "you can only rename your own team",
   "room.error.teamNameTooLong": "the team name is too long",
   "room.error.gameIsOver": "the game is over",
