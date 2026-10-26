@@ -58,9 +58,8 @@ async function joinedPlayers(page: Page, roomId: number) {
   const res = await rest(page.request, anonKey).get(
     `room_events?room_id=eq.${roomId}&type=eq.join&select=payload&order=id`,
   );
-  const rows = (await res.json()) as {
-    payload: { userId: string; name: string };
-  }[];
+  const rows: { payload: { userId: string; name: string } }[] =
+    await res.json();
   return rows.map((r) => r.payload);
 }
 
@@ -261,7 +260,8 @@ test.describe("inactive room cleanup", () => {
         created_at: createdAt,
       });
       expect(res.status()).toBe(201);
-      const [room] = (await res.json()) as { id: number }[];
+      const created: { id: number }[] = await res.json();
+      const [room] = created;
       if (eventAt !== null) {
         const ev = await service.post("room_events", {
           room_id: room.id,
@@ -326,11 +326,10 @@ test.describe("inactive room cleanup", () => {
     ).toBeVisible();
     await expect(admin.getByRole("alertdialog")).toHaveCount(0);
 
-    const remaining = (await (
-      await service.get(
-        `rooms?id=in.(${idleRoom},${emptyOldRoom},${activeOldRoom},${freshRoom})&select=id`,
-      )
-    ).json()) as { id: number }[];
+    const remainingRes = await service.get(
+      `rooms?id=in.(${idleRoom},${emptyOldRoom},${activeOldRoom},${freshRoom})&select=id`,
+    );
+    const remaining: { id: number }[] = await remainingRes.json();
     expect(remaining.map((r) => r.id).sort()).toEqual(
       [activeOldRoom, freshRoom].sort(),
     );

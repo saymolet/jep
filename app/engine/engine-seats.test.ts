@@ -322,7 +322,7 @@ describe("seat engine (kick rules and rejoining)", () => {
       id,
       room_id: 1,
       ts: new Date(Date.UTC(2026, 0, 1, 0, 0, id)).toISOString().slice(0, -1),
-      type: type as string,
+      type: String(type),
       payload,
     }));
     const state = applyRoomEventsToState(initialState, events);
