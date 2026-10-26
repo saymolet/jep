@@ -6,7 +6,7 @@ const BASE_STYLES = "underline transition-colors";
 
 const VARIANT_STYLES: Record<Variant, string> = {
   default:
-    "text-blue-600 decoration-blue-400 visited:text-purple-700 visited:decoration-purple-500 hover:text-blue-500 hover:decoration-blue-300",
+    "text-accent decoration-link-line visited:text-link-visited visited:decoration-link-visited-line hover:text-accent-soft hover:decoration-link-line-hover",
   inverse:
     "text-sm text-blue-100 decoration-blue-300 hover:text-white hover:decoration-white",
 };

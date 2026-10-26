@@ -27,7 +27,7 @@ export default function Dialog({
     >
       <DialogPrimitive.Portal>
         <DialogPrimitive.Overlay
-          className={`fixed top-0 right-0 bottom-0 left-0 grid animate-overlay-show place-items-center overflow-y-auto bg-slate-500/75 opacity-0`}
+          className={`fixed top-0 right-0 bottom-0 left-0 grid animate-overlay-show place-items-center overflow-y-auto bg-slate-500/75 opacity-0 dark:bg-black/70`}
         >
           <DialogPrimitive.Content
             className={`animate-content-show rounded-md bg-blue-1000 p-4 opacity-0 shadow-xl focus:outline-none sm:max-w-lg`}

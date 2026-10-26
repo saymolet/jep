@@ -84,11 +84,12 @@ function UploadBox({
         type="button"
         onClick={() => inputRef.current?.click()}
         className={clsx(
-          `flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-6 text-sm text-slate-900 shadow-sm transition-colors focus:shadow-md focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none`,
+          `flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-6 text-sm text-ink-900 shadow-sm transition-colors focus:shadow-md focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-page focus:outline-none`,
           {
-            "border-green-500 bg-green-50": isDragActive && !isDragReject,
-            "border-red-500 bg-red-50": isDragReject,
-            "border-blue-600 hover:border-blue-700 hover:shadow-md":
+            "border-green-500 bg-green-50 dark:bg-green-950/40":
+              isDragActive && !isDragReject,
+            "border-red-500 bg-red-50 dark:bg-red-950/40": isDragReject,
+            "border-blue-600 hover:border-blue-700 hover:shadow-md dark:border-accent dark:hover:border-accent-strong":
               !isDragActive,
           },
         )}
@@ -125,7 +126,7 @@ function UploadBox({
           onChange={(e) => onChange(e.target.files?.[0])}
         />
       </button>
-      <p id="upload_help" className="mt-1 text-center text-xs text-slate-500">
+      <p id="upload_help" className="mt-1 text-center text-xs text-ink-500">
         {t("upload.hint")}
       </p>
       <Link to="/upload-help">

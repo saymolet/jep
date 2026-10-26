@@ -14,10 +14,15 @@ export function DefaultErrorBoundary() {
   return (
     <div className="p-12">
       <h1 className="mb-4 text-xl font-bold">{t("common.errorSad")}</h1>
-      <div className="rounded-md bg-red-100 p-3">
-        <p className="mb-2 font-mono text-sm text-red-500">{message}</p>
+      <div className="rounded-md bg-red-100 p-3 dark:bg-red-950/60">
+        <p className="mb-2 font-mono text-sm text-red-500 dark:text-red-300">
+          {message}
+        </p>
         {stack.map((s, i) => (
-          <p key={i} className="ml-4 font-mono text-sm text-red-500">
+          <p
+            key={i}
+            className="ml-4 font-mono text-sm text-red-500 dark:text-red-300"
+          >
             {s}
           </p>
         ))}
@@ -28,15 +33,15 @@ export function DefaultErrorBoundary() {
 
 export function ErrorMessage({ children }: { children: React.ReactNode }) {
   return (
-    <div className="rounded-md bg-red-100 p-3" role="alert">
-      <p className="text-sm text-red-500">{children}</p>
+    <div className="rounded-md bg-red-100 p-3 dark:bg-red-950/60" role="alert">
+      <p className="text-sm text-red-500 dark:text-red-300">{children}</p>
     </div>
   );
 }
 
 export function WarningMessage({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex-wrap items-baseline rounded-md bg-yellow-100 p-3 text-yellow-700">
+    <div className="flex-wrap items-baseline rounded-md bg-yellow-100 p-3 text-yellow-700 dark:bg-yellow-950/60 dark:text-yellow-200">
       <p className="text-sm">{children}</p>
     </div>
   );
@@ -44,8 +49,8 @@ export function WarningMessage({ children }: { children: React.ReactNode }) {
 
 export function SuccessMessage({ children }: { children: React.ReactNode }) {
   return (
-    <div className="rounded-md bg-green-100 p-3">
-      <p className="text-sm text-green-500">{children}</p>
+    <div className="rounded-md bg-green-100 p-3 dark:bg-green-950/60">
+      <p className="text-sm text-green-500 dark:text-green-300">{children}</p>
     </div>
   );
 }

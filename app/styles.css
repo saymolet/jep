@@ -26,6 +26,32 @@
   ::file-selector-button {
     border-color: var(--color-gray-200, currentcolor);
   }
+
+  /* The page itself follows the theme (see "Themes" below). */
+  html {
+    color-scheme: light;
+  }
+  body {
+    background-color: var(--color-page);
+    color: var(--color-ink);
+  }
+}
+
+/* Themes: <html data-theme="classic|dark|system"> (app/theme/theme.ts),
+   rendered by the server. Classic is the original look; Dark redefines the
+   theme tokens below; System is Dark when the device prefers a dark color
+   scheme. Pure CSS, so there is no flash and nothing to detect in JS.
+
+   `dark:` utilities follow the theme too (rarely needed: prefer tokens). */
+@custom-variant dark {
+  &:where([data-theme="dark"], [data-theme="dark"] *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where([data-theme="system"], [data-theme="system"] *) {
+      @slot;
+    }
+  }
 }
 
 /* buzzbar: phones, tablets and narrow windows, where the question prompt shows
@@ -43,6 +69,37 @@
   --color-yellow-1000: #d69f4c;
   --color-blue-bright: #0c0a79;
   --color-blue-925: #222167;
+
+  /* Theme tokens. In Classic they are exactly the colors the UI always used;
+     the Dark theme redefines them (see the end of the file).
+     - page / paper: page background / cards, panels and dialogs on it
+     - ink: default text; ink-50…950: the neutral scale of the site's UI
+       (Classic: Tailwind's slate) — use it instead of slate for text,
+       borders and fills on page/paper. Game surfaces (board, prompt, TV)
+       are dark in every theme and keep white/slate text.
+     - accent: links and outlined buttons; header: the top bar. */
+  --color-page: #fff;
+  --color-paper: #fff;
+  --color-ink: #000;
+  --color-ink-50: var(--color-slate-50);
+  --color-ink-100: var(--color-slate-100);
+  --color-ink-200: var(--color-slate-200);
+  --color-ink-300: var(--color-slate-300);
+  --color-ink-400: var(--color-slate-400);
+  --color-ink-500: var(--color-slate-500);
+  --color-ink-600: var(--color-slate-600);
+  --color-ink-700: var(--color-slate-700);
+  --color-ink-800: var(--color-slate-800);
+  --color-ink-900: var(--color-slate-900);
+  --color-ink-950: var(--color-slate-950);
+  --color-accent: var(--color-blue-600);
+  --color-accent-strong: var(--color-blue-700);
+  --color-accent-soft: var(--color-blue-500);
+  --color-link-line: var(--color-blue-400);
+  --color-link-line-hover: var(--color-blue-300);
+  --color-link-visited: var(--color-purple-700);
+  --color-link-visited-line: var(--color-purple-500);
+  --color-header: var(--color-blue-bright);
 
   --color-discord: #5865f2;
   --color-discord-hover: #4752c4;
@@ -445,5 +502,47 @@
       100% var(--bw),
       0% var(--bw),
       var(--bw) 0%;
+  }
+}
+
+/* Dark theme: near-black charcoal pages, soft light text, and a deep navy /
+   indigo board with gold values. Text colors keep at least WCAG AA contrast
+   (4.5:1) on page, paper and ink-50. */
+:root {
+  @variant dark {
+    color-scheme: dark;
+
+    --color-page: #0e1117;
+    --color-paper: #161a22;
+    --color-ink: #e4e7ee;
+    --color-ink-50: #1c212b;
+    --color-ink-100: #232935;
+    --color-ink-200: #2d3442;
+    --color-ink-300: #3b4354;
+    --color-ink-400: #8b94a7;
+    --color-ink-500: #9ea6b7;
+    --color-ink-600: #b3bac8;
+    --color-ink-700: #c8cdd8;
+    --color-ink-800: #dadee6;
+    --color-ink-900: #eceef3;
+    --color-ink-950: #f6f7f9;
+    --color-gray-200: #2d3442;
+    --color-gray-300: #3b4354;
+    --color-gray-500: #9ea6b7;
+    --color-gray-700: #c8cdd8;
+    --color-accent: #7aa7ff;
+    --color-accent-strong: #a6c4ff;
+    --color-accent-soft: #93b7ff;
+    --color-link-line: #5b7fc7;
+    --color-link-line-hover: #93b7ff;
+    --color-link-visited: #c4a7ff;
+    --color-link-visited-line: #8f74c9;
+    --color-header: #141831;
+
+    /* Game surfaces */
+    --color-blue-1000: #0b0e1c;
+    --color-blue-bright: #1a1f4e;
+    --color-blue-925: #070914;
+    --color-yellow-1000: #e3b25f;
   }
 }

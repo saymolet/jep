@@ -10,7 +10,7 @@ export function GameVisibilityTag({
   const { t } = useTranslation();
   return (
     <div
-      className={`flex items-center rounded-md border border-slate-200 bg-slate-100 px-1 text-slate-500`}
+      className={`flex items-center rounded-md border border-ink-200 bg-ink-100 px-1 text-ink-500`}
     >
       <span className="text-xs">{t(`common.visibility.${visibility}`)}</span>
       <GameVisibilityIcon variant="tag" visibility={visibility} />
@@ -34,7 +34,10 @@ export default function GameVisibilityIcon({
     case "PUBLIC":
       return (
         <Eye
-          className={"text-green-600 group-hover:text-green-700 " + className}
+          className={
+            "text-green-600 group-hover:text-green-700 dark:text-green-400 dark:group-hover:text-green-300 " +
+            className
+          }
           title={t("common.visibility.PUBLIC")}
         />
       );

@@ -104,7 +104,7 @@ function Choice({
   defaultChecked: boolean;
 }) {
   return (
-    <label className="flex min-w-12 cursor-pointer items-center justify-center rounded-md border border-slate-300 bg-white px-3 py-2 text-base font-medium text-slate-700 shadow-sm transition-colors has-checked:border-blue-600 has-checked:bg-blue-600 has-checked:text-white has-focus-visible:ring-2 has-focus-visible:ring-blue-500 has-focus-visible:ring-offset-2 sm:text-sm">
+    <label className="flex min-w-12 cursor-pointer items-center justify-center rounded-md border border-ink-300 bg-paper px-3 py-2 text-base font-medium text-ink-700 shadow-sm transition-colors has-checked:border-blue-600 has-checked:bg-blue-600 has-checked:text-white has-focus-visible:ring-2 has-focus-visible:ring-blue-500 has-focus-visible:ring-offset-2 has-focus-visible:ring-offset-page sm:text-sm">
       <input
         type="radio"
         name={name}
@@ -166,15 +166,15 @@ export default function RandomBoard({ actionData }: Route.ComponentProps) {
               />
             </div>
           </fieldset>
-          <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700">
+          <label className="flex cursor-pointer items-center gap-2 text-sm text-ink-700">
             <input
               type="checkbox"
               name="includeFinal"
-              className="h-5 w-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+              className="h-5 w-5 rounded border-ink-300 text-blue-600 focus:ring-blue-500"
             />
             {t("random.includeFinal")}
           </label>
-          <p className="text-xs text-slate-500">{t("random.unlistedHint")}</p>
+          <p className="text-xs text-ink-500">{t("random.unlistedHint")}</p>
           <div className="flex flex-col gap-2 sm:flex-row">
             <Button
               variant="primary"

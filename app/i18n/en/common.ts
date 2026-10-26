@@ -4,6 +4,11 @@ export const common = {
   "common.siteDescription":
     "A website for sharing J! trivia and playing collaboratively with friends in real time.",
   "common.language": "Language",
+  "common.theme": "Theme",
+  "common.themeCurrent": "Theme: {name}",
+  "common.theme.classic": "Classic",
+  "common.theme.dark": "Dark",
+  "common.theme.system": "System",
   "common.playerCount": { one: "{count} player", other: "{count} players" },
   "common.errorTitle": "Oh no!",
   "common.caughtError": "Caught error",

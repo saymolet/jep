@@ -22,7 +22,7 @@ export function FormStateMessage({ formState }: { formState: FormState }) {
       )}
       {details.length > 0 ? (
         <div
-          className="rounded-md bg-yellow-100 p-3 text-sm text-yellow-800"
+          className="rounded-md bg-yellow-100 p-3 text-sm text-yellow-800 dark:bg-yellow-950/60 dark:text-yellow-200"
           data-testid="form-state-details"
         >
           <p className="font-semibold">{t("common.skippedOrChanged")}</p>

@@ -22,7 +22,7 @@ export default function SolveInfo({ solve }: { solve: Solve }) {
     <div className="flex items-center gap-2">
       <SolveIcon solved={solved} />
       <Link to={roomLink}>{title}</Link>{" "}
-      <span className="text-sm text-slate-500">
+      <span className="text-sm text-ink-500">
         {solveDate ? <LocalDate date={solveDate} /> : null}
       </span>
       {gameId ? (

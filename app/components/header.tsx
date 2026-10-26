@@ -6,6 +6,7 @@ import * as DropdownMenu from "~/components/dropdown-menu";
 import LanguageSwitcher from "~/components/language-switcher";
 import Link from "~/components/link";
 import SoundControl from "~/components/sound";
+import { ThemeMenu } from "~/components/theme-switcher";
 import WagerHintsControl from "~/components/wager-hints-control";
 import { useTranslation } from "~/i18n";
 import type { Game } from "~/models/game.server";
@@ -200,10 +201,7 @@ export default function Header({
   const pathname = matches[matches.length - 1].pathname;
 
   return (
-    <nav
-      className="bg-blue-bright p-4"
-      aria-label={t("header.primaryNavigation")}
-    >
+    <nav className="bg-header p-4" aria-label={t("header.primaryNavigation")}>
       <div className="flex items-center justify-between">
         <RouterLink to="/">
           <h1 className="font-korinna text-2xl font-bold text-white text-shadow-md">
@@ -214,6 +212,7 @@ export default function Header({
           {!game && (
             <SiteLinks className="mr-4 hidden items-center gap-6 sm:flex" />
           )}
+          <ThemeMenu />
           <LanguageSwitcher />
           {user ? (
             <AccountButton user={user} />

@@ -8,6 +8,7 @@ import LanguageSwitcher from "~/components/language-switcher";
 import Link from "~/components/link";
 import Main from "~/components/main";
 import ShowPasswordButton from "~/components/show-password-button";
+import { ThemeSwitcher } from "~/components/theme-switcher";
 import { useTranslation } from "~/i18n";
 import { metaT } from "~/i18n/meta";
 import { getAuthAccountByAccessToken, requireAuthSession } from "~/models/auth";
@@ -65,16 +66,16 @@ function SettingsSection({
 }) {
   const toneClasses =
     tone === "danger"
-      ? "border-red-300 bg-red-50/40"
-      : "border-slate-200 bg-white shadow-sm";
+      ? "border-red-300 bg-red-50/40 dark:border-red-900 dark:bg-red-950/30"
+      : "border-ink-200 bg-paper shadow-sm";
 
   return (
     <section className={`rounded-lg border p-5 ${toneClasses}`}>
       <h2
         className={
           tone === "danger"
-            ? "mb-4 text-xl font-semibold text-red-700"
-            : "mb-4 text-xl font-semibold text-slate-900"
+            ? "mb-4 text-xl font-semibold text-red-700 dark:text-red-400"
+            : "mb-4 text-xl font-semibold text-ink-900"
         }
       >
         {title}
@@ -110,7 +111,7 @@ function ChangePasswordForm({ hasPassword }: { hasPassword: boolean }) {
         <div className="flex flex-col gap-2">
           <label
             htmlFor="currentPassword"
-            className="text-sm font-medium text-slate-700"
+            className="text-sm font-medium text-ink-700"
           >
             {t("settings.changePassword.current")}
           </label>
@@ -133,7 +134,7 @@ function ChangePasswordForm({ hasPassword }: { hasPassword: boolean }) {
       <div className="flex flex-col gap-2">
         <label
           htmlFor="newPassword"
-          className="text-sm font-medium text-slate-700"
+          className="text-sm font-medium text-ink-700"
         >
           {t("settings.changePassword.new")}
         </label>
@@ -156,7 +157,7 @@ function ChangePasswordForm({ hasPassword }: { hasPassword: boolean }) {
       <div className="flex flex-col gap-2">
         <label
           htmlFor="confirmPassword"
-          className="text-sm font-medium text-slate-700"
+          className="text-sm font-medium text-ink-700"
         >
           {t("settings.changePassword.confirm")}
         </label>
@@ -211,16 +212,13 @@ function ChangeEmailForm({ email }: { email?: string }) {
       className="flex flex-col gap-4"
     >
       <div className="flex flex-col gap-2">
-        <label className="text-sm font-medium text-slate-700">
+        <label className="text-sm font-medium text-ink-700">
           {t("settings.changeEmail.current")}
         </label>
-        <p className="text-sm text-slate-500">{email}</p>
+        <p className="text-sm text-ink-500">{email}</p>
       </div>
       <div className="flex flex-col gap-2">
-        <label
-          htmlFor="newEmail"
-          className="text-sm font-medium text-slate-700"
-        >
+        <label htmlFor="newEmail" className="text-sm font-medium text-ink-700">
           {t("settings.changeEmail.new")}
         </label>
         <Input
@@ -259,19 +257,26 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
   return (
     <div className="max-w-full grow">
       <Main>
-        <h1 className="mb-4 text-2xl font-semibold text-slate-900">
+        <h1 className="mb-4 text-2xl font-semibold text-ink-900">
           {t("settings.title")}
         </h1>
-        <p className="mb-8 text-sm text-slate-500">
+        <p className="mb-8 text-sm text-ink-500">
           <Link to="/profile">{t("settings.backToProfile")}</Link>
         </p>
 
         <div className="flex flex-col gap-6">
           <SettingsSection title={t("settings.language.title")}>
-            <p className="mb-4 text-sm text-slate-600">
+            <p className="mb-4 text-sm text-ink-600">
               {t("settings.language.description")}
             </p>
             <LanguageSwitcher variant="light" />
+          </SettingsSection>
+
+          <SettingsSection title={t("settings.theme.title")}>
+            <p className="mb-4 text-sm text-ink-600">
+              {t("settings.theme.description")}
+            </p>
+            <ThemeSwitcher />
           </SettingsSection>
 
           <SettingsSection title={t("settings.changeEmail.title")}>
@@ -287,7 +292,7 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
           </Form>
 
           <SettingsSection title={t("settings.danger.title")} tone="danger">
-            <p className="mb-4 text-sm text-red-900/80">
+            <p className="mb-4 text-sm text-red-900/80 dark:text-red-200/80">
               {t("settings.danger.description")}
             </p>
             <dangerZoneFetcher.Form
@@ -298,7 +303,7 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
               <div className="flex flex-col gap-2">
                 <label
                   htmlFor="deleteConfirmation"
-                  className="text-sm font-medium text-slate-700"
+                  className="text-sm font-medium text-ink-700"
                 >
                   {t("settings.danger.typeEmail")}
                 </label>

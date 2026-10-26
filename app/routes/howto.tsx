@@ -181,7 +181,7 @@ export default function HowTo() {
             <Lockout active={lockout} />
           </div>
         </button>
-        <div className="bg-slate-200 p-2">
+        <div className="bg-ink-200 p-2">
           <table className="w-full table-fixed font-mono">
             <tbody>
               <tr>
@@ -220,7 +220,7 @@ export default function HowTo() {
               </tr>
             </tbody>
           </table>
-          <div className="my-4 w-full border-b border-b-slate-400" />
+          <div className="my-4 w-full border-b border-b-ink-400" />
           <div className="flex flex-col gap-2">
             {hadLockout ? (
               <ErrorMessage>

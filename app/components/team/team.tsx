@@ -261,7 +261,7 @@ export function TeamDialog({
                 placeholder={t(`team.name.${ownTeam}`)}
                 maxLength={MAX_TEAM_NAME_LENGTH}
                 autoComplete="off"
-                className="block w-full min-w-0 flex-1 rounded-lg border border-slate-300 bg-slate-50 p-2 font-handwriting text-xl font-bold text-slate-900 placeholder:font-sans placeholder:text-sm placeholder:font-normal focus:border-blue-500 focus:ring-blue-500"
+                className="block w-full min-w-0 flex-1 rounded-lg border border-ink-300 bg-ink-50 p-2 font-handwriting text-xl font-bold text-ink-900 placeholder:font-sans placeholder:text-sm placeholder:font-normal focus:border-blue-500 focus:ring-blue-500"
               />
               <div className="shrink-0">
                 <Button type="submit">{t("team.saveName")}</Button>

@@ -13,6 +13,11 @@ import type { Dictionary } from "../types";
 export const common: Dictionary<typeof en> = {
   "common.siteDescription":
     "Сайт, щоб ділитися вікторинами в стилі J! і грати разом із друзями в реальному часі.",
+  "common.theme": "Тема",
+  "common.themeCurrent": "Тема: {name}",
+  "common.theme.classic": "Класична",
+  "common.theme.dark": "Темна",
+  "common.theme.system": "Системна",
   "common.language": "Мова",
   "common.playerCount": {
     one: "{count} гравець",

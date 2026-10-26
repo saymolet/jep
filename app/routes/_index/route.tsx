@@ -137,7 +137,7 @@ export default function Index({ loaderData }: Route.ComponentProps) {
       </div>
       {formState ? <FormStateMessage formState={formState} /> : null}
       {games.length === 0 && (
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-ink-500">
           {search
             ? t("home.noGamesForSearch", { search: debouncedSearch ?? "" })
             : t("home.noGames")}
