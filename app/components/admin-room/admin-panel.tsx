@@ -803,6 +803,9 @@ export function AdminControls({
         <DialogPrimitive.Overlay className="fixed inset-0 z-40 animate-overlay-show bg-black/60" />
         <DialogPrimitive.Content
           onKeyDown={stopEnter}
+          // The question behind the sheet moves focus on its own (autofocus
+          // as its steps change); that must not close the sheet.
+          onFocusOutside={(e) => e.preventDefault()}
           className={clsx(
             "fixed z-50 flex animate-slide-up-and-fade flex-col bg-blue-1000 text-slate-100 shadow-2xl focus:outline-none",
             "inset-x-0 bottom-0 max-h-[85dvh] rounded-t-2xl pb-[env(safe-area-inset-bottom)]",

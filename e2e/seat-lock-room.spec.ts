@@ -193,7 +193,7 @@ test.describe("seat lock", () => {
     await guestContext.close();
   });
 
-  test("the browser key can't insert seat events", async ({
+  test("the browser key can't insert any room event", async ({
     authedPage: host,
   }) => {
     const { anonKey } = env();
@@ -204,7 +204,9 @@ test.describe("seat lock", () => {
     const roomId = roomIdOf(host.url());
     const anon = rest(host.request, anonKey);
 
-    for (const [type, payload] of [
+    // Every room event is inserted by the server (feature 20): the browser
+    // key may not insert any type, for anyone.
+    const forgeries: [string, unknown][] = [
       ["kick", { userId: "victim", name: "Victim", admin: true }],
       ["leave", { userId: "victim", name: "Victim" }],
       ["transfer_player", { oldUserId: "victim", newUserId: "thief" }],
@@ -212,7 +214,28 @@ test.describe("seat lock", () => {
         "set_settings",
         { userId: "x", answerTimeSec: 10, autoWrongOnTimeout: true },
       ],
-    ] as const) {
+      ["join", { userId: "someone", name: "Someone" }],
+      ["change_name", { userId: "victim", name: "Renamed" }],
+      ["start_round", { round: 0, userId: "victim" }],
+      ["choose_clue", { userId: "victim", i: 0, j: 0 }],
+      ["buzz", { userId: "victim", i: 0, j: 0, deltaMs: 1 }],
+      ["answer", { userId: "victim", i: 0, j: 0, answer: "x" }],
+      ["check", { userId: "victim", i: 0, j: 0, correct: true }],
+      [
+        "correct_check",
+        { round: 0, userId: "victim", i: 0, j: 0, correct: true },
+      ],
+      ["set_clue_wager", { userId: "victim", i: 0, j: 0, wager: 5 }],
+      ["pass_clue", { userId: "victim", i: 0, j: 0, toUserId: "thief" }],
+      ["next_clue", { userId: "victim", i: 0, j: 0 }],
+      ["toggle_pause", null],
+      ["toggle_clock", null],
+      ["set_team", { userId: "victim", team: "red" }],
+      ["rename_team", { userId: "victim", team: "red", name: "X" }],
+      ["skip_clue", { i: 0, j: 0, admin: true }],
+      ["adjust_score", { userId: "victim", delta: 1000, admin: true }],
+    ];
+    for (const [type, payload] of forgeries) {
       const forged = await anon.post("room_events", {
         room_id: roomId,
         type,
@@ -221,14 +244,10 @@ test.describe("seat lock", () => {
       expect([401, 403], type).toContain(forged.status());
       expect((await forged.json()).code, type).toBe("42501");
     }
-
-    // Every other event type is accepted as before.
-    const joined = await anon.post("room_events", {
-      room_id: roomId,
-      type: "join",
-      payload: { userId: "someone", name: "Someone" },
-    });
-    expect(joined.status()).toBe(201);
+    const stored = await (
+      await anon.get(`room_events?room_id=eq.${roomId}&select=id`)
+    ).json();
+    expect(stored).toEqual([]);
   });
 });
 

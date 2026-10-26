@@ -165,24 +165,15 @@ test.describe("only the admin changes the answer timer", () => {
     expect([401, 403]).toContain(forged.status());
     expect((await forged.json()).code).toBe("42501");
 
-    // ...while every other event type is accepted as before.
+    // ...like every other event type since all room events are inserted by
+    // the server (see seat-lock-room.spec.ts for the full list).
     const pause = await insert("toggle_pause", null);
-    expect(pause.status()).toBe(201);
+    expect([401, 403]).toContain(pause.status());
 
     const events = await host.request.get(
       `${supabaseUrl}/rest/v1/room_events?room_id=eq.${roomId}&select=type`,
       { headers: { apikey: anonKey!, Authorization: `Bearer ${anonKey}` } },
     );
-    const rows: unknown = await events.json();
-    expect(rows).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ type: "toggle_pause" }),
-      ]),
-    );
-    expect(rows).not.toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ type: "set_settings" }),
-      ]),
-    );
+    expect(await events.json()).toEqual([]);
   });
 });
