@@ -128,6 +128,13 @@ Difficulty estimates from the original planning discussion.
       game uses), rooms, reports, unused Storage files cleanup — see
       [features/18-admin.md](./features/18-admin.md) — ⭐⭐ medium
 
+- [x] Seat lock + inactive room cleanup — seats keyed by the session userId are locked once
+      the first question is opened (only the site admin may kick, between questions; a
+      returning player gets their seat, score, color, avatar and team back; kick / leave /
+      transfer only via the server, enforced by RLS); rooms with no activity for 5 h are
+      deleted (hourly job `scripts/cleanup-inactive-rooms.mjs` + admin Rooms button) — see
+      [features/19-seat-lock-cleanup.md](./features/19-seat-lock-cleanup.md) — ⭐⭐ medium
+
 Question search · Discord login · keyboard shortcuts ·
 OBS/browser-source mode ·
 auto-reconnect · host controls from phone ·
@@ -236,3 +243,12 @@ auto-reconnect · host controls from phone ·
   when the audio context is created (first tap), played through the same limiter / volume /
   mute / ducking / overlap path; a sample that fails to load falls back to the Web Audio
   synth. No migration, no new dependencies.
+- **2026-10-26** — Feature 19 on `feat/seat-lock-cleanup`: seat lock (`isGameUnderway`;
+  players kick only before the first question, the site admin any time between questions with
+  `admin: true` events; a Join never resets a seat and restores a left player's seat; kick /
+  leave / transfer_player inserted by the server only) and inactive room cleanup (5 h,
+  `cleanup_inactive_rooms` SQL function, hourly `varlock run -- node
+scripts/cleanup-inactive-rooms.mjs`, admin Rooms button; 7-day dashboard tile removed).
+  Migrations `20261026172752_room_events_seats_server_only.sql` (insert policy) and
+  `20261026173001_cleanup_inactive_rooms.sql` (`rooms.created_at` + function). No new
+  dependencies.
