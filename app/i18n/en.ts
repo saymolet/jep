@@ -16,6 +16,7 @@ import {
   settings,
   siq,
   soundboard,
+  standings,
   summary,
   team,
   upload,
@@ -50,4 +51,5 @@ export const en = {
   ...watch,
   ...team,
   ...soundboard,
+  ...standings,
 } as const satisfies Messages;

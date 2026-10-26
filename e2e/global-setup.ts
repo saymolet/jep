@@ -69,6 +69,19 @@ export default async function globalSetup() {
       throw new Error(`Failed to clean up test games: ${deleteError.message}`);
     }
     console.log(`[global-setup] Removed ${count ?? 0} games from earlier runs`);
+
+    // Specs change the shared account's settings (theme, language, sound…);
+    // an interrupted run left them changed and the next run's settings spec
+    // clicked an already-selected option. Start every run from defaults.
+    const { error: settingsError } = await supabase
+      .from("accounts")
+      .update({ settings: {} })
+      .eq("id", userId);
+    if (settingsError) {
+      throw new Error(
+        `Failed to reset test settings: ${settingsError.message}`,
+      );
+    }
   }
 
   console.log(`[global-setup] Test user ready: ${EMAIL} (${userId})`);

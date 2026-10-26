@@ -296,7 +296,7 @@ export function getCheckCorrectionForPlayer(
 }
 
 export function getClueValueForRound(
-  state: State,
+  state: Pick<State, "game" | "wagers">,
   round: number,
   [i, j]: [number, number],
   userId: string,

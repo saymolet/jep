@@ -16,6 +16,7 @@ export { room } from "./room";
 export { settings } from "./settings";
 export { siq } from "./siq";
 export { soundboard } from "./soundboard";
+export { standings } from "./standings";
 export { summary } from "./summary";
 export { team } from "./team";
 export { upload } from "./upload";

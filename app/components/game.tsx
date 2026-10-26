@@ -11,6 +11,7 @@ import { PlayerScores } from "~/components/player";
 import Preview from "~/components/preview";
 import Prompt from "~/components/prompt";
 import { Soundboard } from "~/components/soundboard";
+import { StandingsButton } from "~/components/standings/standings";
 import { UndoArmingContext, UndoArmingProvider } from "~/components/undo-check";
 import { SpectatorBar, WatcherCount } from "~/components/watch/spectator-bar";
 import { SpectatorPrompt } from "~/components/watch/viewer-prompt";
@@ -157,7 +158,7 @@ export default function GameComponent({
         <div
           className={`mx-auto flex w-full max-w-screen-lg flex-col gap-4 p-3 text-slate-100 sm:p-6 md:p-12`}
         >
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-y-1">
             <CallToAction
               boardController={boardController}
               type={type}
@@ -170,6 +171,7 @@ export default function GameComponent({
                 count={watchers}
                 className="px-2 text-sm whitespace-nowrap text-slate-300"
               />
+              <StandingsButton userId={userId} />
               {isPlayer ? (
                 <AnswerTimerControl roomId={roomId} userId={userId} />
               ) : null}

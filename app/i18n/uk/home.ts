@@ -19,4 +19,15 @@ export const home: Dictionary<typeof en> = {
   "home.timeAgo.justNow": "щойно",
   "home.timeAgo.minutes": "{minutes} хв тому",
   "home.timeAgo.hours": "{hours} год тому",
+  "home.timeAgo.days": {
+    one: "{count} день тому",
+    few: "{count} дні тому",
+    many: "{count} днів тому",
+    other: "{count} дня тому",
+  },
+  "home.yourGames": "Ваші незакінчені ігри",
+  "home.yourScore": "Ваш рахунок",
+  "home.yourRank": "{rank} місце з {total}",
+  "home.yourRoomActivity": "Кімната {room} · активність {ago}",
+  "home.continue": "Продовжити",
 };

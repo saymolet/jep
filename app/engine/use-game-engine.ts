@@ -28,6 +28,7 @@ import {
   mergeRoomEvents,
   roomEventToAction,
 } from "./room-event";
+import { getScoreChanges, scoreChangesKey } from "./standings";
 import {
   type State,
   getCheckCorrectionForPlayer,
@@ -121,6 +122,8 @@ export function stateToGameEngine(
     return getClueValue(state, idx, userId);
   }
 
+  const scoreChanges = getScoreChanges(state);
+
   const clueKey = `${state.round},${
     state.activeClue ? state.activeClue[0] : -1
   },${state.activeClue ? state.activeClue[1] : -1}`;
@@ -175,6 +178,11 @@ export function stateToGameEngine(
     /** Soundboard sounds on the room channel (Realtime broadcast, never
      * stored); unavailable in solo play. */
     soundboard,
+    /** Each player's score change on the previous question (see
+     * engine/standings.ts). */
+    scoreChanges,
+    /** Changes when a new question changes scores ("" before any). */
+    scoreChangesKey: scoreChangesKey(state, scoreChanges),
   };
 }
 

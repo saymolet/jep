@@ -77,8 +77,11 @@ test.describe("soundboard in a room", () => {
     await expect(own).toBeVisible();
     await expect(own).toContainText("👏");
     // The visible text is "<emoji> <name>"; the name is its second part.
-    const hostName = (await own.locator("span").nth(1).innerText()).trim();
-    expect(hostName.length).toBeGreaterThan(0);
+    // Read it with a retrying assertion and textContent: innerText depends on
+    // layout and could read empty while the toast scales in.
+    const ownName = own.locator("span").nth(1);
+    await expect(ownName).toHaveText(/\S/);
+    const hostName = ((await ownName.textContent()) ?? "").trim();
     const guestToast = toast(guest, "applause");
     await expect(guestToast).toBeVisible({ timeout: 10_000 });
     await expect(guestToast.locator("span").nth(1)).toHaveText(hostName);

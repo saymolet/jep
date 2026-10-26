@@ -7,7 +7,7 @@ import { useTranslation } from "~/i18n";
 import { type ActiveRoom, formatTimeAgo } from "~/models/active-rooms";
 import { formatDollars } from "~/utils";
 
-function PlayerList({ players }: { players: ActiveRoom["players"] }) {
+export function PlayerList({ players }: { players: ActiveRoom["players"] }) {
   return (
     <ul className="flex flex-wrap gap-x-3 gap-y-1">
       {players.map((player, i) => (
