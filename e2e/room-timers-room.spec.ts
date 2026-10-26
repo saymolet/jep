@@ -10,6 +10,7 @@ import {
   logInAsAdmin,
   openClue,
   uploadGame,
+  waitForBoardReady,
   waitForConnected,
 } from "./helpers";
 
@@ -18,7 +19,9 @@ const ROOM_TIMERS_GAME = path.resolve("e2e/assets/room-timers.jep.json");
 
 /** pick clicks a radio of a room timers group until it is selected. */
 async function pick(panel: Locator, group: string, name: string) {
-  const option = panel.getByTestId(group).getByRole("radio", { name });
+  const option = panel
+    .getByTestId(group)
+    .getByRole("radio", { name, exact: true });
   await expect(async () => {
     await option.click();
     await expect(option).toHaveAttribute("aria-checked", "true", {
@@ -65,7 +68,7 @@ test.describe("room timers", () => {
       await expect(
         panel
           .getByTestId("buzz-window-settings")
-          .getByRole("radio", { name: "5 s" }),
+          .getByRole("radio", { name: "5 s", exact: true }),
       ).toHaveAttribute("aria-checked", "true");
       await pick(panel, "read-time-settings", "0 s");
       await pick(panel, "buzz-window-settings", "3 s");
@@ -85,7 +88,7 @@ test.describe("room timers", () => {
       guest
         .getByRole("dialog")
         .getByTestId("buzz-window-settings")
-        .getByRole("radio", { name: "7 s" }),
+        .getByRole("radio", { name: "7 s", exact: true }),
     ).toBeDisabled();
 
     // Nobody buzzes: with no reading time and a 3 s window the answer is
@@ -99,7 +102,12 @@ test.describe("room timers", () => {
 
     // The Double Down: the wager countdown runs for everyone; when it runs
     // out, the host's own device wagers the minimum ($5).
-    await openClue(host, host.getByRole("button", { name: "$ 400" }).first());
+    await waitForBoardReady(host);
+    const wagerTimer = host.getByTestId("wager-timer");
+    await expect(async () => {
+      await host.getByRole("button", { name: "$ 400" }).first().click();
+      await expect(wagerTimer).toBeVisible({ timeout: 1_000 });
+    }).toPass({ timeout: 10_000 });
     for (const page of [host, guest]) {
       await expect(page.getByTestId("wager-timer")).toBeVisible();
     }
@@ -134,7 +142,7 @@ test.describe("room timers", () => {
       host
         .getByRole("dialog")
         .getByTestId("buzz-window-settings")
-        .getByRole("radio", { name: "3 s" }),
+        .getByRole("radio", { name: "3 s", exact: true }),
     ).toBeDisabled();
     // The admin-only route refuses the change.
     const response = await host.request.post(`/game/${gameId}/play`, {
