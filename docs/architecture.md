@@ -118,6 +118,22 @@ languages.** Game content (titles, categories, questions, answers) is never tran
   Accept-Language get English. The root sets `<html lang>`.
 - Components rendered without the provider (unit tests) get English.
 
+## Themes (Classic / Dark / System)
+
+- `app/theme/theme.ts`: `resolveTheme` in the root loader — the `theme` cookie (set by the
+  header menu / Settings) → `accounts.settings.theme` → **Classic**. The root renders
+  `<html data-theme="classic|dark|system">`; the switcher (`useSetTheme`) updates root state,
+  the cookie and the account setting, so the change shows at once and the next server render
+  agrees. System is resolved purely in CSS (`prefers-color-scheme`), never in JS.
+- **Colors come from theme tokens** (`app/styles.css` `@theme`): `page`, `paper`, `ink`,
+  `ink-50…950` (= slate in Classic), `accent*`, `link-*`, `header`, and the game colors
+  `blue-1000`, `blue-bright`, `blue-925`, `yellow-1000`. The Dark theme redefines them in one
+  block at the end of the file. **For new light-UI code (text, borders, fills on the page or a
+  card) use `ink-*` / `paper` / `page` / `accent`, not `slate-*` / `white`;** game surfaces
+  (board, prompt, dialogs, TV) are dark in every theme and keep `white` / `slate-*` text.
+- `dark:` utilities follow the theme (`@custom-variant dark` = Dark, or System on a dark
+  device); use them only for one-off status colors.
+
 ## Open questions to resolve during feature work
 
 - Exact room-event protocol and how buzz order / lockout is tracked.

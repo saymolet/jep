@@ -109,12 +109,16 @@ Difficulty estimates from the original planning discussion.
       on every device in the room with a "🎺 Ann" toast; ephemeral Realtime broadcast on the
       room channel (not stored), 1 sound / 2 s, spectators and the TV only listen, per-device
       "Mute soundboard" — see [features/15-soundboard.md](./features/15-soundboard.md) — ⭐⭐ medium
+- [x] Themes (F12c) — Classic (unchanged), Dark and System (follows the device) picked with
+      an icon menu in the header or in Settings; `theme` cookie → account setting → Classic,
+      rendered server-side as `<html data-theme>` (no flash, System is pure CSS); theme tokens
+      in `app/styles.css` — see [features/16-themes.md](./features/16-themes.md) — ⭐⭐ medium
 
 Question search ·
 admin panel · Discord login · keyboard shortcuts ·
 OBS/browser-source mode ·
 auto-reconnect · host controls from phone · game save/resume · live scoreboard ·
-themes (Classic / Своя Игра / Dark).
+"Своя Игра" theme (Classic and Dark are done, see above).
 
 ## Status log
 
@@ -190,3 +194,8 @@ themes (Classic / Своя Игра / Dark).
   the TV, send/receive cooldowns and overlap cap, per-device "Mute soundboard", ducking
   during questions with audio/video. No migration, no new dependencies.
 - **2026-10-26** — Board fill now starts before paint (no flash of the full board, no taps on cells about to hide); the board sets `aria-busy` while hidden or filling, and e2e helpers wait for it.
+- **2026-10-26** — Feature 16 on `feat/themes`: themes Classic / Dark / System (`theme` cookie →
+  `accounts.settings.theme` → Classic; `<html data-theme>` from the root loader, System via
+  `prefers-color-scheme` in CSS), theme tokens (`page`, `paper`, `ink-*`, `accent`, `header`,
+  game colors) in `app/styles.css`, switcher in the header and Settings. No migration, no new
+  dependencies.
