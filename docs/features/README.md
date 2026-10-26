@@ -21,3 +21,4 @@ See the backlog in [../README.md](../README.md#feature-backlog).
 - [15 — Soundboard](./15-soundboard.md)
 - [18 — Admin panel](./18-admin.md)
 - [20 — Admin interventions](./20-admin-interventions.md)
+- [21 — Room timers](./21-room-timers.md)
