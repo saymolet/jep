@@ -297,6 +297,22 @@ describe("Final answer time", () => {
     expect(sent).toEqual([]);
   });
 
+  it("has no countdown and sends nothing without a limit (Off)", async () => {
+    const state = finalAnswers(0);
+    expect(state.finalAnswerTimeSec).toBe(0);
+    vi.setSystemTime(state.longFormStartedAt ?? 0);
+    renderPrompt(state, ANN);
+    await advance(300_000);
+    expect(
+      container.querySelector('[data-testid="final-answer-timer"]'),
+    ).toBeNull();
+    expect(text()).not.toContain("When the time runs out");
+    expect(container.querySelector<HTMLInputElement>("#answer")?.readOnly).toBe(
+      false,
+    );
+    expect(sent).toEqual([]);
+  });
+
   it("uses the room's duration (default 30 s) and shows it on the TV", async () => {
     const state = finalAnswers(90);
     expect(state.finalAnswerTimeSec).toBe(90);

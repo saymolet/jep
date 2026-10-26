@@ -40,7 +40,7 @@ packs have none, so the room settings are what matters.
    | Answer time (feature 14)               | Off / 10 / 15 / 20 / 30 / 60 s (+ mark wrong)  | Off      |
    | Reading time (before the buzzers open) | Auto / 0, 1, 2, 3, 5, 10, 15, 20, 30, 45, 60 s | Auto     |
    | Time to buzz in (buzz window)          | 3 / 5 / 7 / 10 / 15 / 20 s                     | 5 s      |
-   | Final answer time                      | 15 / 30 / 45 / 60 / 90 / 120 s                 | 30 s     |
+   | Final answer time                      | No limit / 15 / 30 / 45 / 60 / 90 / 120 s      | 30 s     |
    | Wager time                             | No limit / 15 / 30 / 60 s                      | No limit |
 
    Players and spectators see the values read-only ("Only the admin can change this."). In solo
@@ -56,7 +56,8 @@ packs have none, so the room settings are what matters.
    - **Final answers:** everyone sees the countdown of the Final answer time; the player sees
      "When the time runs out, what you typed is sent." At 0 their own device sends what is in
      the box (possibly nothing) and the box locks ("Time's up! Your answer was sent."). A
-     player who already sent an answer keeps it.
+     player who already sent an answer keeps it. With **No limit** there is no countdown and
+     nothing is sent: the Final waits for every answer, as before this feature.
 4. **Game JSON:** optional `"readTimeSec": 8` (whole seconds 0–60) on a question — that question
    is shown for exactly that long before the buzzers open when the room's reading time is
    Auto. Documented on `/upload-help` (EN/UK) and in `/game.schema.json`; exported by
@@ -116,12 +117,14 @@ seed, buzzWindowMs)` in Buzz and Check, the admin step, the engine context's win
 - **Minimum wager** = `getWagerRange(...).min`, the existing rule: **$0 on the Final**, **$5 on a
   Double Down** (the engine/route reject anything below). It's what a player who doesn't
   decide risks least.
-- **Final answer time is now enforced** (it was a cosmetic 30-second bar that started on each
-  device at mount and did nothing at 0). Default stays 30 s; the countdown now runs from the
-  server timestamp. At 0 the player's device sends what was typed (trimmed; may be empty). This
-  changes behaviour in rooms with defaults: a Final no longer waits forever for someone who
-  stopped typing. Deliberate — that's what a "Final answer time" means — but easy to revisit
-  (e.g. an "Off" option) if the owner prefers the old open-ended Final.
+- **Final answer time: default 30 s, enforced; "No limit" (0) available.** Before, the Final
+  showed a cosmetic 30-second bar (started on each device at mount, nothing happened at 0) and
+  waited forever. The default stays 30 s — the countdown players already knew — but it now
+  runs from the server timestamp and at 0 the player's device sends what was typed (trimmed;
+  may be empty), so a Final no longer hangs on someone who stopped typing. Rooms that want the
+  old open-ended Final pick **No limit** (`finalAnswerTimeSec: 0`, accepted by the route and the
+  engine): no countdown, no auto-submit, the Final waits for every answer (the admin can still
+  answer for a stuck player, feature 20).
 - **The old 5 s hint** for the buzz winner without an answer timer (sound + red bars) is not a
   buzz window; it stays 5 s (`ANSWER_HINT_MS`).
 - **Solo play** saves/restores the timers (`offline-storage.ts`; old saves get the defaults; a

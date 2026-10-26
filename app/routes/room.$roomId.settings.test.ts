@@ -153,6 +153,20 @@ describe("settings route", () => {
     );
   });
 
+  it("saves a Final without a time limit (0)", async () => {
+    await call("5", {
+      userId: USER,
+      answerTimeSec: "0",
+      autoWrongOnTimeout: "true",
+      finalAnswerTimeSec: "0",
+    });
+    expect(mocks.createRoomEventAsServer).toHaveBeenCalledWith(
+      ROOM.id,
+      ActionType.SetSettings,
+      expect.objectContaining({ finalAnswerTimeSec: 0, admin: true }),
+    );
+  });
+
   it("saves the Auto reading time as null", async () => {
     await call("5", {
       userId: USER,

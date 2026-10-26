@@ -120,7 +120,7 @@ export const room: Dictionary<typeof en> = {
   "room.timers.buzzWindow": "Час, щоб натиснути кнопку",
   "room.timers.finalAnswerTime": "Час на відповідь у фіналі",
   "room.timers.finalAnswerTimeHelp":
-    "Коли час вийде, надішлеться те, що встиг написати кожен гравець.",
+    "Коли час вийде, надішлеться те, що встиг написати кожен гравець. Без обмеження: фінал чекає на відповіді всіх.",
   "room.timers.wagerTime": "Час на ставку",
   "room.timers.noLimit": "Без обмеження",
   "room.timers.wagerTimeHelp":

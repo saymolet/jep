@@ -147,7 +147,7 @@ Difficulty estimates from the original planning discussion.
 
 - [x] Room timers (owner's request) — the site admin sets a room's **reading time** (Auto or
       0–60 s), **buzz window** (3–20 s, default 5), **answer time**, **Final answer time**
-      (15–120 s, default 30, now enforced: the player's device sends what was typed) and
+      (No limit / 15–120 s, default 30, enforced: the player's device sends what was typed) and
       **wager time** (Off / 15–60 s; the player's device wagers the minimum) — in a "new room"
       step when the admin creates a room (last-used values remembered), in the round preview
       and the ⏱ sheet; players see them read-only. SIGame packs carry no such timers; their

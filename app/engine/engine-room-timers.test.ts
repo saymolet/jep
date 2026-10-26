@@ -145,6 +145,11 @@ describe("SetSettings (room timers)", () => {
       expected: { ...DEFAULT_ROOM_TIMERS, readTimeSec: 7 },
     },
     {
+      name: "the Final answer time can be turned off (0 = no limit)",
+      actions: [...LOBBY, timers({ finalAnswerTimeSec: 0 })],
+      expected: { ...DEFAULT_ROOM_TIMERS, finalAnswerTimeSec: 0 },
+    },
+    {
       name: "reading time back to Auto (null)",
       actions: [
         ...LOBBY,

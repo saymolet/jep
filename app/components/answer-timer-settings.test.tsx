@@ -183,6 +183,7 @@ describe("room timers", () => {
     ]);
     expect(selected("buzz-window-settings")).toBe("5 s");
     expect(labels("final-answer-time-settings")).toEqual([
+      "No limit",
       "15 s",
       "30 s",
       "45 s",
@@ -203,7 +204,8 @@ describe("room timers", () => {
   it.each([
     ["read-time-settings", 1, { readTimeSec: "0" }],
     ["buzz-window-settings", 0, { buzzWindowSec: "3" }],
-    ["final-answer-time-settings", 5, { finalAnswerTimeSec: "120" }],
+    ["final-answer-time-settings", 6, { finalAnswerTimeSec: "120" }],
+    ["final-answer-time-settings", 0, { finalAnswerTimeSec: "0" }],
     ["wager-time-settings", 1, { wagerTimeSec: "15" }],
   ])("saves %s", async (group, index, change) => {
     render(play(STEPS.join));

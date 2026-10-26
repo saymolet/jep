@@ -25,7 +25,8 @@ export function useWagerTimer(): StepTimerState {
 }
 
 /** useFinalAnswerTimer is the room's Final answer time while the players
- * write their answers (not when nobody could wager). */
+ * write their answers (not when nobody could wager, and not when the room
+ * has no limit: 0). */
 export function useFinalAnswerTimer(): StepTimerState {
   const { type, finalAnswerTimeSec, longFormStartedAt, buzzes, players } =
     useEngineContext();
@@ -33,7 +34,9 @@ export function useFinalAnswerTimer(): StepTimerState {
     buzzes.size === players.size &&
     Array.from(buzzes.values()).every((b) => b === CANT_BUZZ_FLAG);
   const startedAt =
-    type === GameState.ReadLongFormClue && !nobodyCanAnswer
+    type === GameState.ReadLongFormClue &&
+    !nobodyCanAnswer &&
+    finalAnswerTimeSec > 0
       ? longFormStartedAt
       : null;
   const status = useCountdownStatus(startedAt, finalAnswerTimeSec);

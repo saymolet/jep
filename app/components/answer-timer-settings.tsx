@@ -194,10 +194,10 @@ export function RoomTimersFields({
   return (
     <div className="flex flex-col gap-4" data-testid="room-timers">
       <div className="flex flex-col gap-2" data-testid="answer-timer-settings">
-        <ChoiceGroup
+        <ChoiceGroup<number>
           label={t("room.answerTime")}
           options={ANSWER_TIME_OPTIONS}
-          value={values.answerTimeSec as (typeof ANSWER_TIME_OPTIONS)[number]}
+          value={values.answerTimeSec}
           format={(s) => (s === 0 ? t("room.answerTimeOff") : seconds(s))}
           disabled={disabled}
           onSelect={(answerTimeSec) => set({ answerTimeSec })}
@@ -219,41 +219,39 @@ export function RoomTimersFields({
           {t("room.answerTimeAutoWrong")}
         </label>
       </div>
-      <ChoiceGroup
+      <ChoiceGroup<number | null>
         label={t("room.timers.readTime")}
         options={READ_TIME_OPTIONS}
-        value={values.readTimeSec as (typeof READ_TIME_OPTIONS)[number]}
+        value={values.readTimeSec}
         format={(s) => (s === null ? t("room.timers.auto") : seconds(s))}
         disabled={disabled}
         onSelect={(readTimeSec) => set({ readTimeSec })}
         testId="read-time-settings"
         help={t("room.timers.readTimeHelp")}
       />
-      <ChoiceGroup
+      <ChoiceGroup<number>
         label={t("room.timers.buzzWindow")}
         options={BUZZ_WINDOW_OPTIONS}
-        value={values.buzzWindowSec as (typeof BUZZ_WINDOW_OPTIONS)[number]}
+        value={values.buzzWindowSec}
         format={seconds}
         disabled={disabled}
         onSelect={(buzzWindowSec) => set({ buzzWindowSec })}
         testId="buzz-window-settings"
       />
-      <ChoiceGroup
+      <ChoiceGroup<number>
         label={t("room.timers.finalAnswerTime")}
         options={FINAL_ANSWER_TIME_OPTIONS}
-        value={
-          values.finalAnswerTimeSec as (typeof FINAL_ANSWER_TIME_OPTIONS)[number]
-        }
-        format={seconds}
+        value={values.finalAnswerTimeSec}
+        format={(s) => (s === 0 ? t("room.timers.noLimit") : seconds(s))}
         disabled={disabled}
         onSelect={(finalAnswerTimeSec) => set({ finalAnswerTimeSec })}
         testId="final-answer-time-settings"
         help={t("room.timers.finalAnswerTimeHelp")}
       />
-      <ChoiceGroup
+      <ChoiceGroup<number>
         label={t("room.timers.wagerTime")}
         options={WAGER_TIME_OPTIONS}
-        value={values.wagerTimeSec as (typeof WAGER_TIME_OPTIONS)[number]}
+        value={values.wagerTimeSec}
         format={(s) => (s === 0 ? t("room.timers.noLimit") : seconds(s))}
         disabled={disabled}
         onSelect={(wagerTimeSec) => set({ wagerTimeSec })}

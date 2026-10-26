@@ -138,6 +138,13 @@ test.describe("room timers", () => {
       "30 s",
     );
     await expect(selected(host, "wager-time-settings")).toHaveText("No limit");
+    // The Final can also run without a time limit (not the default).
+    await expect(
+      host
+        .getByRole("dialog")
+        .getByTestId("final-answer-time-settings")
+        .getByRole("radio", { name: "No limit", exact: true }),
+    ).toHaveAttribute("aria-checked", "false");
     await expect(
       host
         .getByRole("dialog")

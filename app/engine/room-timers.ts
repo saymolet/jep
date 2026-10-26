@@ -30,9 +30,10 @@ export const READ_TIME_OPTIONS = [
   60,
 ] as const;
 
-/** Time to write the Final (long-form) answer. */
+/** Time to write the Final (long-form) answer; 0 = no limit (the Final waits
+ * for every answer, as before the room timers). */
 export const DEFAULT_FINAL_ANSWER_TIME_SEC = 30;
-export const FINAL_ANSWER_TIME_OPTIONS = [15, 30, 45, 60, 90, 120] as const;
+export const FINAL_ANSWER_TIME_OPTIONS = [0, 15, 30, 45, 60, 90, 120] as const;
 
 /** Time to place a wager (Double Down, Final); 0 = unlimited. */
 export const DEFAULT_WAGER_TIME_SEC = 0;

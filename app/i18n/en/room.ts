@@ -107,7 +107,7 @@ export const room = {
   "room.timers.buzzWindow": "Time to buzz in",
   "room.timers.finalAnswerTime": "Final answer time",
   "room.timers.finalAnswerTimeHelp":
-    "When it runs out, what each player typed is sent.",
+    "When it runs out, what each player typed is sent. No limit: the Final waits for every answer.",
   "room.timers.wagerTime": "Wager time",
   "room.timers.noLimit": "No limit",
   "room.timers.wagerTimeHelp":
