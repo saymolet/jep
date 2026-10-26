@@ -7,6 +7,7 @@ import { cyrb53 } from "~/utils";
 import { isChoiceIndex, isCorrectChoice } from "~/utils/choices";
 
 import {
+  isAdminAction,
   isAnswerAction,
   isBuzzAction,
   isCheckAction,
@@ -74,6 +75,10 @@ function getMostRecentCorrectOrder(
 
 export enum ActionType {
   Join = "join",
+  /** Kick removes another player. Players may kick only before the game is
+   * underway (isGameUnderway); the site admin (payload `admin: true`,
+   * inserted by the server) may remove a player between questions at any
+   * time. Only the server can insert kick events (RLS). */
   Kick = "kick",
   Leave = "leave",
   ChangeName = "change_name",
@@ -475,6 +480,21 @@ function applyCheckCorrection(
       : getNextRoundBoardControl(draft, correctedClueBoardControl);
 }
 
+/** isGameUnderway is true once the first question of the game was opened:
+ * from then on only the site admin may remove a player (Kick). Before that —
+ * the first round's preview, or its board before anyone picked a question —
+ * players may still kick each other. GameOver counts as underway. */
+export function isGameUnderway(
+  state: Pick<State, "type" | "round" | "numAnswered">,
+) {
+  return (
+    (state.type !== GameState.ShowBoard &&
+      state.type !== GameState.PreviewRound) ||
+    state.numAnswered > 0 ||
+    state.round > 0
+  );
+}
+
 /** gameEngine is the reducer (aka state machine) which implements the game. */
 export function gameEngine(state: State, action: Action): State {
   switch (action.type) {
@@ -487,40 +507,75 @@ export function gameEngine(state: State, action: Action): State {
         if (draft.type === GameState.GameOver) {
           return;
         }
-        const { avatar, team, ...player } = action.payload;
-        draft.players.set(action.payload.userId, {
-          ...player,
-          ...(avatar ? { avatar } : {}),
-          ...(team ? { team } : {}),
-          score: 0,
-        });
+        const { userId, name } = action.payload;
+        // Seats are keyed by userId and never reset by a Join: a player who
+        // is already seated keeps their seat, and one who left (or was
+        // removed by the admin) during the game gets it back — score, color,
+        // avatar and team. Only the name comes from the new Join.
+        const seat = draft.players.get(userId) ?? draft.leftPlayers.get(userId);
+        if (seat) {
+          draft.leftPlayers.delete(userId);
+          draft.players.set(userId, { ...seat, name });
+        } else {
+          const { avatar, team, ...player } = action.payload;
+          draft.players.set(userId, {
+            ...player,
+            ...(avatar ? { avatar } : {}),
+            ...(team ? { team } : {}),
+            score: 0,
+          });
+        }
         // If this is the first player joining, give them board control.
         if (draft.players.size === 1) {
           draft.boardControl = action.payload.userId;
         }
       });
-    case ActionType.Kick:
+    case ActionType.Kick: {
+      // Before isPlayerAction, which strips the payload to a player's fields.
+      const byAdmin = isAdminAction(action);
       if (!isPlayerAction(action)) {
         throw new Error("PlayerKick action must have an associated player");
       }
       return produce(state, (draft) => {
-        // Don't kick players after the game has started.
+        const { userId } = action.payload;
+        if (!byAdmin) {
+          // Players may only kick before the game is underway (events from
+          // before the admin rule replay exactly as they did).
+          if (isGameUnderway(draft)) {
+            return;
+          }
+          // Don't allow the only player to be kicked.
+          if (draft.players.size === 1) {
+            return;
+          }
+          transferBoardControl(draft, userId);
+          draft.players.delete(userId);
+          forgetEmptyTeamNames(draft);
+          return;
+        }
+        // The site admin (inserted by the server): any time the board or the
+        // round preview shows, never the last player.
+        const player = draft.players.get(userId);
         if (
           (draft.type !== GameState.ShowBoard &&
             draft.type !== GameState.PreviewRound) ||
-          draft.numAnswered > 0 ||
-          draft.round > 0
+          !player ||
+          draft.players.size <= 1
         ) {
           return;
         }
-        // Don't allow the only player to be kicked.
-        if (draft.players.size === 1) {
-          return;
+        transferBoardControl(draft, userId);
+        transferCheckCorrectionBoardControl(draft, userId);
+        draft.players.delete(userId);
+        if (isGameUnderway(draft)) {
+          // Like leaving: the player stays on the summary with their points
+          // and gets their seat back if they join again.
+          draft.leftPlayers.set(userId, player);
+        } else {
+          forgetEmptyTeamNames(draft);
         }
-        transferBoardControl(draft, action.payload.userId);
-        draft.players.delete(action.payload.userId);
-        forgetEmptyTeamNames(draft);
       });
+    }
     case ActionType.Leave:
       if (!isPlayerAction(action)) {
         throw new Error("PlayerLeave action must have an associated player");
