@@ -5,6 +5,7 @@ import type { TeamId } from "~/models/team";
 import { hasChoices } from "~/utils/choices";
 
 import { DEFAULT_AUTO_WRONG_ON_TIMEOUT } from "./answer-timer";
+import { DEFAULT_ROOM_TIMERS } from "./room-timers";
 
 /** UNREVEALED_PLACEHOLDER is used when a field was not revealed in the game
  * playthrough.
@@ -157,6 +158,24 @@ export interface State {
    * device sent a timed-out check), so everyone can be told "Time's up!"
    * after the question moves on. Cleared when the next turn starts. */
   readonly answerTimedOut: { userId: string; startedAt: number } | null;
+
+  // room timers (room settings, see room-timers.ts). Older saved solo states
+  // and rooms without such settings use DEFAULT_ROOM_TIMERS.
+  /** Seconds the question is "read" before the buzzers open; null = Auto
+   * (from the question's text and media, or its pack hint). */
+  readonly readTimeSec: number | null;
+  /** Seconds players have to buzz in once the buzzers open. */
+  readonly buzzWindowSec: number;
+  /** Seconds to write the Final (long-form) answer. */
+  readonly finalAnswerTimeSec: number;
+  /** Seconds to place a wager; 0 = unlimited. */
+  readonly wagerTimeSec: number;
+  /** When the current wager step (WagerClue) started: the timestamp of the
+   * event that opened it. null outside it. */
+  readonly wagerStartedAt: number | null;
+  /** When the current Final answer step (ReadLongFormClue) started. null
+   * outside it. */
+  readonly longFormStartedAt: number | null;
 }
 
 /** stateFromGame creates a new initial state based on the game. */
@@ -189,6 +208,9 @@ export function stateFromGame(game: Game) {
     autoWrongOnTimeout: DEFAULT_AUTO_WRONG_ON_TIMEOUT,
     answerStartedAt: null,
     answerTimedOut: null,
+    ...DEFAULT_ROOM_TIMERS,
+    wagerStartedAt: null,
+    longFormStartedAt: null,
   };
 
   for (let round = 0; round < game.boards.length; round++) {
