@@ -24,6 +24,8 @@ export interface ClueWithMedia {
   answerMedia?: MediaBlock[];
   /** Options of a multiple choice clue; read together with the clue. */
   choices?: string[];
+  /** The question's own reading time (pack hint), in seconds. */
+  readTimeSec?: number;
 }
 
 /** MAX_MEDIA_BLOCKS caps the number of media blocks per clue/answer. */
@@ -196,4 +198,29 @@ export function getClueReadMs(clue: ClueWithMedia): number {
   if (hasPlayableMedia(media)) return Math.max(textMs, PLAYBACK_READ_MS);
   if (media.length > 0) return Math.max(textMs, IMAGE_READ_MS);
   return textMs;
+}
+
+/** READ_REOPENED_MS is how long the question is "re-read" after a wrong
+ * answer before the buzzers open again for the others. */
+export const READ_REOPENED_MS = 1000;
+
+/** getRoomReadMs is how long the buzzers stay locked while the question is
+ * read, with the room's reading time setting (State.readTimeSec): a fixed
+ * number of seconds, or with "Auto" (null) the question's own hint
+ * (`readTimeSec`, e.g. from a SIGame pack) or else getClueReadMs. A re-read
+ * after a wrong answer takes READ_REOPENED_MS, or less when the room's fixed
+ * reading time is shorter. */
+export function getRoomReadMs(
+  clue: ClueWithMedia,
+  readTimeSec: number | null,
+  { reRead = false }: { reRead?: boolean } = {},
+): number {
+  if (reRead) {
+    return readTimeSec === null
+      ? READ_REOPENED_MS
+      : Math.min(READ_REOPENED_MS, readTimeSec * 1000);
+  }
+  if (readTimeSec !== null) return readTimeSec * 1000;
+  if (clue.readTimeSec !== undefined) return clue.readTimeSec * 1000;
+  return getClueReadMs(clue);
 }

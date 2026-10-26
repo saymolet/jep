@@ -160,4 +160,10 @@ export const play = {
   "play.answerTimer.countedWrong": "Your answer counts as wrong.",
   "play.answerTimer.markNow": "Mark your answer now.",
   "play.answerTimer.ranOutOfTime": "{name} ran out of time.",
+  "play.stepTimer.wagerLabel": "Time to wager",
+  "play.stepTimer.finalLabel": "Time to write the answer",
+  "play.wager.timerHint": "When the time runs out, you wager {amount}.",
+  "play.wager.timeUp": "Time's up! Your wager: {amount}.",
+  "play.answer.timerHint": "When the time runs out, what you typed is sent.",
+  "play.answer.timeUpSent": "Time's up! Your answer was sent.",
 } as const;

@@ -1,4 +1,5 @@
-import { CANT_BUZZ_FLAG, CLUE_TIMEOUT_MS } from "~/engine/engine";
+import { CANT_BUZZ_FLAG } from "~/engine/engine";
+import { getBuzzWindowMs } from "~/engine/room-timers";
 import type { Player } from "~/engine/state";
 import { GameState, isSecretClue } from "~/engine/state";
 import type { useEngineContext } from "~/engine/use-engine-context";
@@ -44,7 +45,9 @@ export type ViewerStatusInput = Pick<
   | "wagers"
   | "winningBuzzer"
   | "answeredBy"
->;
+> &
+  /** The room's buzz window (default 5 s). */
+  Partial<Pick<Engine, "buzzWindowSec">>;
 
 /** isSingleLongFormBoard is a final round: one category with one long-form
  * question. */
@@ -117,7 +120,7 @@ export function getViewerStatus(
       return { kind: "passing", name: nameOf(boardControl) };
     case GameState.ReadClue: {
       const someoneBuzzed = Array.from(engine.buzzes.values()).some(
-        (b) => b !== CANT_BUZZ_FLAG && b <= CLUE_TIMEOUT_MS,
+        (b) => b !== CANT_BUZZ_FLAG && b <= getBuzzWindowMs(engine),
       );
       return buzzersOpen || someoneBuzzed
         ? { kind: "buzzersOpen" }

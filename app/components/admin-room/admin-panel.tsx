@@ -8,13 +8,13 @@ import { XMark } from "~/components/icons";
 import { PlayerIcon } from "~/components/player/player-icon";
 import { PROMPT_STATES } from "~/components/prompt/prompt";
 import {
-  CLUE_TIMEOUT_MS,
   GameState,
   getWagerRange,
   type Player,
   useEngineContext,
 } from "~/engine";
 import type { AdminStep } from "~/engine/admin";
+import { getNoBuzzMs } from "~/engine/room-timers";
 import { clueIsPlayable } from "~/engine/state";
 import { useTranslation } from "~/i18n";
 import { formatDollars } from "~/utils";
@@ -293,7 +293,7 @@ function PassForPlayer({
 
 function BuzzForPlayer({ roomId, userId }: { roomId: number; userId: string }) {
   const { t } = useTranslation();
-  const { activeClue, players } = useEngineContext();
+  const { activeClue, players, buzzWindowSec } = useEngineContext();
   const { send, busy } = usePlayerStep(roomId, "buzz");
   if (!activeClue) return null;
   const name = nameOf(players, userId);
@@ -318,7 +318,7 @@ function BuzzForPlayer({ roomId, userId }: { roomId: number; userId: string }) {
         type="button"
         className={SECONDARY}
         disabled={busy}
-        onClick={() => buzz(CLUE_TIMEOUT_MS + 1)}
+        onClick={() => buzz(getNoBuzzMs({ buzzWindowSec }))}
       >
         {t("room.admin.passBuzz", { name })}
       </button>

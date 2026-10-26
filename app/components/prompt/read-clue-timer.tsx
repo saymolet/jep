@@ -1,13 +1,18 @@
 import clsx from "clsx";
 
+import { CLUE_TIMEOUT_MS } from "~/engine/engine";
+
 /** ReadClueTimer is a white bar which scrolls across the screen for
- * clueDurationMs. */
+ * clueDurationMs, then shrinks back over the buzz window. */
 export function ReadClueTimer({
   clueDurationMs,
+  buzzWindowMs = CLUE_TIMEOUT_MS,
   shouldAnimate,
   wonBuzz,
 }: {
   clueDurationMs: number;
+  /** The room's buzz window (State.buzzWindowSec). */
+  buzzWindowMs?: number;
   shouldAnimate: boolean;
   wonBuzz: boolean;
 }) {
@@ -23,7 +28,7 @@ export function ReadClueTimer({
         animation: shouldAnimate
           ? `${clueDurationMs / 1000}s linear 0s 1 growFromLeft forwards,
              ${clueDurationMs / 1000}s linear 0s 1 turnGreen forwards,
-             5s linear ${clueDurationMs / 1000}s 1 shrinkToLeft forwards`
+             ${buzzWindowMs / 1000}s linear ${clueDurationMs / 1000}s 1 shrinkToLeft forwards`
           : "none",
       }}
     />

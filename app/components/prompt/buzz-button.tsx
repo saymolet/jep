@@ -35,9 +35,9 @@ export type BuzzButtonState =
   | { kind: "won" };
 
 /** isValidBuzz is true for a real buzz (not a "can't buzz" flag or a
- * timeout). */
-function isValidBuzz(ms: number) {
-  return ms !== CANT_BUZZ_FLAG && ms <= CLUE_TIMEOUT_MS;
+ * timeout past the room's buzz window). */
+function isValidBuzz(ms: number, buzzWindowMs: number) {
+  return ms !== CANT_BUZZ_FLAG && ms <= buzzWindowMs;
 }
 
 /** getBuzzButtonState derives what the BUZZ button shows from the prompt's
@@ -48,12 +48,15 @@ export function getBuzzButtonState({
   buzzes,
   userId,
   players,
+  buzzWindowMs = CLUE_TIMEOUT_MS,
 }: {
   lockout: boolean;
   buzzerOpen: boolean;
   buzzes: Map<string, number>;
   userId: string;
   players: Map<string, Player>;
+  /** The room's buzz window (State.buzzWindowSec). */
+  buzzWindowMs?: number;
 }): BuzzButtonState {
   if (lockout) return { kind: "tooEarly" };
   const mine = buzzes.get(userId);
@@ -61,10 +64,10 @@ export function getBuzzButtonState({
 
   let fastest: [string, number] | undefined;
   for (const [id, ms] of buzzes) {
-    if (id === userId || !isValidBuzz(ms)) continue;
+    if (id === userId || !isValidBuzz(ms, buzzWindowMs)) continue;
     if (!fastest || ms < fastest[1]) fastest = [id, ms];
   }
-  if (mine !== undefined && isValidBuzz(mine)) {
+  if (mine !== undefined && isValidBuzz(mine, buzzWindowMs)) {
     if (!fastest || mine <= fastest[1]) return { kind: "won" };
   }
   if (fastest) {

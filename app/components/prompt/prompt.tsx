@@ -7,17 +7,17 @@ import type { RoomProps } from "~/components/game";
 import type { Action, Player } from "~/engine";
 import {
   CANT_BUZZ_FLAG,
-  CLUE_TIMEOUT_MS,
   GameState,
   QUANTIZATION_FACTOR_MS,
   useEngineContext,
 } from "~/engine";
+import { getBuzzWindowMs, getNoBuzzMs } from "~/engine/room-timers";
 import { getSecretTopic, isSecretClue } from "~/engine/state";
 import { useTranslation } from "~/i18n";
 import type { Clue } from "~/models/convert.server";
 import { hasChoices } from "~/utils/choices";
 import type { MediaBlock } from "~/utils/media";
-import { getClueMedia, getClueReadMs, hasPlayableMedia } from "~/utils/media";
+import { getClueMedia, getRoomReadMs, hasPlayableMedia } from "~/utils/media";
 import useFitText from "~/utils/use-fit-text";
 import useKeyPress from "~/utils/use-key-press";
 import useSoloAction from "~/utils/use-solo-action";
@@ -45,19 +45,23 @@ import { ConnectedNextClueForm as NextClueForm } from "./next-clue-form";
 import { ConnectedPassCluePrompt } from "./pass-clue";
 import { ReadClueTimer } from "./read-clue-timer";
 import ShinyText from "./shiny-text";
+import {
+  FinalAnswerTimer,
+  useFinalAnswerTimer,
+  useWagerTimer,
+  WagerTimer,
+} from "./step-timers";
 import { ConnectedWagerForm as WagerForm } from "./wager-form";
 
-/** READ_REOPENED_MS is the amount of time to "re-read" the clue after a
- * failed buzz before re-opening the buzzers.
- */
-const READ_REOPENED_MS = 1000;
+/** ANSWER_HINT_MS: without the answer timer, the buzz winner hears the
+ * "time's up" sound after this long as a hint (nothing is enforced). */
+const ANSWER_HINT_MS = 5000;
 
 /** LOCKOUT_MS applies a 250ms lockout if a contestant buzzes before the clue is
  * done being read.
  */
 const LOCKOUT_MS = 250;
 
-const LONG_FORM_CLUE_DURATION_SEC = 30;
 const TIMES_UP_SFX = "/sounds/times-up.mp3";
 const LONG_FORM_SFX = "/sounds/long-form.mp3";
 
@@ -264,6 +268,7 @@ function WagerCluePrompt({ roomId, userId }: RoomProps) {
   const { clue, boardControl, buzzes, category, players } = useEngineContext();
   const { t } = useTranslation();
   const { ref, fontSize } = useFitText<HTMLDivElement>({ maxFontSize: 300 });
+  const wagerTimer = useWagerTimer();
 
   const canWager = buzzes.get(userId) !== CANT_BUZZ_FLAG;
   const wagererName = boardControl
@@ -306,7 +311,7 @@ function WagerCluePrompt({ roomId, userId }: RoomProps) {
         )}
       </div>
       {canWager ? (
-        <WagerForm roomId={roomId} userId={userId} />
+        <WagerForm roomId={roomId} userId={userId} timer={wagerTimer} />
       ) : longForm ? (
         <div className="flex flex-col items-center gap-2 p-2">
           <p className="font-bold text-white">{t("play.notEnoughToWager")}</p>
@@ -317,7 +322,11 @@ function WagerCluePrompt({ roomId, userId }: RoomProps) {
           {t("play.waitingForResponse", { name: wagererName })}
         </p>
       )}
-      <Countdown startTime={undefined} />
+      {wagerTimer.startedAt !== null ? (
+        <WagerTimer timer={wagerTimer} />
+      ) : (
+        <Countdown startTime={undefined} />
+      )}
       <Buzzes />
     </>
   );
@@ -334,8 +343,12 @@ function ReadWagerableCluePrompt({ roomId, userId }: RoomProps) {
     category,
     clue,
     getClueValue,
+    readTimeSec,
+    buzzWindowSec,
     soloDispatch,
   } = useEngineContext();
+  const buzzWindowMs = getBuzzWindowMs({ buzzWindowSec });
+  const noBuzzMs = getNoBuzzMs({ buzzWindowSec });
 
   const clueMedia = useClueMedia();
   const { rich } = useTranslation();
@@ -352,7 +365,7 @@ function ReadWagerableCluePrompt({ roomId, userId }: RoomProps) {
   useSoloAction(fetcher, soloDispatch);
   const submit = fetcher.submit;
 
-  const clueDurationMs = getClueReadMs(clue);
+  const clueDurationMs = getRoomReadMs(clue, readTimeSec);
 
   /** submitBuzz submits a buzz of deltaMs to the server. */
   const submitBuzz = React.useCallback(
@@ -375,24 +388,23 @@ function ReadWagerableCluePrompt({ roomId, userId }: RoomProps) {
   const delayMs = buzzDurationMs === undefined ? clueDurationMs : null;
   useTimeout(() => setBuzzerOpenAt(Date.now()), delayMs);
 
-  // If the player with board control does nothing for 5 seconds after the
-  // buzzer opens, close the buzzer and send a 5-second timeout to the server.
+  // If the player with board control does nothing for the room's buzz
+  // window after the buzzer opens, close the buzzer and send a "no buzz"
+  // (one millisecond past the window) to the server.
   useTimeout(
     () => {
       if (!buzzerOpenAt) return;
-      submitBuzz(CLUE_TIMEOUT_MS + 1);
+      submitBuzz(noBuzzMs);
     },
-    buzzerOpenAt !== undefined && boardControl === userId
-      ? CLUE_TIMEOUT_MS + 1
-      : null,
+    buzzerOpenAt !== undefined && boardControl === userId ? noBuzzMs : null,
   );
 
-  // Play the "time's up" sound after 5 seconds if no one buzzed in after the
-  // buzzer opened.
+  // Play the "time's up" sound after the buzz window if no one buzzed in
+  // after the buzzer opened.
   const [playTimesUpSfx] = useGameSound(TIMES_UP_SFX);
   useTimeout(
     playTimesUpSfx,
-    buzzerOpenAt === undefined || buzzDurationMs ? null : CLUE_TIMEOUT_MS,
+    buzzerOpenAt === undefined || buzzDurationMs ? null : buzzWindowMs,
   );
 
   const handleClick = (clickedAtMs: number) => {
@@ -412,11 +424,12 @@ function ReadWagerableCluePrompt({ roomId, userId }: RoomProps) {
     <>
       <ReadClueTimer
         clueDurationMs={clueDurationMs}
+        buzzWindowMs={buzzWindowMs}
         shouldAnimate={buzzDurationMs === undefined}
         wonBuzz={
           buzzDurationMs !== undefined &&
           buzzDurationMs !== CANT_BUZZ_FLAG &&
-          buzzDurationMs <= CLUE_TIMEOUT_MS
+          buzzDurationMs <= buzzWindowMs
         }
       />
       <div className="flex justify-between p-4">
@@ -458,8 +471,12 @@ function ReadCluePrompt({
     clue,
     getClueValue,
     players,
+    readTimeSec,
+    buzzWindowSec,
     soloDispatch,
   } = useEngineContext();
+  const buzzWindowMs = getBuzzWindowMs({ buzzWindowSec });
+  const noBuzzMs = getNoBuzzMs({ buzzWindowSec });
 
   const clueMedia = useClueMedia();
   const { t, rich } = useTranslation();
@@ -476,7 +493,7 @@ function ReadCluePrompt({
       Array.from(buzzes.values()).some((b) => b === CANT_BUZZ_FLAG),
   );
   const [clueDurationMs] = React.useState(() =>
-    isReRead ? READ_REOPENED_MS : getClueReadMs(clue),
+    getRoomReadMs(clue, readTimeSec, { reRead: isReRead }),
   );
 
   const [optimisticBuzzes, setOptimisticBuzzes] = React.useState(buzzes);
@@ -529,10 +546,7 @@ function ReadCluePrompt({
             0,
             buzz + QUANTIZATION_FACTOR_MS - deltaMs,
           );
-          timeout = setTimeout(
-            () => submitBuzz(CLUE_TIMEOUT_MS + 1),
-            remainingMs,
-          );
+          timeout = setTimeout(() => submitBuzz(noBuzzMs), remainingMs);
           break;
         }
       }
@@ -554,14 +568,15 @@ function ReadCluePrompt({
     return () => {
       if (timeout) clearTimeout(timeout);
     };
-  }, [buzzes, buzzerOpenAt, myBuzzDurationMs, userId, submitBuzz]);
+  }, [buzzes, buzzerOpenAt, myBuzzDurationMs, userId, submitBuzz, noBuzzMs]);
 
   // Open the buzzer after the clue is done being "read".
   const delayMs = myBuzzDurationMs === undefined ? clueDurationMs : null;
   useTimeout(() => setBuzzerOpenAt(Date.now()), delayMs);
 
-  // If nothing happens for 5 seconds after the buzzer opens, close the buzzer
-  // and send a 5-second "non-buzz" buzz to the server.
+  // If nothing happens for the room's buzz window after the buzzer opens,
+  // close the buzzer and send a "no buzz" (one millisecond past the window)
+  // to the server.
   useTimeout(
     () => {
       if (!buzzerOpenAt) return;
@@ -571,23 +586,23 @@ function ReadCluePrompt({
           if (prev) {
             return;
           }
-          draft.set(userId, CLUE_TIMEOUT_MS + 1);
+          draft.set(userId, noBuzzMs);
         }),
       );
-      submitBuzz(CLUE_TIMEOUT_MS + 1);
+      submitBuzz(noBuzzMs);
     },
-    buzzerOpenAt === undefined ? null : CLUE_TIMEOUT_MS + 1,
+    buzzerOpenAt === undefined ? null : noBuzzMs,
   );
 
-  // Play the "time's up" sound after 5 seconds if no one buzzed in after the
-  // buzzer opened.
+  // Play the "time's up" sound after the buzz window if no one buzzed in
+  // after the buzzer opened.
   const [playTimesUpSfx] = useGameSound(TIMES_UP_SFX);
   const someoneBuzzed = Array.from(optimisticBuzzes.values()).some(
-    (v) => v !== CANT_BUZZ_FLAG && v <= CLUE_TIMEOUT_MS,
+    (v) => v !== CANT_BUZZ_FLAG && v <= buzzWindowMs,
   );
   useTimeout(
     playTimesUpSfx,
-    buzzerOpenAt === undefined || someoneBuzzed ? null : CLUE_TIMEOUT_MS,
+    buzzerOpenAt === undefined || someoneBuzzed ? null : buzzWindowMs,
   );
 
   function handleClick(clickedAtMs: number) {
@@ -620,11 +635,12 @@ function ReadCluePrompt({
     <>
       <ReadClueTimer
         clueDurationMs={clueDurationMs}
+        buzzWindowMs={buzzWindowMs}
         shouldAnimate={myBuzzDurationMs === undefined}
         wonBuzz={
           myBuzzDurationMs !== undefined &&
           myBuzzDurationMs !== CANT_BUZZ_FLAG &&
-          myBuzzDurationMs <= CLUE_TIMEOUT_MS
+          myBuzzDurationMs <= buzzWindowMs
         }
       />
       <div className="flex justify-between gap-2 p-4">
@@ -672,6 +688,7 @@ function ReadCluePrompt({
           buzzes: optimisticBuzzes,
           userId,
           players,
+          buzzWindowMs,
         })}
         clueDurationMs={clueDurationMs}
         onBuzz={() => handleClick(Date.now())}
@@ -707,9 +724,9 @@ function ReadLongFormCluePrompt({ roomId, userId }: RoomProps) {
     buzzes.size === players.size &&
     Array.from(buzzes.values()).every((b) => b === CANT_BUZZ_FLAG);
 
-  const [countdownStartedAt] = React.useState(
-    myBuzzDurationMs === undefined ? Date.now() : undefined,
-  );
+  // The room's Final answer time, from when the step started (server
+  // clock): the same on every device.
+  const finalTimer = useFinalAnswerTimer();
 
   // Play the long form sound when the component mounts, unless the clue has
   // its own audio/video to listen to.
@@ -739,7 +756,7 @@ function ReadLongFormCluePrompt({ roomId, userId }: RoomProps) {
         answer={clue.answer}
       />
       {canAnswer ? (
-        <AnswerForm roomId={roomId} userId={userId} />
+        <AnswerForm roomId={roomId} userId={userId} timer={finalTimer} />
       ) : allPlayersCantAnswer ? (
         <div className="flex flex-col items-center gap-2 p-2">
           <p className="font-bold text-white">{t("play.noOneCanWagerRead")}</p>
@@ -752,10 +769,7 @@ function ReadLongFormCluePrompt({ roomId, userId }: RoomProps) {
           </p>
         </div>
       )}
-      <Countdown
-        startTime={countdownStartedAt}
-        durationSec={LONG_FORM_CLUE_DURATION_SEC}
-      />
+      <FinalAnswerTimer timer={finalTimer} />
       <Buzzes />
     </>
   );
@@ -827,7 +841,7 @@ function RevealAnswerToBuzzerPrompt({ roomId, userId }: RoomProps) {
   const [playTimesUpSfx] = useGameSound(TIMES_UP_SFX);
   useTimeout(
     playTimesUpSfx,
-    hintCountdown && !showAnswer ? CLUE_TIMEOUT_MS : null,
+    hintCountdown && !showAnswer ? ANSWER_HINT_MS : null,
   );
   const [countdownStartedAt] = React.useState(
     hintCountdown && !showAnswer ? Date.now() : undefined,
@@ -1025,10 +1039,7 @@ function RevealAnswerLongFormPrompt({ roomId, userId }: RoomProps) {
           );
         })}
       </div>
-      <Countdown
-        startTime={undefined}
-        durationSec={LONG_FORM_CLUE_DURATION_SEC}
-      />
+      <Countdown startTime={undefined} />
       <Buzzes />
     </>
   );
