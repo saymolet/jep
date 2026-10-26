@@ -341,6 +341,26 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      admin_media_objects: {
+        Args: never;
+        Returns: {
+          created_at: string;
+          name: string;
+          size: number;
+        }[];
+      };
+      admin_recent_rooms: {
+        Args: { max_count: number; skip: number };
+        Returns: {
+          event_count: number;
+          game_id: string;
+          game_title: string;
+          last_activity: string;
+          room_id: number;
+          room_name: string;
+        }[];
+      };
+      admin_stats: { Args: never; Returns: Json };
       random_board_categories: {
         Args: { max_count: number };
         Returns: {
