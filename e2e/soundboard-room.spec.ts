@@ -114,3 +114,39 @@ test.describe("soundboard in a room", () => {
     await guestContext.close();
   });
 });
+
+test.describe("soundboard button placement", () => {
+  test("doesn't cover the footer links on a phone", async ({
+    authedPage: host,
+  }) => {
+    test.setTimeout(60_000);
+    await host.setViewportSize({ width: 390, height: 844 });
+    await goto(host, "/profile");
+    const gameId = await uploadGame(host);
+    await goto(host, `/game/${gameId}/play`);
+    await expect(host).toHaveURL(/\/room\/\d+-\w+$/);
+    await waitForConnected(host);
+    await join(host);
+    const start = host.getByRole("button", { name: /start round/i });
+    await expect(async () => {
+      if (await start.isVisible()) {
+        await start.click({ timeout: 2_000 });
+      }
+      await expect(start).toBeHidden({ timeout: 5_000 });
+    }).toPass({ timeout: 30_000 });
+
+    const button = host.getByTestId("soundboard-button");
+    await expect(button).toBeVisible();
+    // Scroll to the end, where the fixed button used to sit on the footer.
+    await host.evaluate(() =>
+      window.scrollTo(0, document.documentElement.scrollHeight),
+    );
+    const footer = host.locator("footer");
+    await expect(footer).toBeVisible();
+    const b = await button.boundingBox();
+    const f = await footer.boundingBox();
+    expect(b && f).toBeTruthy();
+    // The button sits entirely below the footer.
+    expect(b!.y).toBeGreaterThanOrEqual(f!.y + f!.height - 1);
+  });
+});

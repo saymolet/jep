@@ -546,3 +546,10 @@
     --color-yellow-1000: #e3b25f;
   }
 }
+
+/* The soundboard's 🎺 button is fixed to the bottom-left corner; when the
+ * page is scrolled to the end it covered the footer links. Reserve room for
+ * it (3rem button + 0.75rem gap + breathing room) below the footer. */
+body:has([data-testid="soundboard-button"]) {
+  padding-bottom: calc(4.5rem + env(safe-area-inset-bottom));
+}
