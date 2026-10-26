@@ -120,8 +120,14 @@ Difficulty estimates from the original planning discussion.
       still found after logging in) — see
       [features/17-standings-resume.md](./features/17-standings-resume.md) — ⭐⭐ medium
 
-Question search ·
-admin panel · Discord login · keyboard shortcuts ·
+- [x] Admin panel (F12e) — `/admin` (no link anywhere, `noindex`), gated by its own
+      `ADMIN_PASSWORD` (server env; unset = 404), constant-time check, per-IP lockout, 12 h
+      admin session + CSRF token in the session cookie; dashboard (counts, Storage and DB
+      usage of the free plan), games (search, visibility, delete with the media no other
+      game uses), rooms, reports, unused Storage files cleanup — see
+      [features/18-admin.md](./features/18-admin.md) — ⭐⭐ medium
+
+Question search · Discord login · keyboard shortcuts ·
 OBS/browser-source mode ·
 auto-reconnect · host controls from phone ·
 "Своя Игра" theme (Classic and Dark are done, see above).
@@ -211,3 +217,8 @@ auto-reconnect · host controls from phone ·
   (account + guest cookie ids, replayed rooms, max 6 from the last 7 days). Migration
   `20261026021235_user_rooms_in_progress.sql` (partial index on `join` events' userId + SQL
   function `user_rooms_in_progress`). No new dependencies.
+- **2026-10-26** — Feature 18 on `feat/admin`: admin panel (`/admin`, `ADMIN_PASSWORD` env var,
+  `requireAdmin` on every admin loader/action, login lockout, dashboard, games / rooms /
+  reports moderation, game delete removes its unshared media, orphaned media cleanup).
+  Migration `20261026033929_admin_panel.sql` (three service-role-only SQL functions:
+  `admin_stats`, `admin_media_objects`, `admin_recent_rooms`). No new dependencies.

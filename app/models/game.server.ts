@@ -211,6 +211,8 @@ function getPagination(page: number, pageSize: number = RESULTS_PER_PAGE) {
 export async function getGame(
   gameId: string,
   userId?: string,
+  /** The admin panel opens private games too. */
+  { ignoreVisibility = false }: { ignoreVisibility?: boolean } = {},
 ): Promise<Game | null> {
   const { data: gameData, error: gameErr } = await getSupabaseAdmin()
     .from("games")
@@ -226,7 +228,11 @@ export async function getGame(
     return null;
   }
 
-  if (game.visibility === "PRIVATE" && game.uploaded_by !== userId) {
+  if (
+    !ignoreVisibility &&
+    game.visibility === "PRIVATE" &&
+    game.uploaded_by !== userId
+  ) {
     return null;
   }
 

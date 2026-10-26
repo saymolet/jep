@@ -5,6 +5,16 @@ import { getPageMetadata, getSearchMetadata, INDEXABLE_PATHS } from "./seo";
 const BASE_URL = "https://whatis.club";
 
 describe("getSearchMetadata", () => {
+  it.each(["/admin", "/admin/", "/admin/login", "/admin/games/abc"])(
+    "never indexes or follows the admin page %s",
+    (pathname) => {
+      expect(getSearchMetadata(pathname, BASE_URL, true)).toEqual({
+        canonicalUrl: undefined,
+        robots: "noindex, nofollow",
+      });
+    },
+  );
+
   it.each(INDEXABLE_PATHS)("indexes public page %s", (pathname) => {
     expect(getSearchMetadata(pathname, BASE_URL)).toEqual({
       canonicalUrl: new URL(pathname, BASE_URL).toString(),

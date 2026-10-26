@@ -45,6 +45,20 @@ random candidates from PUBLIC games for the random board generator
 `room_events_join_user_id_idx` on `join` events' `payload->>'userId'`), for "Your games in
 progress" (see [features/17-standings-resume.md](./features/17-standings-resume.md)).
 
+`admin_stats()`, `admin_media_objects()`, `admin_recent_rooms(max_count, skip)` — the admin
+panel's dashboard counts, the `game-media` file list and the rooms list; `SECURITY DEFINER`,
+executable by the service role only (see [features/18-admin.md](./features/18-admin.md)).
+
+## Admin panel
+
+`/admin/*` (feature 18) is gated by the `ADMIN_PASSWORD` server env var (unset → 404), not by
+a user role. Every admin loader and action starts with `requireAdmin(request)`
+(`app/admin/auth.server.ts`): 404 when off, redirect to `/admin/login` without a valid admin
+session (expiry + password fingerprint in the signed session cookie), and a CSRF token check
+on every POST. Admin data access is in `app/models/admin.server.ts` (service role, server
+only). A new admin route must call `requireAdmin` first — `app/admin/require-admin.test.ts`
+checks every `app/routes/admin*.tsx` module automatically.
+
 ## Realtime / rooms
 
 - Supabase Realtime drives multiplayer. `rooms` + `room_events` tables; buzzing and

@@ -28,4 +28,9 @@ export SUPABASE_URL="${SUPABASE_URL:?Local Supabase API URL was not reported}"
 export SUPABASE_ANON_KEY="${SUPABASE_ANON_KEY:?Local Supabase anon key was not reported}"
 export SUPABASE_SERVICE_ROLE_KEY="${SUPABASE_SERVICE_ROLE_KEY:?Local Supabase service role key was not reported}"
 
+# The admin panel is off without ADMIN_PASSWORD. E2E tests log in to it with
+# this test-only password (baked into the test build; the production build
+# uses the password from its own environment).
+export ADMIN_PASSWORD="${ADMIN_PASSWORD:-e2e-admin-password}"
+
 exec "$@"
