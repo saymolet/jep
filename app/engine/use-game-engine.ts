@@ -6,6 +6,7 @@ import type { Clue, Game } from "~/models/convert.server";
 import type { DbRoomEvent } from "~/models/room-event.server";
 import { getSupabase } from "~/supabase";
 import { noteServerTime } from "~/utils/server-clock";
+import { SOUNDBOARD_EVENT } from "~/utils/soundboard/messages";
 
 import type { Action } from "./engine";
 import {
@@ -15,6 +16,11 @@ import {
   parseUtcMs,
 } from "./engine";
 import { countWatchers, type PresenceRole } from "./presence";
+import {
+  createListenerSet,
+  NO_BROADCAST,
+  type RoomBroadcast,
+} from "./room-broadcast";
 import {
   applyRoomEventsToState,
   compareRoomEvents,
@@ -76,11 +82,13 @@ export function stateToGameEngine(
     lastMessageAt,
     reconnect,
     watchers = 0,
+    soundboard = NO_BROADCAST,
   }: {
     connectionState: ConnectionState;
     lastMessageAt?: number;
     reconnect?: () => void;
     watchers?: number;
+    soundboard?: RoomBroadcast;
   },
 ) {
   // Board may be undefined
@@ -164,6 +172,9 @@ export function stateToGameEngine(
     /** How many people are watching the room without playing (spectators,
      * counted with Realtime presence; 0 in solo play). */
     watchers,
+    /** Soundboard sounds on the room channel (Realtime broadcast, never
+     * stored); unavailable in solo play. */
+    soundboard,
   };
 }
 
@@ -277,6 +288,28 @@ export function useGameEngine(
     }
   }, [presence]);
 
+  // Soundboard: ephemeral Realtime broadcasts on the same channel. Listeners
+  // survive reconnects (they are not tied to one channel instance).
+  const soundboardListeners =
+    React.useRef(createListenerSet<unknown>()).current;
+  const soundboard = React.useMemo<RoomBroadcast>(
+    () => ({
+      available: true,
+      send(payload) {
+        const channel = channelRef.current;
+        if (!channel || channel.state !== "joined") return false;
+        channel
+          .send({ type: "broadcast", event: SOUNDBOARD_EVENT, payload })
+          .catch((err: unknown) =>
+            console.warn("Soundboard broadcast failed:", err),
+          );
+        return true;
+      },
+      subscribe: soundboardListeners.add,
+    }),
+    [soundboardListeners],
+  );
+
   React.useEffect(() => {
     let disposed = false;
     const channel = client.channel(`realtime:roomId:${roomId}`, {
@@ -365,6 +398,10 @@ export function useGameEngine(
       .on("presence", { event: "sync" }, () => {
         if (disposed) return;
         setWatchers(countWatchers(channel.presenceState()));
+      })
+      .on("broadcast", { event: SOUNDBOARD_EVENT }, (message) => {
+        if (disposed) return;
+        soundboardListeners.emit(message.payload);
       })
       .subscribe((status, err) => {
         if (disposed) return;
@@ -457,13 +494,14 @@ export function useGameEngine(
       if (channelRef.current === channel) channelRef.current = null;
       client.removeChannel(channel);
     };
-  }, [client, roomId, reconnectTrigger, ingestEvents]);
+  }, [client, roomId, reconnectTrigger, ingestEvents, soundboardListeners]);
 
   return stateToGameEngine(game, state, dispatch, {
     connectionState,
     lastMessageAt,
     reconnect,
     watchers,
+    soundboard,
   });
 }
 

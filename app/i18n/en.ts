@@ -15,6 +15,7 @@ import {
   room,
   settings,
   siq,
+  soundboard,
   summary,
   team,
   upload,
@@ -48,4 +49,5 @@ export const en = {
   ...random,
   ...watch,
   ...team,
+  ...soundboard,
 } as const satisfies Messages;

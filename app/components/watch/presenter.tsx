@@ -9,6 +9,7 @@ import { PlayerIcon, PlayerScore } from "~/components/player";
 import { PROMPT_STATES } from "~/components/prompt/prompt";
 import { QrCode } from "~/components/qr-code";
 import SoundControl from "~/components/sound";
+import { Soundboard } from "~/components/soundboard";
 import { getTeamName, TeamSwatch } from "~/components/team/team";
 import { GameState, useEngineContext } from "~/engine";
 import type { Player } from "~/engine";
@@ -401,6 +402,8 @@ export function Presenter({ game, joinUrl }: { game: Game; joinUrl: string }) {
         </p>
       ) : null}
       <PausedOverlay roomId={-1} canResume={false} />
+      {/* Players' reaction sounds: the TV only listens. */}
+      <Soundboard userId={null} variant="tv" />
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import * as React from "react";
 
+import { SoundboardMuteToggle } from "~/components/soundboard/soundboard";
 import { useTranslation } from "~/i18n";
 import { useSoundSettings } from "~/utils/user-settings";
 
@@ -9,9 +10,12 @@ import { VolumeSlider } from "./volume-slider";
 export function SoundControl({
   showLabel = true,
   showSlider = true,
+  showSoundboard = showSlider,
 }: {
   showLabel?: boolean;
   showSlider?: boolean;
+  /** Also show "Mute soundboard on this device". */
+  showSoundboard?: boolean;
 }) {
   const { t } = useTranslation();
   const sound = useSoundSettings();
@@ -54,6 +58,7 @@ export function SoundControl({
           />
         )}
       </form>
+      {showSoundboard ? <SoundboardMuteToggle className="pt-1" /> : null}
     </div>
   );
 }

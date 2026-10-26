@@ -53,6 +53,10 @@ random candidates from PUBLIC games for the random board generator
 - Presence: the same room channel carries Realtime presence. Each client may announce a role
   (`player` / `spectator` / `presenter`, never names); `watchers` in the engine context is the
   number of spectators (see [features/11-spectator-presenter.md](./features/11-spectator-presenter.md)).
+- Broadcast: the same channel also carries ephemeral Realtime broadcasts (event `soundboard`)
+  exposed as `engine.soundboard` (`RoomBroadcast`); never stored, not part of the replayed
+  state. Payloads are untrusted and validated by the receiver
+  (see [features/15-soundboard.md](./features/15-soundboard.md)).
 - Read-only viewers (spectators, the TV page `/room/:roomName/present`) render the same engine
   context through `components/watch/` (`getViewerStatus`, `ViewerPromptContent`); they never
   submit room actions.

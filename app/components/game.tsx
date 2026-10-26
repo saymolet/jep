@@ -10,6 +10,7 @@ import { PauseControl, PausedOverlay } from "~/components/pause";
 import { PlayerScores } from "~/components/player";
 import Preview from "~/components/preview";
 import Prompt from "~/components/prompt";
+import { Soundboard } from "~/components/soundboard";
 import { UndoArmingContext, UndoArmingProvider } from "~/components/undo-check";
 import { SpectatorBar, WatcherCount } from "~/components/watch/spectator-bar";
 import { SpectatorPrompt } from "~/components/watch/viewer-prompt";
@@ -115,6 +116,7 @@ export default function GameComponent({
     players,
     reconnect,
     round,
+    soundboard,
     type,
     watchers,
   } = useEngineContext();
@@ -187,8 +189,13 @@ export default function GameComponent({
         ) : (
           <SpectatorPrompt />
         )}
+        {isPlayer && soundboard.available ? (
+          // Room for the floating soundboard button below the page content.
+          <div className="h-16 shrink-0" aria-hidden />
+        ) : null}
       </div>
       <PausedOverlay roomId={roomId} canResume={isPlayer} />
+      <Soundboard userId={userId} />
       {!isPlayer && watching && onWatchingChange ? (
         <>
           {/* Room for the floating bar below the page content. */}
