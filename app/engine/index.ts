@@ -5,6 +5,7 @@ export {
   QUANTIZATION_FACTOR_MS,
   gameEngine,
   getHighestClueValue,
+  isGameUnderway,
 } from "./engine";
 export type { Action } from "./engine";
 export { GameState, clueIsPlayable } from "./state";

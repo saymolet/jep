@@ -48,6 +48,10 @@ progress" (see [features/17-standings-resume.md](./features/17-standings-resume.
 `admin_stats()`, `admin_media_objects()`, `admin_recent_rooms(max_count, skip)` — the admin
 panel's dashboard counts, the `game-media` file list and the rooms list; `SECURITY DEFINER`,
 executable by the service role only (see [features/18-admin.md](./features/18-admin.md)).
+`cleanup_inactive_rooms(max_idle, dry_run)` — deletes (or counts) rooms with no activity for
+`max_idle` (5 h, `ROOM_MAX_IDLE_HOURS` in `app/models/room-cleanup.js`); service role only;
+run hourly by `scripts/cleanup-inactive-rooms.mjs` and from the admin Rooms page
+(see [features/19-seat-lock-cleanup.md](./features/19-seat-lock-cleanup.md)).
 
 ## Admin panel
 
@@ -67,6 +71,12 @@ checks every `app/routes/admin*.tsx` module automatically.
   realtime INSERTs, catch-up fetches (on SUBSCRIBED, +3 s, visibility/online) and the
   room loader's snapshot after every own action (fetcher revalidation); all are merged
   by id via `mergeRoomEvents`, rebuilding state if one arrives out of order.
+- Who may insert which event: the browser key (anon/authenticated) may insert every
+  `room_events` type except `set_settings`, `kick`, `leave` and `transfer_player` (RLS insert
+  policy). Those are inserted by the server with the service role
+  (`createRoomEventAsServer`) after the route's checks; admin-only ones carry `admin: true`.
+  Seats are keyed by userId, locked once the game is underway (`isGameUnderway`), and a
+  Join never resets a seat (see [features/19-seat-lock-cleanup.md](./features/19-seat-lock-cleanup.md)).
 - Presence: the same room channel carries Realtime presence. Each client may announce a role
   (`player` / `spectator` / `presenter`, never names); `watchers` in the engine context is the
   number of spectators (see [features/11-spectator-presenter.md](./features/11-spectator-presenter.md)).

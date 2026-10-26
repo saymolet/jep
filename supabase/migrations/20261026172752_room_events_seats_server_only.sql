@@ -1,0 +1,24 @@
+-- Seats are changed only by the server (feature 19, seat lock).
+--
+-- room_events accepts inserts from the anon and authenticated roles (the
+-- browser key). Until now a modified client could therefore insert a `kick`
+-- (remove another player), a `leave` with someone else's userId (the same,
+-- disguised as leaving) or a `transfer_player` moving someone else's seat to
+-- itself, skipping every check of the routes. From now on these three event
+-- types are inserted by the server with the service role (which bypasses
+-- RLS) after the route checked who is asking:
+--   - kick / leave: DELETE /room/:roomId/player (players may kick only
+--     before the game is underway, the site admin any time between
+--     questions; a leave is always the visitor's own seat);
+--   - transfer_player: the room loader, from the visitor's own guest cookie
+--     to their own account.
+-- The insert policy keeps rejecting `set_settings` (migration
+-- 20261026123109_room_events_settings_admin_only.sql) and now rejects these
+-- three as well. Every other event type is accepted exactly as before.
+--
+-- Additive and backward compatible: no data changes, events already in the
+-- table stay as they are (and replay as before), the select policy and the
+-- realtime publication are untouched (realtime checks the subscriber's
+-- select policy, so service-role inserts are still delivered).
+alter policy "Enable insert for all users" on public.room_events
+  with check (type not in ('set_settings', 'kick', 'leave', 'transfer_player'));

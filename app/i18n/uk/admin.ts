@@ -35,7 +35,6 @@ export const admin: Dictionary<typeof en> = {
     other: "{count} гри",
   },
   "admin.dash.rooms24h": "Активні кімнати за 24 год",
-  "admin.dash.rooms7d": "Активні кімнати за 7 днів",
   "admin.dash.roomsTotal": "Усього кімнат",
   "admin.dash.roomEvents": "Подій у кімнатах",
   "admin.dash.accounts": "Акаунти",
@@ -135,6 +134,22 @@ export const admin: Dictionary<typeof en> = {
   "admin.rooms.deleteConfirm": "Видалити кімнату {room} і всі її події?",
   "admin.rooms.deleteYes": "Так, видалити",
   "admin.rooms.deleted": "Кімнату {room} видалено.",
+  "admin.rooms.cleanupInfo":
+    "Кімнати без активності понад {hours} год видаляються автоматично разом з їхніми подіями й результатами.",
+  "admin.rooms.cleanup": "Видалити кімнати без активності {hours} год зараз",
+  "admin.rooms.cleanupConfirm": {
+    one: "Видалити {count} кімнату без активності {hours} год?",
+    few: "Видалити {count} кімнати без активності {hours} год?",
+    many: "Видалити {count} кімнат без активності {hours} год?",
+    other: "Видалити {count} кімнати без активності {hours} год?",
+  },
+  "admin.rooms.cleanupNone": "Немає кімнат без активності понад {hours} год.",
+  "admin.rooms.cleanupDone": {
+    one: "Видалено {count} неактивну кімнату.",
+    few: "Видалено {count} неактивні кімнати.",
+    many: "Видалено {count} неактивних кімнат.",
+    other: "Видалено {count} неактивної кімнати.",
+  },
 
   "admin.reports.title": "Скарги",
   "admin.reports.count": {

@@ -188,7 +188,7 @@ export default function GameComponent({
               <GameClock roomId={roomId} readOnly={!isPlayer} />
             </div>
           </div>
-          <PlayerScores roomId={roomId} userId={userId} />
+          <PlayerScores roomId={roomId} userId={userId} isAdmin={isAdmin} />
           <Connection
             state={connectionState}
             lastMessageAt={lastMessageAt}

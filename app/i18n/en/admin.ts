@@ -28,7 +28,6 @@ export const admin = {
   "admin.dash.games": "Games",
   "admin.dash.gamesTotal": { one: "{count} game", other: "{count} games" },
   "admin.dash.rooms24h": "Rooms active in the last 24 h",
-  "admin.dash.rooms7d": "Rooms active in the last 7 days",
   "admin.dash.roomsTotal": "Rooms in total",
   "admin.dash.roomEvents": "Room events",
   "admin.dash.accounts": "Accounts",
@@ -107,6 +106,18 @@ export const admin = {
   "admin.rooms.deleteConfirm": "Delete room {room} and all its events?",
   "admin.rooms.deleteYes": "Yes, delete",
   "admin.rooms.deleted": "Deleted room {room}.",
+  "admin.rooms.cleanupInfo":
+    "Rooms with no activity for {hours} hours are deleted automatically, with their events and results.",
+  "admin.rooms.cleanup": "Delete rooms inactive for {hours} h now",
+  "admin.rooms.cleanupConfirm": {
+    one: "Delete {count} room inactive for {hours} hours?",
+    other: "Delete {count} rooms inactive for {hours} hours?",
+  },
+  "admin.rooms.cleanupNone": "No room has been inactive for {hours} hours.",
+  "admin.rooms.cleanupDone": {
+    one: "Deleted {count} inactive room.",
+    other: "Deleted {count} inactive rooms.",
+  },
 
   "admin.reports.title": "Reports",
   "admin.reports.count": { one: "{count} report", other: "{count} reports" },

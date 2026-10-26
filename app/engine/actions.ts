@@ -90,6 +90,7 @@ const SetSettingsPayload = z.object({
    * can insert set_settings events into a room, see the settings route). */
   admin: z.literal(true).optional(),
 });
+const AdminFlagPayload = z.object({ admin: z.literal(true) });
 const TransferPlayerPayload = z.object({
   oldUserId: z.string(),
   newUserId: z.string(),
@@ -289,4 +290,11 @@ export function isRestoreAction(action: Action): action is {
     action.type === ActionType.Restore &&
     RestorePayload.safeParse(action.payload).success
   );
+}
+
+/** isAdminAction is true for an event the server inserted for the site admin
+ * (payload `admin: true`, e.g. an admin's Kick). Only the server may insert
+ * such event types, see the room_events insert policy. */
+export function isAdminAction(action: Action) {
+  return AdminFlagPayload.safeParse(action.payload).success;
 }

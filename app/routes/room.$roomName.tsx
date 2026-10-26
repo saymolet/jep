@@ -11,7 +11,10 @@ import { GameState, stateFromGame } from "~/engine/state";
 import { createT, getRequestLocale } from "~/i18n";
 import { getValidAuthSession } from "~/models/auth";
 import { getGame } from "~/models/game.server";
-import { createRoomEvent, getRoomEvents } from "~/models/room-event.server";
+import {
+  createRoomEventAsServer,
+  getRoomEvents,
+} from "~/models/room-event.server";
 import { getRoomByName } from "~/models/room.server";
 import { getUserByEmail } from "~/models/user";
 import { parseUserSettings } from "~/models/user-settings";
@@ -83,12 +86,13 @@ export async function loader({ request, params }: Route.LoaderArgs) {
       anonymousUserId !== userId &&
       state.players.has(anonymousUserId)
     ) {
-      await createRoomEvent(
-        room.id,
-        ActionType.TransferPlayer,
-        { oldUserId: anonymousUserId, newUserId: userId },
-        accessToken,
-      );
+      // With the service role: the browser key may not insert
+      // transfer_player events (RLS), so nobody can move someone else's
+      // seat to themselves; here both ids come from this visitor's sessions.
+      await createRoomEventAsServer(room.id, ActionType.TransferPlayer, {
+        oldUserId: anonymousUserId,
+        newUserId: userId,
+      });
       // Re-fetch room events to include the transfer.
       const updatedRoomEvents = await getRoomEvents(room.id, accessToken);
       return {

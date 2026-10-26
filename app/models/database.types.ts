@@ -263,16 +263,19 @@ export type Database = {
       };
       rooms: {
         Row: {
+          created_at: string;
           game_id: string;
           id: number;
           name: string;
         };
         Insert: {
+          created_at?: string;
           game_id: string;
           id?: number;
           name: string;
         };
         Update: {
+          created_at?: string;
           game_id?: string;
           id?: number;
           name?: string;
@@ -361,6 +364,10 @@ export type Database = {
         }[];
       };
       admin_stats: { Args: never; Returns: Json };
+      cleanup_inactive_rooms: {
+        Args: { dry_run?: boolean; max_idle: string };
+        Returns: number;
+      };
       random_board_categories: {
         Args: { max_count: number };
         Returns: {
