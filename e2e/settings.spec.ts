@@ -98,4 +98,32 @@ test.describe("settings persistence", () => {
     const volumeAfterUnmute = await volumeThumb.getAttribute("aria-valuenow");
     expect(volumeAfterUnmute).toBe(volumeBefore);
   });
+
+  test("theme is saved to the account and follows the user to a new device", async ({
+    authedPage: page,
+  }) => {
+    await goto(page, "/settings");
+    const group = page.getByRole("group", { name: "Theme" });
+    await expect(group).toBeVisible();
+
+    const save = waitForSettingsSave(page);
+    await group.getByRole("button", { name: "Dark" }).click();
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+    await save;
+
+    // A new device: no theme cookie, so the theme comes from the account.
+    await page.context().clearCookies({ name: "theme" });
+    await reload(page);
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+    await expect(group.getByRole("button", { name: "Dark" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+
+    // Put the shared test user back on Classic.
+    const reset = waitForSettingsSave(page);
+    await group.getByRole("button", { name: "Classic" }).click();
+    await reset;
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "classic");
+  });
 });
