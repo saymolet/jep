@@ -135,6 +135,16 @@ Difficulty estimates from the original planning discussion.
       deleted (hourly job `scripts/cleanup-inactive-rooms.mjs` + admin Rooms button) — see
       [features/19-seat-lock-cleanup.md](./features/19-seat-lock-cleanup.md) — ⭐⭐ medium
 
+- [x] Admin controls & interventions (owner's request) — the site admin (playing or just
+      watching) opens 🛡 in a room: **skip** the open question (or a question on the board),
+      do the step the game waits for **for a stuck player** ("вибрати замість когось": start
+      the round, choose a question, wager, hand over the cat in the bag, buzz in / pass, Final
+      answer, mark right / wrong, pick an option, back to the board) and **change scores** any
+      time (+/− / exact; toast for everyone, counted in the standings delta and team totals).
+      Security: every room event is now inserted by the server (RLS rejects all browser
+      inserts) — see [features/20-admin-interventions.md](./features/20-admin-interventions.md)
+      — ⭐⭐ medium
+
 Question search · Discord login · keyboard shortcuts ·
 OBS/browser-source mode ·
 auto-reconnect · host controls from phone ·
@@ -252,3 +262,10 @@ scripts/cleanup-inactive-rooms.mjs`, admin Rooms button; 7-day dashboard tile re
   Migrations `20261026172752_room_events_seats_server_only.sql` (insert policy) and
   `20261026173001_cleanup_inactive_rooms.sql` (`rooms.created_at` + function). No new
   dependencies.
+- **2026-10-26** — Feature 20 on `feat/admin-interventions`: admin interventions in rooms
+  (🛡 sheet: skip a question — `skip_clue`; act for a stuck player — the player's own action
+  tagged `admin: true` through its own route; change a score — `adjust_score`; toasts for
+  everyone, standings delta and the summary chart account for score changes) and every room
+  event inserted by the server only (all routes use `createRoomEventAsServer`; the wager route
+  now checks the wager range). Migration `20261026180715_room_events_server_only.sql` (the
+  room_events insert policy rejects every insert from the browser key). No new dependencies.
