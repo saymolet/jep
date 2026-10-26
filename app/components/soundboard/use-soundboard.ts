@@ -14,7 +14,7 @@ import {
   type SoundId,
 } from "~/utils/soundboard/messages";
 import { useSoundboardMute } from "~/utils/soundboard/mute";
-import { SOUND_DURATION_S } from "~/utils/soundboard/synth";
+import { SAMPLE_DURATION_S } from "~/utils/soundboard/samples";
 import { useSoundSettings } from "~/utils/user-settings";
 
 /** How long a "🎺 Ann" toast stays on screen. */
@@ -108,7 +108,7 @@ export function useSoundboard({
       if (settings.mute || settings.soundboardMuted || settings.volume <= 0) {
         return false;
       }
-      const durationMs = SOUND_DURATION_S[sound] * 1000;
+      const durationMs = SAMPLE_DURATION_S[sound] * 1000;
       if (!limiter.tryStartPlayback(Date.now(), durationMs)) return false;
       return settings.playSound(
         sound,

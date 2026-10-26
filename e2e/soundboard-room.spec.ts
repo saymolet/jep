@@ -46,6 +46,12 @@ test.describe("soundboard in a room", () => {
 
     const guestContext = await browser.newContext();
     const guest = await guestContext.newPage();
+    // The soundboard samples the guest's browser downloads (after a tap).
+    const guestSamples = new Map<string, number>();
+    guest.on("response", (response) => {
+      const match = /\/sounds\/soundboard\/(\w+)\.mp3$/.exec(response.url());
+      if (match) guestSamples.set(match[1], response.status());
+    });
     await goto(guest, roomUrl);
     await waitForConnected(guest);
     await join(guest);
@@ -87,6 +93,9 @@ test.describe("soundboard in a room", () => {
     await expect(guestToast.locator("span").nth(1)).toHaveText(hostName);
     // The guest tapped the page (Join), so the sound played there.
     await expect(guestToast).toHaveAttribute("data-played", "true");
+    // It played the real recording: the guest downloaded the samples.
+    await expect.poll(() => guestSamples.get("applause")).toBe(200);
+    await expect.poll(() => guestSamples.size).toBe(9);
     await expect(toast(spectator, "applause")).toBeVisible({ timeout: 10_000 });
 
     // The guest mutes the soundboard on their device: the toast still shows,
