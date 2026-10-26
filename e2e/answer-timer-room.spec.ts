@@ -3,6 +3,7 @@ import type { Browser, Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
 import {
   clickStartRound,
+  createRoomAsAdmin,
   goto,
   logInAsAdmin,
   openClue,
@@ -17,8 +18,8 @@ async function roomWithTwoPlayers(host: Page, browser: Browser) {
   await logInAsAdmin(host);
   await goto(host, "/profile");
   const gameId = await uploadGame(host);
-  await goto(host, `/game/${gameId}/play`);
-  await expect(host).toHaveURL(/\/room\/\d+-\w+$/);
+  // The admin gets the "new room" step (room timers) first.
+  await createRoomAsAdmin(host, gameId);
   const roomUrl = host.url();
   await waitForConnected(host);
   await host.getByRole("button", { name: /join game/i }).click();

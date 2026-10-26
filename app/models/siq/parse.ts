@@ -54,6 +54,11 @@ export interface SiqQuestion {
   answerType?: string;
   /** v5 `answerOptions` (multiple choice options). */
   options?: SiqAnswerOption[];
+  /** How long the question part is shown, in seconds: the sum of the display
+   * times the pack gives its question fragments (v4 `<atom time="5">`, v5
+   * `<item duration="00:00:05">`). Undefined when none has one (most packs:
+   * SIGame's own timers are app settings, not stored in the pack). */
+  displayTimeSec?: number;
 }
 
 export interface SiqTheme {
@@ -154,13 +159,36 @@ function parseIntSafe(value: string | undefined): number {
   return Number.isFinite(n) ? n : 0;
 }
 
+/** parseSeconds reads a v4 `time` attribute (seconds, a decimal number). */
+function parseSeconds(value: string | undefined): number | undefined {
+  if (value === undefined) return undefined;
+  const n = Number(value.trim().replace(",", "."));
+  return value.trim() !== "" && Number.isFinite(n) && n >= 0 ? n : undefined;
+}
+
+/** parseDuration reads a v5 `duration` attribute ("hh:mm:ss"). */
+export function parseDuration(value: string | undefined): number | undefined {
+  const match = /^\s*(\d{1,2}):(\d{2}):(\d{2})\s*$/.exec(value ?? "");
+  if (!match) return undefined;
+  const [, h, m, s] = match.map(Number);
+  return h * 3600 + m * 60 + s;
+}
+
+/** sumTimes adds up the display times given; undefined when none is. */
+function sumTimes(times: (number | undefined)[]): number | undefined {
+  const known = times.filter((t): t is number => t !== undefined);
+  return known.length > 0 ? known.reduce((a, b) => a + b, 0) : undefined;
+}
+
 /** v4: `<scenario><atom type="...">...</atom></scenario>`. */
 function parseV4Scenario(question: XmlNode): {
   question: SiqContent[];
   answer: SiqContent[];
+  displayTimeSec?: number;
 } {
   const questionContent: SiqContent[] = [];
   const answerContent: SiqContent[] = [];
+  const questionTimes: (number | undefined)[] = [];
   let target = questionContent;
   for (const atom of children(child(question, "scenario"), "atom")) {
     const kind = normalizeKind(attr(atom, "type"));
@@ -171,8 +199,16 @@ function parseV4Scenario(question: XmlNode): {
     const raw = text(atom);
     const isRef = kind !== "text" && raw.startsWith("@");
     target.push({ kind, value: isRef ? raw.slice(1) : raw, isRef });
+    if (target === questionContent) {
+      questionTimes.push(parseSeconds(attr(atom, "time")));
+    }
   }
-  return { question: questionContent, answer: answerContent };
+  const displayTimeSec = sumTimes(questionTimes);
+  return {
+    question: questionContent,
+    answer: answerContent,
+    ...(displayTimeSec !== undefined ? { displayTimeSec } : {}),
+  };
 }
 
 function parseV5Content(param: XmlNode | undefined): SiqContent[] {
@@ -216,6 +252,12 @@ function parseQuestion(node: XmlNode): SiqQuestion {
         result.secretPrice = parsePriceRange(text(priceParam));
       }
     }
+    const displayTimeSec = sumTimes(
+      children(param("question"), "item").map((item) =>
+        parseDuration(attr(item, "duration")),
+      ),
+    );
+    if (displayTimeSec !== undefined) result.displayTimeSec = displayTimeSec;
     const answerType = text(param("answerType"));
     if (answerType) result.answerType = answerType;
     const options = param("answerOptions");

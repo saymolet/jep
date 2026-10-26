@@ -26,6 +26,13 @@ import {
   isTransferPlayerAction,
 } from "./actions";
 import { isAnswerTimeSec } from "./answer-timer";
+import {
+  getBuzzWindowMs,
+  isBuzzWindowSec,
+  isFinalAnswerTimeSec,
+  isReadTimeSec,
+  isWagerTimeSec,
+} from "./room-timers";
 import { canSkipClue } from "./skip";
 import {
   type CheckCorrection,
@@ -138,8 +145,9 @@ export interface Action {
   ts: number;
 }
 
-/** CLUE_TIMEOUT_MS is the total amount of time a contestant has to buzz in after
- * the clue is read, inclusive. */
+/** CLUE_TIMEOUT_MS is the default amount of time a contestant has to buzz in
+ * after the clue is read, inclusive. Rooms may set another buzz window (see
+ * room-timers.ts, State.buzzWindowSec); use getBuzzWindowMs(state). */
 export const CLUE_TIMEOUT_MS = 5000;
 
 /** CANT_BUZZ_FLAG means that the player buzzed in wrong, so they can't try again
@@ -149,8 +157,8 @@ export const CANT_BUZZ_FLAG = -1;
 /** Buzzes within this many milliseconds of each other are treated as ties. */
 export const QUANTIZATION_FACTOR_MS = 200;
 
-function isValidBuzz(deltaMs: number): boolean {
-  return deltaMs !== CANT_BUZZ_FLAG && deltaMs <= CLUE_TIMEOUT_MS;
+function isValidBuzz(deltaMs: number, buzzWindowMs: number): boolean {
+  return deltaMs !== CANT_BUZZ_FLAG && deltaMs <= buzzWindowMs;
 }
 
 /** getTiebreakerSeed is the per-clue seed used to break buzz ties. Media
@@ -161,10 +169,12 @@ export function getTiebreakerSeed(clue?: Pick<Clue, "clue" | "answer">) {
   return clue.clue || clue.answer;
 }
 
-/** getWinningBuzzer returns undefined if there were no valid buzzes. */
+/** getWinningBuzzer returns undefined if there were no valid buzzes (within
+ * the room's buzz window, `buzzWindowMs`). */
 export function getWinningBuzzer(
   buzzes: Map<string, number>,
   tiebreakerSeed?: string,
+  buzzWindowMs: number = CLUE_TIMEOUT_MS,
 ):
   | {
       userId: string;
@@ -172,7 +182,7 @@ export function getWinningBuzzer(
     }
   | undefined {
   const validBuzzes = Array.from(buzzes.entries()).filter(([, deltaMs]) =>
-    isValidBuzz(deltaMs),
+    isValidBuzz(deltaMs, buzzWindowMs),
   );
 
   if (validBuzzes.length === 0) {
@@ -774,6 +784,8 @@ export function gameEngine(state: State, action: Action): State {
 
         draft.checkCorrection = null;
         draft.answerTimedOut = null;
+        draft.wagerStartedAt = null;
+        draft.longFormStartedAt = null;
         resumeClock(draft, action.ts);
 
         if (isSecretClue(clue)) {
@@ -815,6 +827,7 @@ export function gameEngine(state: State, action: Action): State {
             draft.activeClue = [i, j];
             draft.buzzes = buzzes;
             draft.numExpectedWagers = 0;
+            draft.longFormStartedAt = action.ts;
             return;
           }
 
@@ -822,6 +835,8 @@ export function gameEngine(state: State, action: Action): State {
           draft.type = GameState.WagerClue;
           draft.activeClue = [i, j];
           draft.numExpectedWagers = numExpectedWagers;
+          // The wager time (room setting) runs from here.
+          draft.wagerStartedAt = action.ts;
           return;
         }
 
@@ -877,8 +892,11 @@ export function gameEngine(state: State, action: Action): State {
         // Read the clue once all wagers are in
         const numWagersIn = clueWagers?.size ?? 1;
         if (numWagersIn === draft.numExpectedWagers) {
+          draft.wagerStartedAt = null;
           if (clue.longForm) {
             draft.type = GameState.ReadLongFormClue;
+            // The Final answer time (room setting) runs from here.
+            draft.longFormStartedAt = action.ts;
           } else {
             draft.type = GameState.ReadWagerableClue;
           }
@@ -937,6 +955,7 @@ export function gameEngine(state: State, action: Action): State {
         const winningBuzzer = getWinningBuzzer(
           draft.buzzes,
           getTiebreakerSeed(clue),
+          getBuzzWindowMs(draft),
         );
         if (!winningBuzzer) {
           // Reveal the answer to everyone and mark it as answered. If the clue
@@ -1000,6 +1019,7 @@ export function gameEngine(state: State, action: Action): State {
 
         // All answers are in, so show the answers to all who answered to check them.
         draft.type = GameState.RevealAnswerLongForm;
+        draft.longFormStartedAt = null;
       });
     case ActionType.Check:
       if (!isCheckAction(action)) {
@@ -1037,6 +1057,7 @@ export function gameEngine(state: State, action: Action): State {
           const winningBuzzer = getWinningBuzzer(
             draft.buzzes,
             getTiebreakerSeed(clue),
+            getBuzzWindowMs(draft),
           );
           if (userId !== winningBuzzer?.userId) {
             return;
@@ -1255,6 +1276,7 @@ export function gameEngine(state: State, action: Action): State {
           if (!allCantBuzz) return;
 
           draft.type = GameState.RevealAnswerToAll;
+          draft.longFormStartedAt = null;
           const clueAnswer = draft.isAnswered[draft.round][i][j];
           clueAnswer.isAnswered = true;
           clueAnswer.answerOrder = getNextAnswerOrder(draft.isAnswered);
@@ -1483,8 +1505,16 @@ export function gameEngine(state: State, action: Action): State {
         throw new Error("SetSettings action must have a user and settings");
       }
       return produce(state, (draft) => {
-        const { userId, answerTimeSec, autoWrongOnTimeout, admin } =
-          action.payload;
+        const {
+          userId,
+          answerTimeSec,
+          autoWrongOnTimeout,
+          readTimeSec,
+          buzzWindowSec,
+          finalAnswerTimeSec,
+          wagerTimeSec,
+          admin,
+        } = action.payload;
         // The site admin (whether playing or not), or a player: solo play
         // and room events from before only the admin could change them.
         // Between questions only: a change mid-question would move the
@@ -1493,12 +1523,25 @@ export function gameEngine(state: State, action: Action): State {
           (admin !== true && !draft.players.has(userId)) ||
           draft.type === GameState.GameOver ||
           draft.activeClue !== null ||
-          !isAnswerTimeSec(answerTimeSec)
+          !isAnswerTimeSec(answerTimeSec) ||
+          // Room timers: left out (older events) keeps the current value;
+          // an invalid one ignores the whole change.
+          (readTimeSec !== undefined && !isReadTimeSec(readTimeSec)) ||
+          (buzzWindowSec !== undefined && !isBuzzWindowSec(buzzWindowSec)) ||
+          (finalAnswerTimeSec !== undefined &&
+            !isFinalAnswerTimeSec(finalAnswerTimeSec)) ||
+          (wagerTimeSec !== undefined && !isWagerTimeSec(wagerTimeSec))
         ) {
           return;
         }
         draft.answerTimeSec = answerTimeSec;
         draft.autoWrongOnTimeout = autoWrongOnTimeout;
+        if (readTimeSec !== undefined) draft.readTimeSec = readTimeSec;
+        if (buzzWindowSec !== undefined) draft.buzzWindowSec = buzzWindowSec;
+        if (finalAnswerTimeSec !== undefined) {
+          draft.finalAnswerTimeSec = finalAnswerTimeSec;
+        }
+        if (wagerTimeSec !== undefined) draft.wagerTimeSec = wagerTimeSec;
       });
     case ActionType.SkipClue:
       // Ignored (not thrown) when malformed: a bad event must not break the
@@ -1529,6 +1572,8 @@ export function gameEngine(state: State, action: Action): State {
         draft.type = GameState.RevealAnswerToAll;
         draft.answerStartedAt = null;
         draft.answerTimedOut = null;
+        draft.wagerStartedAt = null;
+        draft.longFormStartedAt = null;
       });
     case ActionType.AdjustScore:
       if (!isAdjustScoreAction(action)) {

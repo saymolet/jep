@@ -137,3 +137,39 @@ export async function setAdminSessionData(
   headers.append("Set-Cookie", await commitSession(session));
   return headers;
 }
+
+const ROOM_SETTINGS_KEY = "roomSettings";
+
+const RoomSettingsSchema = z.object({
+  answerTimeSec: z.number(),
+  autoWrongOnTimeout: z.boolean(),
+  readTimeSec: z.number().nullable(),
+  buzzWindowSec: z.number(),
+  finalAnswerTimeSec: z.number(),
+  wagerTimeSec: z.number(),
+});
+export type LastRoomSettings = z.infer<typeof RoomSettingsSchema>;
+
+/** getLastRoomSettings reads the room settings the admin last created a
+ * room with (pre-filled in the next "new room" step). Not validated beyond
+ * the shape: callers check the values (see ~/engine/room-timers). */
+export async function getLastRoomSettings(
+  request: Request,
+): Promise<LastRoomSettings | null> {
+  const session = await getSession(request.headers.get("Cookie"));
+  const result = RoomSettingsSchema.safeParse(session.get(ROOM_SETTINGS_KEY));
+  return result.success ? result.data : null;
+}
+
+/** setLastRoomSettings remembers the room settings the admin created a room
+ * with. Appends to existing headers if provided. */
+export async function setLastRoomSettings(
+  request: Request,
+  data: LastRoomSettings,
+  headers = new Headers(),
+) {
+  const session = await getSession(request.headers.get("Cookie"));
+  session.set(ROOM_SETTINGS_KEY, data);
+  headers.append("Set-Cookie", await commitSession(session));
+  return headers;
+}

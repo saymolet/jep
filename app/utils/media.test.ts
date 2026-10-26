@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   getClueMedia,
   getClueReadMs,
+  getRoomReadMs,
   IMAGE_READ_MS,
   mediaBlockError,
   parseYouTubeUrl,
@@ -156,5 +157,27 @@ describe("getClueReadMs", () => {
         answerMedia: [{ type: "audio", src: "https://a.example/1.mp3" }],
       }),
     ).toBe(textMs);
+  });
+});
+
+describe("getRoomReadMs", () => {
+  const text = { clue: "abcdefghij" }; // 1000 + 10 * 60 ms
+  it.each([
+    ["Auto: the estimate", text, null, {}, 1600],
+    [
+      "Auto: the question's hint wins",
+      { ...text, readTimeSec: 8 },
+      null,
+      {},
+      8000,
+    ],
+    ["Auto: a hint of 0", { ...text, readTimeSec: 0 }, null, {}, 0],
+    ["fixed: beats the hint", { ...text, readTimeSec: 8 }, 3, {}, 3000],
+    ["fixed 0: buzzers open at once", text, 0, {}, 0],
+    ["re-read with Auto: 1 s", text, null, { reRead: true }, 1000],
+    ["re-read with a fixed 0 s", text, 0, { reRead: true }, 0],
+    ["re-read with a fixed 10 s: still 1 s", text, 10, { reRead: true }, 1000],
+  ])("%s", (_name, clue, readTimeSec, options, expected) => {
+    expect(getRoomReadMs(clue, readTimeSec, options)).toBe(expected);
   });
 });

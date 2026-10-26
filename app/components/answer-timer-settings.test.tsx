@@ -82,11 +82,24 @@ function render(
   act(() => root.render(<Stub initialEntries={["/play"]} />));
 }
 
-function options() {
+/** The answer time options (the first group of the room timers). */
+function options(group = "answer-time-options") {
   return Array.from(
-    container.querySelectorAll<HTMLButtonElement>('[role="radio"]'),
+    container.querySelectorAll<HTMLButtonElement>(
+      `[data-testid="${group}"] [role="radio"]`,
+    ),
   );
 }
+
+/** The fields every settings request sends besides the changed one. */
+const DEFAULTS = {
+  answerTimeSec: "0",
+  autoWrongOnTimeout: "true",
+  readTimeSec: "auto",
+  buzzWindowSec: "5",
+  finalAnswerTimeSec: "30",
+  wagerTimeSec: "0",
+};
 
 function checkbox() {
   return container.querySelector<HTMLInputElement>('input[type="checkbox"]');
@@ -115,10 +128,7 @@ describe("AnswerTimerSettings", () => {
       options()[2].click();
     });
     expect(sent).toEqual([
-      [
-        "settings",
-        { userId: ANN, answerTimeSec: "15", autoWrongOnTimeout: "true" },
-      ],
+      ["settings", { userId: ANN, ...DEFAULTS, answerTimeSec: "15" }],
     ]);
   });
 
@@ -126,7 +136,7 @@ describe("AnswerTimerSettings", () => {
     render(play(STEPS.join, STEPS.start, STEPS.chooseFirst));
     expect(options().every((o) => o.disabled)).toBe(true);
     expect(container.textContent).toContain(
-      "The answer time can be changed between questions",
+      "The timers can be changed between questions",
     );
   });
 
@@ -138,6 +148,118 @@ describe("AnswerTimerSettings", () => {
     expect(container.textContent).toContain(
       "Зараховувати як неправильну, коли час вийде",
     );
+  });
+});
+
+describe("room timers", () => {
+  it("offers each timer with today's defaults selected", () => {
+    render(play(STEPS.join));
+    const labels = (group: string) => options(group).map((o) => o.textContent);
+    const selected = (group: string) =>
+      options(group).find((o) => o.getAttribute("aria-checked") === "true")
+        ?.textContent;
+    expect(labels("read-time-settings")).toEqual([
+      "Auto",
+      "0 s",
+      "1 s",
+      "2 s",
+      "3 s",
+      "5 s",
+      "10 s",
+      "15 s",
+      "20 s",
+      "30 s",
+      "45 s",
+      "60 s",
+    ]);
+    expect(selected("read-time-settings")).toBe("Auto");
+    expect(labels("buzz-window-settings")).toEqual([
+      "3 s",
+      "5 s",
+      "7 s",
+      "10 s",
+      "15 s",
+      "20 s",
+    ]);
+    expect(selected("buzz-window-settings")).toBe("5 s");
+    expect(labels("final-answer-time-settings")).toEqual([
+      "No limit",
+      "15 s",
+      "30 s",
+      "45 s",
+      "60 s",
+      "90 s",
+      "120 s",
+    ]);
+    expect(selected("final-answer-time-settings")).toBe("30 s");
+    expect(labels("wager-time-settings")).toEqual([
+      "No limit",
+      "15 s",
+      "30 s",
+      "60 s",
+    ]);
+    expect(selected("wager-time-settings")).toBe("No limit");
+  });
+
+  it.each([
+    ["read-time-settings", 1, { readTimeSec: "0" }],
+    ["buzz-window-settings", 0, { buzzWindowSec: "3" }],
+    ["final-answer-time-settings", 6, { finalAnswerTimeSec: "120" }],
+    ["final-answer-time-settings", 0, { finalAnswerTimeSec: "0" }],
+    ["wager-time-settings", 1, { wagerTimeSec: "15" }],
+  ])("saves %s", async (group, index, change) => {
+    render(play(STEPS.join));
+    await act(async () => {
+      options(group)[index].click();
+    });
+    expect(sent).toEqual([
+      ["settings", { userId: ANN, ...DEFAULTS, ...change }],
+    ]);
+  });
+
+  it("keeps the other values when one changes", async () => {
+    const state = {
+      ...play(STEPS.join),
+      answerTimeSec: 15,
+      readTimeSec: 0,
+      buzzWindowSec: 3,
+    };
+    render(state);
+    await act(async () => {
+      options("wager-time-settings")[3].click();
+    });
+    expect(sent).toEqual([
+      [
+        "settings",
+        {
+          ...DEFAULTS,
+          userId: ANN,
+          answerTimeSec: "15",
+          readTimeSec: "0",
+          buzzWindowSec: "3",
+          wagerTimeSec: "60",
+        },
+      ],
+    ]);
+  });
+
+  it("are read-only for players, in Ukrainian", () => {
+    const state = { ...play(STEPS.join), buzzWindowSec: 10, wagerTimeSec: 30 };
+    render(state, { isAdmin: false, locale: "uk" });
+    expect(container.textContent).toContain("Таймери кімнати");
+    expect(container.textContent).toContain("Час на читання");
+    expect(container.textContent).toContain("Час на ставку");
+    expect(options("read-time-settings")[0].textContent).toBe("Авто");
+    expect(options("wager-time-settings")[0].textContent).toBe("Без обмеження");
+    const all = Array.from(
+      container.querySelectorAll<HTMLButtonElement>('[role="radio"]'),
+    );
+    expect(all.every((o) => o.disabled)).toBe(true);
+    expect(
+      options("buzz-window-settings").find(
+        (o) => o.getAttribute("aria-checked") === "true",
+      )?.textContent,
+    ).toBe("10 с");
   });
 });
 
@@ -176,11 +298,7 @@ describe("AnswerTimerSettings for everyone but the admin", () => {
     expect(sent).toEqual([
       [
         "settings",
-        {
-          userId: "admin-visitor",
-          answerTimeSec: "10",
-          autoWrongOnTimeout: "true",
-        },
+        { userId: "admin-visitor", ...DEFAULTS, answerTimeSec: "10" },
       ],
     ]);
   });
@@ -200,7 +318,7 @@ describe("AnswerTimerControl", () => {
   it("is a button that opens the settings for the admin", () => {
     render(play(STEPS.join), { control: true });
     const button = container.querySelector("button");
-    expect(button?.getAttribute("aria-label")).toBe("Answer time settings");
+    expect(button?.getAttribute("aria-label")).toBe("Room timers");
     expect(button?.textContent).toContain("Off");
     expect(readOnly()).toBeNull();
   });

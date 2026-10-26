@@ -101,6 +101,7 @@ export type Database = {
           image_src: string | null;
           long_form: boolean;
           media: Json | null;
+          read_time_sec: number | null;
           secret: boolean | null;
           secret_topic: string | null;
           secret_value: number | null;
@@ -117,6 +118,7 @@ export type Database = {
           image_src?: string | null;
           long_form?: boolean;
           media?: Json | null;
+          read_time_sec?: number | null;
           secret?: boolean | null;
           secret_topic?: string | null;
           secret_value?: number | null;
@@ -133,6 +135,7 @@ export type Database = {
           image_src?: string | null;
           long_form?: boolean;
           media?: Json | null;
+          read_time_sec?: number | null;
           secret?: boolean | null;
           secret_topic?: string | null;
           secret_value?: number | null;

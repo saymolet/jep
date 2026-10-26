@@ -51,27 +51,24 @@ export interface AnswerTimer {
   status: AnswerTimerStatus | null;
 }
 
-/** useAnswerTimer is the countdown of the current answer turn, the same on
- * every device: it runs from the timestamp of the room event that gave the
- * player their turn (server clock, see utils/server-clock.ts). It keeps
- * ticking while the tab is in the background (as fast as the browser lets
- * it) and catches up as soon as the tab is visible again. */
-export function useAnswerTimer(): AnswerTimer {
-  const { type, answerTimeSec, answerStartedAt, winningBuzzer } =
-    useEngineContext();
-  const timed =
-    type === GameState.RevealAnswerToBuzzer &&
-    answerTimeSec > 0 &&
-    answerStartedAt !== null &&
-    winningBuzzer !== undefined;
-
+/** useCountdownStatus is a countdown of `durationSec` from `startedAt` (a
+ * room event timestamp, server clock, see utils/server-clock.ts), the same on
+ * every device. It keeps ticking while the tab is in the background (as fast
+ * as the browser lets it) and catches up as soon as the tab is visible
+ * again. null when there is no countdown (`startedAt` null or no duration)
+ * and until the page is hydrated. */
+export function useCountdownStatus(
+  startedAt: number | null,
+  durationSec: number,
+): AnswerTimerStatus | null {
+  const running = startedAt !== null && durationSec > 0;
   const [now, setNow] = React.useState<number | null>(null);
   React.useEffect(() => {
-    if (!timed || answerStartedAt === null) {
+    if (!running || startedAt === null) {
       setNow(null);
       return;
     }
-    const deadline = answerStartedAt + answerTimeSec * 1000;
+    const deadline = startedAt + durationSec * 1000;
     const tick = () => {
       const t = serverNow();
       setNow(t);
@@ -86,16 +83,29 @@ export function useAnswerTimer(): AnswerTimer {
       document.removeEventListener("visibilitychange", tick);
       window.removeEventListener("focus", tick);
     };
-  }, [timed, answerStartedAt, answerTimeSec]);
+  }, [running, startedAt, durationSec]);
 
-  const status =
-    timed && answerStartedAt !== null && now !== null
-      ? getAnswerTimerStatus({
-          startedAt: answerStartedAt,
-          durationSec: answerTimeSec,
-          now,
-        })
-      : null;
+  return running && startedAt !== null && now !== null
+    ? getAnswerTimerStatus({ startedAt, durationSec, now })
+    : null;
+}
+
+/** useAnswerTimer is the countdown of the current answer turn, the same on
+ * every device: it runs from the timestamp of the room event that gave the
+ * player their turn. */
+export function useAnswerTimer(): AnswerTimer {
+  const { type, answerTimeSec, answerStartedAt, winningBuzzer } =
+    useEngineContext();
+  const timed =
+    type === GameState.RevealAnswerToBuzzer &&
+    answerTimeSec > 0 &&
+    answerStartedAt !== null &&
+    winningBuzzer !== undefined;
+
+  const status = useCountdownStatus(
+    timed ? answerStartedAt : null,
+    answerTimeSec,
+  );
 
   return {
     timed,
@@ -111,6 +121,8 @@ export function useAnswerTimer(): AnswerTimer {
 export function AnswerTimerBar({
   status,
   variant = "screen",
+  testId = "answer-timer",
+  label,
   children,
 }: {
   status: Pick<
@@ -118,6 +130,9 @@ export function AnswerTimerBar({
     "secondsLeft" | "fraction" | "expired"
   > | null;
   variant?: "screen" | "tv";
+  /** Test id and accessible name (the answer timer's by default). */
+  testId?: string;
+  label?: string;
   /** Extra line under the timer (e.g. a hint for the answering player). */
   children?: React.ReactNode;
 }) {
@@ -128,10 +143,10 @@ export function AnswerTimerBar({
   return (
     <div
       className="flex w-full flex-col items-center gap-1 px-4 pb-2"
-      data-testid="answer-timer"
+      data-testid={testId}
       data-state={status === null ? "pending" : expired ? "expired" : "running"}
       role="timer"
-      aria-label={t("play.answerTimer.label")}
+      aria-label={label ?? t("play.answerTimer.label")}
     >
       <div
         className={clsx(
@@ -183,24 +198,65 @@ export function ConnectedAnswerTimer({
 }) {
   const { status } = timer;
   const { answerStartedAt } = useEngineContext();
-  const playTimesUp = useTimesUpSound();
+  useTimesUpWhenSeen(status?.expired, answerStartedAt);
 
-  // Only when this page saw the time run out, not when it loads a turn that
-  // is already over.
+  if (!timer.timed) return null;
+  return (
+    <AnswerTimerBar status={status} variant={variant}>
+      {children}
+    </AnswerTimerBar>
+  );
+}
+
+/** useTimesUpWhenSeen plays the "time's up" sound when a countdown that
+ * started at `startedAt` runs out while this page watches it (not when it
+ * loads a step whose time is already over). */
+function useTimesUpWhenSeen(
+  expired: boolean | undefined,
+  startedAt: number | null,
+) {
+  const playTimesUp = useTimesUpSound();
   const sawRunning = React.useRef(false);
-  const expired = status?.expired;
   React.useEffect(() => {
     if (expired === false) {
       sawRunning.current = true;
     } else if (expired === true && sawRunning.current) {
       sawRunning.current = false;
-      if (answerStartedAt !== null) playTimesUp(answerStartedAt);
+      if (startedAt !== null) playTimesUp(startedAt);
     }
-  }, [expired, answerStartedAt, playTimesUp]);
+  }, [expired, startedAt, playTimesUp]);
+}
 
-  if (!timer.timed) return null;
+/** StepTimer shows the countdown of a timed step other than an answer turn
+ * (a wager, the Final answers), started at `startedAt` (server clock), with
+ * the "time's up" sound. Renders nothing without a countdown. */
+export function StepTimer({
+  startedAt,
+  durationSec,
+  status,
+  testId,
+  label,
+  variant = "screen",
+  children,
+}: {
+  startedAt: number | null;
+  durationSec: number;
+  /** From useCountdownStatus(startedAt, durationSec). */
+  status: AnswerTimerStatus | null;
+  testId: string;
+  label: string;
+  variant?: "screen" | "tv";
+  children?: React.ReactNode;
+}) {
+  useTimesUpWhenSeen(status?.expired, startedAt);
+  if (startedAt === null || durationSec <= 0) return null;
   return (
-    <AnswerTimerBar status={status} variant={variant}>
+    <AnswerTimerBar
+      status={status}
+      variant={variant}
+      testId={testId}
+      label={label}
+    >
       {children}
     </AnswerTimerBar>
   );

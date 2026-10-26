@@ -105,6 +105,19 @@ function dbSecretToSecret(
   };
 }
 
+/** dbReadTimeToReadTime reads the `read_time_sec` column (dropping values
+ * the schema would reject, which createGame never writes). */
+function dbReadTimeToReadTime(
+  value: number | null | undefined,
+): Pick<Clue, "readTimeSec"> {
+  return typeof value === "number" &&
+    Number.isInteger(value) &&
+    value >= 0 &&
+    value <= 60
+    ? { readTimeSec: value }
+    : {};
+}
+
 /** dbClueToClue maps a clues row to the game representation. */
 export function dbClueToClue(clue: DbClue): Clue {
   return {
@@ -117,6 +130,7 @@ export function dbClueToClue(clue: DbClue): Clue {
     // Overwrite the raw columns spread in above.
     secret: undefined,
     ...dbSecretToSecret(clue),
+    ...dbReadTimeToReadTime(clue.read_time_sec),
   };
 }
 
@@ -139,6 +153,7 @@ export function clueToDbClue(
     secret: clue.secret ? true : null,
     secret_topic: clue.secret ? (clue.secretTopic ?? null) : null,
     secret_value: clue.secret ? (clue.secretValue ?? null) : null,
+    read_time_sec: clue.readTimeSec ?? null,
   };
 }
 

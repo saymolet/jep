@@ -1,12 +1,13 @@
 import { PlayerIcon } from "~/components/player";
 import type { Player } from "~/engine";
-import { CANT_BUZZ_FLAG, CLUE_TIMEOUT_MS, useEngineContext } from "~/engine";
+import { CANT_BUZZ_FLAG, useEngineContext } from "~/engine";
+import { getBuzzWindowMs } from "~/engine/room-timers";
 
-function showBuzz(durationMs?: number) {
+function showBuzz(buzzWindowMs: number, durationMs?: number) {
   switch (true) {
     case durationMs === undefined:
     case durationMs === CANT_BUZZ_FLAG:
-    case durationMs && durationMs > CLUE_TIMEOUT_MS:
+    case durationMs && durationMs > buzzWindowMs:
       return false;
     default:
       return true;
@@ -18,7 +19,13 @@ export function Buzzes({
 }: {
   buzzes?: Map<string, number>;
 }) {
-  const { activeClue, buzzes: serverBuzzes, players } = useEngineContext();
+  const {
+    activeClue,
+    buzzes: serverBuzzes,
+    players,
+    buzzWindowSec,
+  } = useEngineContext();
+  const buzzWindowMs = getBuzzWindowMs({ buzzWindowSec });
 
   if (!activeClue) {
     throw new Error("No active clue");
@@ -28,7 +35,7 @@ export function Buzzes({
 
   // sort buzzes by time
   const sortedBuzzes = Array.from(buzzes.entries())
-    .filter(([, b]) => showBuzz(b))
+    .filter(([, b]) => showBuzz(buzzWindowMs, b))
     .sort(([aUserId], [bUserId]) => {
       const aDurationMs = buzzes.get(aUserId);
       const bDurationMs = buzzes.get(bUserId);

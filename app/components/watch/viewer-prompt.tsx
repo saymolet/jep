@@ -19,15 +19,18 @@ import {
   useClueMedia,
 } from "~/components/prompt/prompt";
 import ShinyText from "~/components/prompt/shiny-text";
+import {
+  FinalAnswerTimer,
+  useFinalAnswerTimer,
+  useWagerTimer,
+  WagerTimer,
+} from "~/components/prompt/step-timers";
 import { CANT_BUZZ_FLAG, GameState, useEngineContext } from "~/engine";
 import { getSecretTopic, isSecretClue } from "~/engine/state";
 import { useTranslation } from "~/i18n";
-import { getClueReadMs } from "~/utils/media";
+import { getRoomReadMs } from "~/utils/media";
 
 import { getViewerStatus, type ViewerStatus } from "./status";
-
-/** Same as the players' re-read time after a wrong answer (prompt.tsx). */
-const READ_REOPENED_MS = 1000;
 
 export type ViewerVariant = "screen" | "tv";
 
@@ -35,14 +38,17 @@ export type ViewerVariant = "screen" | "tv";
  * enough for the buzzers to open. Players' devices time this locally, so the
  * viewer does the same (it is only used for the status line). */
 function useBuzzersOpen() {
-  const { type, activeClue, clue, buzzes } = useEngineContext();
+  const { type, activeClue, clue, buzzes, readTimeSec } = useEngineContext();
   const reading = type === GameState.ReadClue && clue !== undefined;
   const isReRead =
     reading &&
     !clue.wagerable &&
     Array.from(buzzes.values()).some((b) => b === CANT_BUZZ_FLAG);
   const key = reading ? `${activeClue?.join(",")}:${isReRead}` : null;
-  const delayMs = !clue ? 0 : isReRead ? READ_REOPENED_MS : getClueReadMs(clue);
+  // The same reading time as the players' devices (room setting).
+  const delayMs = !clue
+    ? 0
+    : getRoomReadMs(clue, readTimeSec, { reRead: isReRead });
 
   const [openKey, setOpenKey] = React.useState<string | null>(null);
   React.useEffect(() => {
@@ -204,6 +210,8 @@ export function ViewerPromptContent({
   const { t } = useTranslation();
   const clueMedia = useClueMedia();
   const timer = useAnswerTimer();
+  const wagerTimer = useWagerTimer();
+  const finalTimer = useFinalAnswerTimer();
 
   if (!PROMPT_STATES.has(type) || !clue || !activeClue || !board) {
     return null;
@@ -259,6 +267,7 @@ export function ViewerPromptContent({
           </div>
         </div>
         {statusLine}
+        <WagerTimer timer={wagerTimer} variant={variant} />
       </>
     );
   }
@@ -318,6 +327,7 @@ export function ViewerPromptContent({
         <TimesUpNotice variant={variant} />
       ) : null}
       <ConnectedAnswerTimer timer={timer} variant={variant} />
+      <FinalAnswerTimer timer={finalTimer} variant={variant} />
       <Buzzes />
     </>
   );

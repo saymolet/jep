@@ -63,7 +63,7 @@ test.describe("only the admin changes the answer timer", () => {
         settings.getByLabel("Mark wrong when time runs out"),
       ).toBeDisabled();
       await expect(
-        settings.getByText("Only the admin can change this."),
+        page.getByRole("dialog").getByText("Only the admin can change this."),
       ).toBeVisible();
     }
 
@@ -90,7 +90,7 @@ test.describe("only the admin changes the answer timer", () => {
     await admin.getByRole("button", { name: "Just watch" }).click();
 
     const timerButton = admin.getByRole("button", {
-      name: "Answer time settings",
+      name: "Room timers",
     });
     await timerButton.click();
     const adminSettings = admin
@@ -123,9 +123,9 @@ test.describe("only the admin changes the answer timer", () => {
       "title",
       "Answer time: 15 s. Only the admin can change this.",
     );
-    await expect(
-      host.getByRole("button", { name: "Answer time settings" }),
-    ).toHaveCount(0);
+    await expect(host.getByRole("button", { name: "Room timers" })).toHaveCount(
+      0,
+    );
 
     await adminContext.close();
     await context.close();

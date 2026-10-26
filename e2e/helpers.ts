@@ -305,3 +305,19 @@ export async function logInAsAdmin(page: Page) {
   await page.getByRole("button", { name: "Log in" }).click();
   await expect(page).toHaveURL(/\/admin$/);
 }
+
+/** createRoomAsAdmin opens a new room for the game as the site admin (who
+ * gets the "new room" step with the room timers first), lets `configure`
+ * pick timers in the panel, creates the room and waits for it. */
+export async function createRoomAsAdmin(
+  page: Page,
+  gameId: string,
+  configure?: (panel: Locator) => Promise<void>,
+) {
+  await goto(page, `/game/${gameId}/play`);
+  const panel = page.getByTestId("room-timers");
+  await expect(panel).toBeVisible();
+  if (configure) await configure(panel);
+  await page.getByRole("button", { name: "Create the room" }).click();
+  await expect(page).toHaveURL(/\/room\/\d+-\w+$/);
+}

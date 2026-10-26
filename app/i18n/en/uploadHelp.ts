@@ -48,6 +48,9 @@ export const uploadHelp = {
     "The <code>answer</code> must be exactly one of the options (letter case doesn't matter).",
   "uploadHelp.choicesWorksWith":
     "Works with wagerable questions and with media, but not with long-form questions.",
+  "uploadHelp.readTimeTitle": "Reading time",
+  "uploadHelp.readTimeIntro":
+    "Add <code>\"readTimeSec\": 8</code> (a whole number from 0 to 60) to show a question for exactly that many seconds before the buzzers open. It is used when the room's reading time is <b>Auto</b> (the default); without it, Jep! estimates the time from the text and media. Imported SIGame packs get it from the display times of their question parts (if the pack has any; SIGame's own timers are app settings and are not stored in packs). The admin can set a fixed reading time, the buzz window, the Final answer time and the wager time for each room.",
   "uploadHelp.secretTitle": "Secret questions (cat in the bag)",
   "uploadHelp.secretIntro":
     'Set <code>"secret": true</code> to hide a cat in the bag (<i>Кот в мешке</i>). On the board it looks like any other question. Whoever chooses it sees the cat, the topic and the value, and must give it to another player. Only that player answers, without buzzing: right wins the value and board control, wrong loses the value and the chooser keeps board control. Playing alone, you get it yourself.',

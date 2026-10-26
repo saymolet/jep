@@ -29,6 +29,7 @@ import {
   mergeRoomEvents,
   roomEventToAction,
 } from "./room-event";
+import { getBuzzWindowMs } from "./room-timers";
 import { getScoreChanges, scoreChangesKey } from "./standings";
 import {
   type State,
@@ -116,7 +117,11 @@ export function stateToGameEngine(
       ?.answeredBy.get(userId);
   };
 
-  const winningBuzz = getWinningBuzzer(state.buzzes, getTiebreakerSeed(clue));
+  const winningBuzz = getWinningBuzzer(
+    state.buzzes,
+    getTiebreakerSeed(clue),
+    getBuzzWindowMs(state),
+  );
   const winningBuzzer = winningBuzz?.userId ?? undefined;
 
   function getClueValueFn(idx: [number, number], userId: string) {
@@ -182,6 +187,15 @@ export function stateToGameEngine(
     answerStartedAt: state.answerStartedAt,
     /** Whose answer turn on the active clue ran out of time, if any. */
     answerTimedOut: state.answerTimedOut,
+    /** Room timers (room settings, see engine/room-timers.ts). */
+    readTimeSec: state.readTimeSec,
+    buzzWindowSec: state.buzzWindowSec,
+    finalAnswerTimeSec: state.finalAnswerTimeSec,
+    wagerTimeSec: state.wagerTimeSec,
+    /** When the current wager step started (server clock), or null. */
+    wagerStartedAt: state.wagerStartedAt,
+    /** When the current Final answer step started (server clock), or null. */
+    longFormStartedAt: state.longFormStartedAt,
     /** How many people are watching the room without playing (spectators,
      * counted with Realtime presence; 0 in solo play). */
     watchers,

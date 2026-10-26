@@ -2,7 +2,6 @@ import { z } from "zod";
 
 import { getAdmin } from "~/admin/auth.server";
 import { ActionType } from "~/engine";
-import { isAnswerTimeSec } from "~/engine/answer-timer";
 import { applyRoomEventsToState } from "~/engine/room-event";
 import { GameState, stateFromGame } from "~/engine/state";
 import { createT, getRequestLocale } from "~/i18n";
@@ -15,19 +14,20 @@ import {
 import { getRoom } from "~/models/room.server";
 import { requireSessionUserId } from "~/session.server";
 import { parseFormData } from "~/utils/http.server";
+import {
+  roomSettingsFormSchema,
+  toSettingsPayload,
+} from "~/utils/room-timers-form";
 
 import type { Route } from "./+types/room.$roomId.settings";
 
-const formSchema = z.object({
+const formSchema = roomSettingsFormSchema.extend({
   /** The visitor changing the settings, only as themselves. */
   userId: z.string().min(1),
-  /** Seconds for the answer timer, 0 = off. */
-  answerTimeSec: z.coerce.number().int().refine(isAnswerTimeSec),
-  /** "true" / "false": mark the answer wrong when the time runs out. */
-  autoWrongOnTimeout: z.enum(["true", "false"]).transform((v) => v === "true"),
 });
 
-/** Changes the room settings (the answer timer). Last change wins.
+/** Changes the room settings (the answer timer and the room timers: reading
+ * time, buzz window, Final answer and wager time). Last change wins.
  *
  * In a room only the site admin (a valid admin session, see /admin) may
  * change them, whether they play in the room or not. The event is inserted
@@ -37,11 +37,8 @@ const formSchema = z.object({
 export async function action({ request, params }: Route.ActionArgs) {
   const t = createT(getRequestLocale(request));
   const formData = await request.formData();
-  const { userId, answerTimeSec, autoWrongOnTimeout } = parseFormData(
-    formData,
-    formSchema,
-  );
-  const payload = { userId, answerTimeSec, autoWrongOnTimeout };
+  const form = parseFormData(formData, formSchema);
+  const payload = { userId: form.userId, ...toSettingsPayload(form) };
 
   const roomId = params.roomId ? parseInt(params.roomId) : undefined;
   if (!roomId) {
@@ -57,7 +54,7 @@ export async function action({ request, params }: Route.ActionArgs) {
   }
 
   const authSession = await getValidAuthSession(request);
-  await requireSessionUserId(request, userId, authSession);
+  await requireSessionUserId(request, form.userId, authSession);
   const room = await getRoom(roomId, authSession?.accessToken);
   if (!room) {
     throw new Response(t("room.error.roomNotFound"), { status: 404 });

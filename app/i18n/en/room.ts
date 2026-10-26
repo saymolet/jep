@@ -78,7 +78,7 @@ export const room = {
     "teams can only be changed between questions",
   "room.error.settingsBetweenQuestions":
     "settings can only be changed between questions",
-  "room.error.settingsAdminOnly": "only the admin can change the answer time",
+  "room.error.settingsAdminOnly": "only the admin can change the room timers",
   "room.error.kickAdminOnly":
     "the game has started: only the admin can kick a player now",
   "room.error.kickPlayersOnly": "only players in this game can kick a player",
@@ -94,15 +94,33 @@ export const room = {
   "room.alreadyPlaying":
     "This game is already being played. Join a room in progress or start your own.",
   "room.startNewRoom": "Start a new room",
+  "room.create.intro":
+    "Set the timers for the new room. Everyone sees them before every round, and you can still change them between questions.",
+  "room.create.lastUsed": "Your last room's timers are filled in.",
+  "room.create.submit": "Create the room",
+  "room.create.defaults": "Use the defaults",
+  "room.timers.title": "Room timers",
+  "room.timers.readTime": "Reading time (before the buzzers open)",
+  "room.timers.auto": "Auto",
+  "room.timers.readTimeHelp":
+    "Auto: from the question's length and media, or the time set in the game.",
+  "room.timers.buzzWindow": "Time to buzz in",
+  "room.timers.finalAnswerTime": "Final answer time",
+  "room.timers.finalAnswerTimeHelp":
+    "When it runs out, what each player typed is sent. No limit: the Final waits for every answer.",
+  "room.timers.wagerTime": "Wager time",
+  "room.timers.noLimit": "No limit",
+  "room.timers.wagerTimeHelp":
+    "When it runs out, the player wagers the smallest amount allowed: $5 on a Double Down, $0 in the Final.",
   "room.answerTime": "Answer time",
   "room.answerTimeHelp":
-    "How long the player whose turn it is has to answer and mark it. It can be changed between questions.",
+    "Answer time is how long the player whose turn it is has to answer and mark it. The timers can be changed between questions.",
   "room.answerTimeOff": "Off",
   "room.answerTimeSeconds": "{seconds} s",
   "room.answerTimeAutoWrong": "Mark wrong when time runs out",
-  "room.answerTimeSettings": "Answer time settings",
+  "room.answerTimeSettings": "Room timers",
   "room.answerTimeBetweenQuestions":
-    "The answer time can be changed between questions",
+    "The timers can be changed between questions",
   "room.answerTimeAdminOnly": "Only the admin can change this.",
   "room.answerTimeReadOnly":
     "Answer time: {value}. Only the admin can change this.",

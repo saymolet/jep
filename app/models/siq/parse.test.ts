@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { fixtureContentXml } from "~/test-fixtures/siq/build";
 
 import { SiqImportError } from "./errors";
-import { parsePriceRange, parseSiqXml } from "./parse";
+import { parseDuration, parsePriceRange, parseSiqXml } from "./parse";
 
 function v5Package(questionXml: string, roundAttrs = "") {
   return `<?xml version="1.0" encoding="utf-8"?>
@@ -247,5 +247,67 @@ describe("parsePriceRange", () => {
     ["", undefined],
   ])("%j", (input, expected) => {
     expect(parsePriceRange(input)).toEqual(expected);
+  });
+});
+
+describe("display time hints", () => {
+  const v4 = (atoms: string) =>
+    `<package name="P" version="4"><rounds><round name="R"><themes><theme name="T"><questions>
+      <question price="1"><scenario>${atoms}</scenario><right><answer>A</answer></right></question>
+    </questions></theme></themes></round></rounds></package>`;
+  const first = (xml: string) =>
+    parseSiqXml(xml).rounds[0].themes[0].questions[0];
+
+  it("v4: sums the time of the question atoms (not the answer part)", () => {
+    const q = first(
+      v4(
+        `<atom>Look</atom><atom type="image" time="5">@a.png</atom><atom type="say" time="2.5">Hm</atom><atom type="marker" /><atom time="9">Answer text</atom>`,
+      ),
+    );
+    expect(q.displayTimeSec).toBe(7.5);
+  });
+
+  it("v4: no time attributes, no hint", () => {
+    expect(first(v4(`<atom>Look</atom>`)).displayTimeSec).toBeUndefined();
+  });
+
+  it("v4: ignores a malformed time", () => {
+    expect(
+      first(v4(`<atom time="soon">Look</atom>`)).displayTimeSec,
+    ).toBeUndefined();
+  });
+
+  it("v5: sums the duration of the question items", () => {
+    const q = first(
+      v5Package(`<question price="100"><params>
+        <param name="question" type="content">
+          <item>Look</item>
+          <item type="image" isRef="True" duration="00:00:06">a.png</item>
+          <item type="audio" isRef="True" duration="00:01:00">b.mp3</item>
+        </param>
+        <param name="answer" type="content"><item duration="00:00:30">x</item></param>
+      </params><right><answer>A</answer></right></question>`),
+    );
+    expect(q.displayTimeSec).toBe(66);
+  });
+
+  it("v5: no duration, no hint", () => {
+    const q = first(
+      v5Package(`<question price="100"><params>
+        <param name="question" type="content"><item>Look</item></param>
+      </params><right><answer>A</answer></right></question>`),
+    );
+    expect(q.displayTimeSec).toBeUndefined();
+  });
+
+  it.each([
+    ["00:00:05", 5],
+    ["00:02:03", 123],
+    ["01:00:00", 3600],
+    ["5", undefined],
+    ["", undefined],
+    [undefined, undefined],
+  ])("parseDuration(%j)", (input, expected) => {
+    expect(parseDuration(input)).toBe(expected);
   });
 });

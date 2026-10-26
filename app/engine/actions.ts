@@ -86,6 +86,13 @@ const SetSettingsPayload = z.object({
    * (see ANSWER_TIME_OPTIONS). */
   answerTimeSec: z.number(),
   autoWrongOnTimeout: z.boolean(),
+  /** Room timers (see room-timers.ts), validated by the engine. Each is
+   * optional: events from before them leave the value as it was. */
+  /** Reading time in seconds, null = Auto. */
+  readTimeSec: z.number().nullable().optional(),
+  buzzWindowSec: z.number().optional(),
+  finalAnswerTimeSec: z.number().optional(),
+  wagerTimeSec: z.number().optional(),
   /** Set by the server when the site admin made the change (only the server
    * can insert set_settings events into a room, see the settings route). */
   admin: z.literal(true).optional(),
@@ -285,6 +292,10 @@ export function isSetSettingsAction(action: Action): action is {
     userId: string;
     answerTimeSec: number;
     autoWrongOnTimeout: boolean;
+    readTimeSec?: number | null;
+    buzzWindowSec?: number;
+    finalAnswerTimeSec?: number;
+    wagerTimeSec?: number;
     admin?: true;
   };
   ts: number;

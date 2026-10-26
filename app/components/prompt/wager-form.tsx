@@ -11,6 +11,7 @@ import type { Action, Player } from "~/engine";
 import {
   CANT_BUZZ_FLAG,
   getHighestClueValue,
+  getWagerRange,
   useEngineContext,
 } from "~/engine";
 import { useTranslation } from "~/i18n";
@@ -23,6 +24,14 @@ import type {
   WagerRecommendation,
 } from "~/utils/wager-strategy";
 import { getFinalClueStrategy } from "~/utils/wager-strategy";
+
+import { type StepTimerState, useOnceWhenTimeUp } from "./step-timers";
+
+const NO_TIMER: StepTimerState = {
+  startedAt: null,
+  durationSec: 0,
+  status: null,
+};
 
 type PlayerAndCanWager = Player & { canWager: boolean; hasWager: boolean };
 
@@ -221,7 +230,15 @@ function WagerForm({
   );
 }
 
-export function ConnectedWagerForm({ roomId, userId }: RoomProps) {
+/** ConnectedWagerForm is the player's own wager form. With the room's wager
+ * time (`timer`), this device places the smallest allowed wager for the
+ * player when the time runs out ($0 on the Final, $5 on a Double Down; see
+ * getWagerRange) — once per wager step, and not if they already wagered. */
+export function ConnectedWagerForm({
+  roomId,
+  userId,
+  timer = NO_TIMER,
+}: RoomProps & { timer?: StepTimerState }) {
   const { activeClue, buzzes, board, clue, players, soloDispatch, wagers } =
     useEngineContext();
   const { t, rich } = useTranslation();
@@ -240,6 +257,19 @@ export function ConnectedWagerForm({ roomId, userId }: RoomProps) {
   );
 
   const wager = wagers.get(userId);
+  const minWager = clue ? getWagerRange(board, clue, score).min : 0;
+  const submit = fetcher.submit;
+  const timeUp = useOnceWhenTimeUp(timer, wager !== undefined, () => {
+    submit(
+      {
+        userId,
+        i: i.toString(),
+        j: j.toString(),
+        wager: minWager.toString(),
+      },
+      { method: "post", action: `/room/${roomId}/wager` },
+    );
+  });
   const playersList = Array.from(players.values()).map((p) => ({
     ...p,
     canWager: buzzes.get(p.userId) !== CANT_BUZZ_FLAG,
@@ -282,6 +312,17 @@ export function ConnectedWagerForm({ roomId, userId }: RoomProps) {
     );
   }
 
+  if (timeUp) {
+    return (
+      <div className="flex flex-col items-center gap-4 p-2">
+        <p className="font-bold text-white" data-testid="wager-time-up">
+          {t("play.wager.timeUp", { amount: formatDollars(minWager) })}
+        </p>
+        <PlayerScores players={playersList} userId={userId} />
+      </div>
+    );
+  }
+
   return (
     <fetcher.Form method="POST" action={`/room/${roomId}/wager`}>
       <input type="hidden" value={userId} name="userId" />
@@ -297,6 +338,11 @@ export function ConnectedWagerForm({ roomId, userId }: RoomProps) {
         strategy={strategy}
         wagerHints={wagerHints}
       />
+      {timer.startedAt !== null ? (
+        <p className="pb-2 text-center text-sm text-slate-300">
+          {t("play.wager.timerHint", { amount: formatDollars(minWager) })}
+        </p>
+      ) : null}
     </fetcher.Form>
   );
 }

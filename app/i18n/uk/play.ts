@@ -167,4 +167,10 @@ export const play: Dictionary<typeof en> = {
   "play.answerTimer.countedWrong": "Твою відповідь зараховано як неправильну.",
   "play.answerTimer.markNow": "Оціни свою відповідь зараз.",
   "play.answerTimer.ranOutOfTime": "{name}: час на відповідь вийшов.",
+  "play.stepTimer.wagerLabel": "Час на ставку",
+  "play.stepTimer.finalLabel": "Час на відповідь",
+  "play.wager.timerHint": "Коли час вийде, твоя ставка буде {amount}.",
+  "play.wager.timeUp": "Час вийшов! Твоя ставка: {amount}.",
+  "play.answer.timerHint": "Коли час вийде, набраний текст надішлеться сам.",
+  "play.answer.timeUpSent": "Час вийшов! Твою відповідь надіслано.",
 };

@@ -204,6 +204,18 @@ describe("ClueSchema secret", () => {
     expect(found.join("\n")).toMatch(message);
   });
 
+  it.each([0, 8, 60])("accepts a reading time of %s s", (readTimeSec) => {
+    expect(issues({ ...BASE, readTimeSec })).toEqual([]);
+  });
+
+  it.each([
+    [-1, "readTimeSec must be from 0 to 60"],
+    [61, "readTimeSec must be from 0 to 60"],
+    [2.5, "readTimeSec must be a whole number"],
+  ])("rejects a reading time of %s", (readTimeSec, message) => {
+    expect(issues({ ...BASE, readTimeSec }).join("\n")).toMatch(message);
+  });
+
   it.each([
     [{ secretTopic: "Cats" }],
     [{ secretValue: 500 }],

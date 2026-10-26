@@ -145,6 +145,16 @@ Difficulty estimates from the original planning discussion.
       inserts) — see [features/20-admin-interventions.md](./features/20-admin-interventions.md)
       — ⭐⭐ medium
 
+- [x] Room timers (owner's request) — the site admin sets a room's **reading time** (Auto or
+      0–60 s), **buzz window** (3–20 s, default 5), **answer time**, **Final answer time**
+      (No limit / 15–120 s, default 30, enforced: the player's device sends what was typed) and
+      **wager time** (Off / 15–60 s; the player's device wagers the minimum) — in a "new room"
+      step when the admin creates a room (last-used values remembered), in the round preview
+      and the ⏱ sheet; players see them read-only. SIGame packs carry no such timers; their
+      per-question display times (v4 `atom time`, v5 `item duration`) become the question's
+      `readTimeSec`, used by "Auto" — see [features/21-room-timers.md](./features/21-room-timers.md)
+      — ⭐⭐ medium
+
 Question search · Discord login · keyboard shortcuts ·
 OBS/browser-source mode ·
 auto-reconnect · host controls from phone ·
@@ -269,3 +279,11 @@ scripts/cleanup-inactive-rooms.mjs`, admin Rooms button; 7-day dashboard tile re
   event inserted by the server only (all routes use `createRoomEventAsServer`; the wager route
   now checks the wager range). Migration `20261026180715_room_events_server_only.sql` (the
   room_events insert policy rejects every insert from the browser key). No new dependencies.
+- **2026-10-26** — Feature 21 on `feat/room-timers`: room timers set by the admin (reading
+  time, buzz window, Final answer time, wager time, plus the answer time) — optional
+  `set_settings` fields replayed deterministically (old events keep today's values), every
+  device reads the room's buzz window and reading time, wager and Final answer countdowns with
+  auto-submit by the player's own device, the admin's "new room" step, and `readTimeSec` on
+  questions (game JSON + SIQ display-time hints). Migration
+  `20261026192800_clues_read_time_sec.sql` (additive nullable `clues.read_time_sec`, 0–60). No
+  new dependencies.

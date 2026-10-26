@@ -2,6 +2,13 @@ import {
   DEFAULT_AUTO_WRONG_ON_TIMEOUT,
   isAnswerTimeSec,
 } from "~/engine/answer-timer";
+import {
+  DEFAULT_ROOM_TIMERS,
+  isBuzzWindowSec,
+  isFinalAnswerTimeSec,
+  isReadTimeSec,
+  isWagerTimeSec,
+} from "~/engine/room-timers";
 import type { ClueAnswer, GameState, Player, State } from "~/engine/state";
 import { newAnswerGrid } from "~/engine/state";
 import type { Game } from "~/models/convert.server";
@@ -159,6 +166,11 @@ interface SerializedState {
   /** Missing in saves from before the answer timer. */
   answerTimeSec?: number;
   autoWrongOnTimeout?: boolean;
+  /** Missing in saves from before the room timers. */
+  readTimeSec?: number | null;
+  buzzWindowSec?: number;
+  finalAnswerTimeSec?: number;
+  wagerTimeSec?: number;
 }
 
 interface SerializedClueAnswer {
@@ -222,6 +234,10 @@ export function serializeState(state: State): SerializedState {
     isPaused: state.isPaused,
     answerTimeSec: state.answerTimeSec,
     autoWrongOnTimeout: state.autoWrongOnTimeout,
+    readTimeSec: state.readTimeSec,
+    buzzWindowSec: state.buzzWindowSec,
+    finalAnswerTimeSec: state.finalAnswerTimeSec,
+    wagerTimeSec: state.wagerTimeSec,
   };
 }
 
@@ -286,6 +302,22 @@ export function deserializeState(
     // session (it would already be over).
     answerStartedAt: null,
     answerTimedOut: null,
+    readTimeSec: isReadTimeSec(serialized.readTimeSec)
+      ? serialized.readTimeSec
+      : DEFAULT_ROOM_TIMERS.readTimeSec,
+    buzzWindowSec: isBuzzWindowSec(serialized.buzzWindowSec)
+      ? serialized.buzzWindowSec
+      : DEFAULT_ROOM_TIMERS.buzzWindowSec,
+    finalAnswerTimeSec: isFinalAnswerTimeSec(serialized.finalAnswerTimeSec)
+      ? serialized.finalAnswerTimeSec
+      : DEFAULT_ROOM_TIMERS.finalAnswerTimeSec,
+    wagerTimeSec: isWagerTimeSec(serialized.wagerTimeSec)
+      ? serialized.wagerTimeSec
+      : DEFAULT_ROOM_TIMERS.wagerTimeSec,
+    // Like the answer turn: a wager or Final answer step restored from a
+    // save has no timer.
+    wagerStartedAt: null,
+    longFormStartedAt: null,
   };
 }
 
