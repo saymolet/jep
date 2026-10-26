@@ -21,7 +21,7 @@ export default function LanguageSwitcher({
         "flex shrink-0 items-center overflow-hidden rounded-md border text-xs font-semibold",
         variant === "inverse"
           ? "border-white/60 text-white"
-          : "w-fit border-slate-300 bg-white text-slate-600 shadow-sm",
+          : "w-fit border-ink-300 bg-paper text-ink-600 shadow-sm",
       )}
     >
       {LOCALES.map((option) => {

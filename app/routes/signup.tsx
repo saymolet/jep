@@ -101,7 +101,7 @@ export default function Signup({ actionData }: Route.ComponentProps) {
             <div className="w-full border-t border-gray-300" />
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="bg-white px-2 text-gray-500">{t("auth.or")}</span>
+            <span className="bg-page px-2 text-gray-500">{t("auth.or")}</span>
           </div>
         </div>
         <Form method="POST" className="flex flex-col gap-4">

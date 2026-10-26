@@ -38,12 +38,12 @@ export default function CopyLinkButton({
       </button>
 
       <ToastPrimitive.Root
-        className={`items-center rounded-md bg-slate-100 p-4 shadow-md data-[state=closed]:animate-hide data-[state=open]:animate-slide-in data-[swipe=cancel]:translate-x-0 data-[swipe=cancel]:transition-[transform_200ms_ease-out] data-[swipe=end]:animate-swipe-out data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)]`}
+        className={`items-center rounded-md bg-ink-100 p-4 shadow-md data-[state=closed]:animate-hide data-[state=open]:animate-slide-in data-[swipe=cancel]:translate-x-0 data-[swipe=cancel]:transition-[transform_200ms_ease-out] data-[swipe=end]:animate-swipe-out data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)]`}
         open={open}
         onOpenChange={setOpen}
       >
         <ToastPrimitive.Description asChild>
-          <p className="text-sm text-slate-700">{t("common.copiedLink")}</p>
+          <p className="text-sm text-ink-700">{t("common.copiedLink")}</p>
         </ToastPrimitive.Description>
       </ToastPrimitive.Root>
     </>

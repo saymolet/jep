@@ -58,7 +58,7 @@ function MoreActionsTrigger({
     <DropdownMenu.Trigger asChild>
       <button
         type="button"
-        className="inline-flex rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+        className="inline-flex rounded-md p-1 text-ink-400 hover:bg-ink-100 hover:text-ink-600"
         aria-label={t("common.moreActions")}
         onClick={onClick}
       >

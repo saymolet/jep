@@ -36,7 +36,7 @@ export default function Search({
           defaultValue={defaultValue}
         />
         {debouncedLoading ? (
-          <div className={"absolute right-2.5 bottom-2.5 p-2 text-blue-600"}>
+          <div className={"absolute right-2.5 bottom-2.5 p-2 text-accent"}>
             <LoadingSpinner />
           </div>
         ) : null}

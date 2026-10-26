@@ -7,6 +7,9 @@ export const settings = {
   "settings.language.title": "Language",
   "settings.language.description":
     "Choose the language of the site. Game content (questions, answers) is never translated.",
+  "settings.theme.title": "Theme",
+  "settings.theme.description":
+    "Classic is the original blue look, Dark is easier on the eyes in a dim room, and System follows your device's light or dark mode.",
   "settings.changeEmail.title": "Change email",
   "settings.changeEmail.current": "Current email",
   "settings.changeEmail.new": "New email",

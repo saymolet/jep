@@ -72,7 +72,7 @@ export function DownloadedGameInfo({
         {cachedGame.title}
       </StyledLink>{" "}
       {t("profile.byAuthor", { author: cachedGame.author })}{" "}
-      <span className="text-sm text-slate-500">
+      <span className="text-sm text-ink-500">
         {/* Downloads are read from IndexedDB after hydration, so this is the
             viewer's local date. */}
         <LocalDate date={cachedGame.cachedAt} />

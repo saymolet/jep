@@ -9,6 +9,9 @@ export const settings: Dictionary<typeof en> = {
   "settings.language.title": "Мова",
   "settings.language.description":
     "Обери мову сайту. Вміст ігор (питання, відповіді) ніколи не перекладається.",
+  "settings.theme.title": "Тема",
+  "settings.theme.description":
+    "Класична — оригінальний синій вигляд, темна — приємніша для очей у темній кімнаті, а системна підлаштовується під світлий чи темний режим твого пристрою.",
   "settings.changeEmail.title": "Змінити пошту",
   "settings.changeEmail.current": "Поточна пошта",
   "settings.changeEmail.new": "Нова пошта",

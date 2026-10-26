@@ -70,7 +70,7 @@ export default function GameCard({
   }
 
   return (
-    <div className="group flex w-full basis-full flex-col rounded-lg border border-slate-300 shadow-sm transition-colors hover:border-blue-500 hover:shadow-sm sm:basis-auto">
+    <div className="group flex w-full basis-full flex-col rounded-lg border border-ink-300 shadow-sm transition-colors hover:border-blue-500 hover:shadow-sm sm:basis-auto">
       <Link to={to} className="w-full grow" onClick={() => setLoading(true)}>
         <div className="flex h-full min-w-0 grow flex-col items-start gap-2 p-4">
           <div className="flex w-full justify-between">
@@ -96,7 +96,7 @@ export default function GameCard({
             {game.author}
           </p>
           {game.note && (
-            <p className="text-left text-sm break-word text-slate-500">
+            <p className="text-left text-sm break-word text-ink-500">
               {game.note}
             </p>
           )}
@@ -104,7 +104,7 @@ export default function GameCard({
             {loading ? <LoadingSpinner className="text-blue-500" /> : null}
             {downloadStatus === "downloaded" && (
               <ArrowDownTray
-                className="h-4 w-4 text-slate-400"
+                className="h-4 w-4 text-ink-400"
                 title={t("home.downloadedOffline")}
               />
             )}

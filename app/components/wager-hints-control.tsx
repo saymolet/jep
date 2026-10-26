@@ -17,10 +17,10 @@ function isWagerHintsMode(v: string): v is WagerHintsMode {
 
 const themes = {
   light: {
-    label: "text-sm text-slate-600",
-    list: "bg-white border border-slate-300 hover:border-blue-500",
+    label: "text-sm text-ink-600",
+    list: "bg-paper border border-ink-300 hover:border-blue-500",
     trigger:
-      "text-slate-600 hover:bg-blue-600/20 data-[state=active]:bg-blue-600 data-[state=active]:text-white",
+      "text-ink-600 hover:bg-blue-600/20 data-[state=active]:bg-blue-600 data-[state=active]:text-white",
   },
   dark: {
     label: "text-sm text-white opacity-70",

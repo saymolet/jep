@@ -103,7 +103,7 @@ export function GameInfo({
     <li>
       <StyledLink to={`/game/${game.id}/play`}>{game.title}</StyledLink>{" "}
       {t("profile.byAuthor", { author: game.author })}{" "}
-      <span className="text-sm text-slate-500">
+      <span className="text-sm text-ink-500">
         <LocalDate date={game.created_at} />
       </span>
       <DeleteGameModal

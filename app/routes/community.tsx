@@ -68,7 +68,7 @@ export default function Login() {
             <li key={key}>{t(key)}</li>
           ))}
         </ul>
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-ink-500">
           {rich("community.basedOn", {
             link: (c) => <Anchor href={SPORCLE}>{c}</Anchor>,
           })}

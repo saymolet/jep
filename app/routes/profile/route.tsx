@@ -109,10 +109,10 @@ function DownloadedGamesSection({
       <h2 className="mb-4 text-2xl font-semibold">
         {t("profile.downloadedGames")}
       </h2>
-      <p className="mb-4 text-sm text-slate-500">
+      <p className="mb-4 text-sm text-ink-500">
         {t("profile.downloadedGamesDescription")}
       </p>
-      <ul className="mb-4 list-inside list-disc text-slate-700">
+      <ul className="mb-4 list-inside list-disc text-ink-700">
         {cachedGames.map((cg) => (
           <DownloadedGameInfo
             key={cg.id}
@@ -218,7 +218,7 @@ function PlayerDefaultsControl({
 
   return (
     <section className="mb-6 flex flex-col gap-3">
-      <h1 className="text-3xl font-semibold text-slate-900">{email}</h1>
+      <h1 className="text-3xl font-semibold text-ink-900">{email}</h1>
 
       {/* Rough ripoff of PlayerScoreBox */}
       <div className="flex items-center gap-2 rounded-2xl bg-blue-700 p-2 sm:gap-3 sm:p-3">
@@ -415,9 +415,9 @@ function OnlineProfile({
           redirectTo="/profile"
         />
         {loaderData.games.length === 0 ? (
-          <p className="text-sm text-slate-500">{t("profile.noGames")}</p>
+          <p className="text-sm text-ink-500">{t("profile.noGames")}</p>
         ) : null}
-        <ul className="mb-4 list-inside list-disc text-slate-700">
+        <ul className="mb-4 list-inside list-disc text-ink-700">
           {loaderData.games.map((game) => (
             <GameInfo
               key={game.id}
