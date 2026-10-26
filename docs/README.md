@@ -106,7 +106,7 @@ Difficulty estimates from the original planning discussion.
       [features/14-answer-timer.md](./features/14-answer-timer.md) — ⭐⭐ medium
 
 - [x] Soundboard (F12b) — players tap reaction sounds (applause, drumroll, ta-da, wrong,
-      air horn, ha-ha, ooh, crickets, ding; synthesized with Web Audio, no files) that play
+      air horn, ha-ha, ooh, crickets, ding; real CC0 recordings, Web Audio synth as fallback) that play
       on every device in the room with a "🎺 Ann" toast; ephemeral Realtime broadcast on the
       room channel (not stored), 1 sound / 2 s, spectators and the TV only listen, per-device
       "Mute soundboard" — see [features/15-soundboard.md](./features/15-soundboard.md) — ⭐⭐ medium
@@ -230,3 +230,9 @@ auto-reconnect · host controls from phone ·
   accepts the server's `admin: true` events (old player events stay valid). Migration
   `20261026123109_room_events_settings_admin_only.sql` (room_events insert policy rejects
   `set_settings` from anon/authenticated). No new dependencies.
+- **2026-10-26** — Feature 15 follow-up on `feat/real-sounds`: the soundboard plays real
+  recordings — nine CC0 MP3s (BigSoundBank / Freesound, mono 112 kbps, ≤ 3 s, ≈ −16 LUFS,
+  ~273 KB in all) in `public/sounds/soundboard/` with `CREDITS.md`. Fetched and decoded once
+  when the audio context is created (first tap), played through the same limiter / volume /
+  mute / ducking / overlap path; a sample that fails to load falls back to the Web Audio
+  synth. No migration, no new dependencies.

@@ -1,6 +1,6 @@
 # Feature 15 — Soundboard (F12b)
 
-**Branch:** `feat/soundboard`
+**Branch:** `feat/soundboard`, follow-up `feat/real-sounds` (real recorded sounds)
 **Status:** ✅ implemented & tested
 **Migration:** none
 **New dependencies:** none
@@ -48,9 +48,40 @@ Start round) is open, because that dialog is modal.
   (`RoomBroadcast`: `available`, `send`, `subscribe`) is `NO_BROADCAST` in solo play.
   `send` drops the message while the channel is not joined (no REST fallback, no queue).
   Broadcast `self` is off (Supabase default), so the sender plays its own sound locally.
-- **Sounds are synthesized** with the Web Audio API (`app/utils/soundboard/synth.ts`): no
-  audio files to license or host. Each effect is a few oscillators / filtered noise bursts
-  with envelopes, ≤ 2 s:
+- **Sounds are real recordings** (follow-up on `feat/real-sounds`): nine CC0 1.0 samples
+  from BigSoundBank (Joseph SARDIN) and Freesound, credited in
+  `public/sounds/soundboard/CREDITS.md` (CC0 needs no attribution; we credit anyway). Each was
+  trimmed to ≤ 3 s, faded, downmixed to mono 44.1 kHz, peak-limited and loudness-normalized
+  (EBU R128 two-pass, −16 LUFS integrated, true peak ≤ −1.5 dBTP), then encoded as 112 kbps
+  CBR MP3 (14–41 KB each, ~273 KB in all). MP3 because every browser — iOS Safari included —
+  decodes it with `decodeAudioData`. Files are `public/sounds/soundboard/<id>.mp3` (ids from
+  `messages.ts`; Ha-ha is `laugh.mp3`).
+  - **Loading** (`samples.ts`, `SampleCache`): when the soundboard's `AudioContext` is
+    created (first tap on a room / TV page, or the first sound after one), all nine samples
+    are fetched (`fetch` → `connect-src 'self'`) and decoded once (callback form of
+    `decodeAudioData`, which older Safari needs) and kept as `AudioBuffer`s for the page's
+    life. Each is fetched at most once; a failure is remembered (not retried). Nothing is
+    fetched before the first tap, so pages that never get a tap download nothing. The files
+    are fetched even when the device has the soundboard muted (the context is created on
+    the first tap regardless) — 273 KB once, then cached by the service worker.
+  - **Playback** (`audio.ts`, `playOnAudio`): a decoded sample plays through
+    `AudioBufferSourceNode → gain (volume) → limiter bus`, i.e. the same graph as before,
+    so volume, game mute, soundboard mute, ducking, the limiter, the overlap cap and the
+    rate limits all apply unchanged (mute / volume / limits are decided in `useSoundboard`
+    before anything is played). The samples are loudness-normalized, so there is no
+    per-sound level. A sample still loading plays as soon as it is decoded; if that takes
+    more than `SAMPLE_WAIT_MS` (1 s) the synthesized sound plays instead (the late sample
+    is still cached for next time).
+  - **Fallback:** a sample that fails to fetch (HTTP error, offline) or decode is replaced
+    by the **Web Audio synth** (`synth.ts`, kept as is) for that sound.
+  - The overlap cap counts each sound as playing for its sample's length
+    (`SAMPLE_DURATION_S`, ≤ 3 s).
+  - **Serving:** plain static files from `public/` (`react-router-serve` / express static
+    sets `Content-Type: audio/mpeg`); the service worker already serves `/sounds/*`
+    cache-first, so each device downloads them once. CSP unchanged (`connect-src 'self'`
+    allows the fetch).
+- **Synthesized fallback** (`synth.ts`, the original implementation): each effect is a few
+  oscillators / filtered noise bursts with envelopes, ≤ 2 s:
   applause = band-passed noise "claps" over a noise bed swelling in and out; drumroll =
   crescendo of high-passed noise snare strokes + a triangle body, ending in a cymbal crash
   and a kick; ta-da = two brass chords (detuned saws through an opening low-pass, vibrato on
@@ -59,17 +90,20 @@ Start round) is open, because that dialog is modal.
   falling "ha" syllables (saw through "a" formant filters + breath noise); ooh = six-voice
   crowd through "oo" formants rising then falling; crickets = two crickets of triple sine
   pulses at 4.4 / 4.75 kHz; ding = two-strike bell from inharmonic sine partials.
-- **Loudness normalization:** every sound was rendered with an `OfflineAudioContext` in
+- **Loudness normalization of the synth:** every synthesized sound was rendered with an
+  `OfflineAudioContext` in
   headless Chromium and its per-sound gain (`SOUND_LEVEL`) set so the loudest 30 % of the
   sound is ≈ −16 dBFS RMS (crickets −20 because high-pitched sounds seem louder; drumroll
   −19.5 so its crash stays below clipping), with every peak < 1 at volume 1. Live playback
-  also goes through a `DynamicsCompressor` limiter so overlapping sounds don't clip. The
-  user's game volume scales it (default 0.5).
+  (samples and synth) also goes through a `DynamicsCompressor` limiter so overlapping sounds
+  don't clip. The user's game volume scales it (default 0.5).
 - **Autoplay policies:** the `AudioContext` is created lazily — on the first tap/click/key
   press on the page (a capture listener installed while a room/TV page is open), or when a
   sound is played after the page was interacted with (`navigator.userActivation`). Before
   any interaction nothing is created (no console warnings) and the sound is skipped; the TV
-  page already shows "tap to turn on sound".
+  page already shows "tap to turn on sound". The samples load from that same moment, so on
+  iOS Safari the tap that unlocks the context also starts the downloads; buffer sources on
+  an unlocked context play like the synth did.
 - **Abuse / annoyance limits** (`SoundboardLimiter`):
   - sender: one sound per **2 s** (buttons dimmed while cooling down);
   - receivers ignore a sender's sounds arriving less than **1.7 s** apart (a bit below 2 s so
@@ -96,7 +130,7 @@ Start round) is open, because that dialog is modal.
   never covers the last row of the scoreboard. Enter on soundboard controls doesn't reach the
   prompt's "Enter buzzes" listener.
 - **Test hook:** each toast has `data-sound` and `data-played` ("true" when the sound was
-  actually handed to the synthesizer on this device), which e2e tests use to check mute
+  actually handed to the audio output (sample or synth) on this device), which e2e tests use to check mute
   without listening to audio.
 
 ## Files
@@ -105,10 +139,13 @@ Start round) is open, because that dialog is modal.
   `parseSoundboardMessage`.
 - `app/utils/soundboard/limiter.ts` — `SoundboardLimiter` (send / receive cooldowns,
   overlap cap).
-- `app/utils/soundboard/synth.ts` — the nine synthesized sounds, durations, levels,
-  `scheduleSound`.
-- `app/utils/soundboard/audio.ts` — lazy `AudioContext` + limiter bus, unlock on gesture,
-  `playSoundboardSound`.
+- `public/sounds/soundboard/*.mp3` + `CREDITS.md` — the nine samples and their sources.
+- `app/utils/soundboard/samples.ts` — sample URLs and durations, `SampleCache` (fetch +
+  decode once), `playSample`.
+- `app/utils/soundboard/synth.ts` — the nine synthesized sounds (fallback), durations,
+  levels, `scheduleSound`.
+- `app/utils/soundboard/audio.ts` — lazy `AudioContext` + limiter bus + sample preload,
+  unlock on gesture, `playSoundboardSound` / `playOnAudio` (sample, else synth).
 - `app/utils/soundboard/mute.ts` — per-device "Mute soundboard".
 - `app/engine/room-broadcast.ts` (new) — `RoomBroadcast`, `NO_BROADCAST`, listener set;
   `use-game-engine.ts` (broadcast handler + `soundboard` in the engine), `use-engine-context.ts`.
@@ -130,7 +167,13 @@ Start round) is open, because that dialog is modal.
   release), `synth.test.ts` (every sound schedules on a mocked `AudioContext` without
   throwing — the mock throws like the browser on exponential ramps to 0 — every source
   starts now and stops within its duration ≤ 2 s, all automation inside the window, output
-  gain = volume × level, volume clamped, scheduling later).
+  gain = volume × level, volume clamped, scheduling later), `samples.test.ts` (URL and
+  duration ≤ 3 s for every sound; fetch + decode with the callback and the promise
+  `decodeAudioData`; fetched once even for concurrent loads; decode error / HTTP 404 /
+  network error → failed, not retried; `preloadAll`; `playSample` graph and volume clamp),
+  `audio.test.ts` (decoded sample plays through the bus at the volume and not the synth;
+  failed sample → synth; first use loads then plays, cached afterwards; slow sample → synth
+  after 1 s, late sample not played on top but cached).
 - Engine: `app/engine/room-broadcast.test.ts`; `use-game-engine.test.tsx` — sends only while
   joined, listeners receive broadcasts and survive a reconnect, room events still arrive.
 - Components: `app/components/soundboard/soundboard.test.tsx` — grid of 9 and sending (payload,
@@ -143,7 +186,9 @@ Start round) is open, because that dialog is modal.
   spectator; host taps Applause → guest sees "👏 <host name>" and it played, the spectator
   sees it too; guest mutes the soundboard → host's Ding! shows on the guest with
   `data-played="false"`, stored in localStorage; the muted guest can still send (host hears
-  Crickets).
+  Crickets); the guest's browser downloaded all nine samples (HTTP 200) after its first tap.
+  `e2e/soundboard-sounds.spec.ts` — every `/sounds/soundboard/<id>.mp3` answers 200 with
+  `audio/mpeg` and a plausible size (production server build).
 - Manually checked screenshots (phone 390×844 with touch, desktop, TV 1280×720): the button
   sits above the BUZZ button and countdown, the panel fits a phone, toasts on all three.
 - Loudness table (offline render, volume 1, after `SOUND_LEVEL`): peaks 0.31–0.95, loud RMS
@@ -156,8 +201,9 @@ Start round) is open, because that dialog is modal.
 2. On the phone tap **🎺** → **Applause**: the phone, the laptop and the TV play applause and
    show "👏 <phone name>". Tap another sound right away: nothing (dimmed, "One sound every 2
    seconds"); after 2 s it works.
-3. Try every sound once and judge if they're recognisable and about equally loud (they are
-   synthesized — tweak `synth.ts` if one is off).
+3. Try every sound once and judge if they're recognisable and about equally loud (real
+   recordings; to compare with the synth fallback, block `/sounds/soundboard/` in the
+   browser's dev tools and reload).
 4. Open a question: on the phone the 🎺 button is above the BUZZ button; play "Drumroll"
    while it's read, then "Wrong!" / "Applause" after an answer.
 5. On the laptop tick **Mute soundboard on this device** (in the panel or the game menu):
