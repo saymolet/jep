@@ -158,6 +158,14 @@ the server; the browser never sends a list of files to delete.
   (`e2e-admin-password`) for the e2e build and server; `playwright.config.ts` runs
   `e2e/admin.spec.ts` in the `db` project.
 
+## Admin in rooms (follow-up `feat/admin-timer`)
+
+The admin session also counts in game rooms: only the admin may change a room's answer timer
+(see [14-answer-timer.md](./14-answer-timer.md), "Only the admin changes it"). The room
+loader exposes just `isAdmin` (a boolean from `getAdmin`), and the settings route answers 403
+without an admin session. Log in at `/admin` on the device you'll use, then open (or reload)
+the room.
+
 ## Production setup
 
 1. Apply the migration (`jep-deploy` does it).

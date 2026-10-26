@@ -13,10 +13,25 @@ import useSoloAction from "~/utils/use-solo-action";
 
 const TIMER_SYMBOL = "⏱"; // ⏱
 
+export interface SettingsAccessProps {
+  /** The visitor is logged in as the site admin (room loader). */
+  isAdmin?: boolean;
+}
+
+/** mayEditSettings: in a room only the site admin may change the settings
+ * (the server enforces it too); in solo play (room -1) the player may. */
+export function mayEditSettings(roomId: number, isAdmin = false) {
+  return isAdmin || roomId === -1;
+}
+
 /** useAnswerTimerSetting is the room's answer timer setting (showing a
  * change right away while it is being saved) and a function to change it.
- * Any player can change it between questions. */
-function useAnswerTimerSetting({ roomId, userId }: RoomProps) {
+ * The admin (or the solo player) can change it between questions. */
+function useAnswerTimerSetting({
+  roomId,
+  userId,
+  isAdmin,
+}: RoomProps & SettingsAccessProps) {
   const {
     activeClue,
     answerTimeSec,
@@ -36,8 +51,13 @@ function useAnswerTimerSetting({ roomId, userId }: RoomProps) {
     ? pending.get("autoWrongOnTimeout") === "true"
     : autoWrongOnTimeout;
 
+  const editable = mayEditSettings(roomId, isAdmin);
+  const betweenQuestions = activeClue === null && type !== GameState.GameOver;
   const canChange =
-    players.has(userId) && activeClue === null && type !== GameState.GameOver;
+    editable &&
+    betweenQuestions &&
+    // The admin needn't play; in solo play the player sets it.
+    (isAdmin || players.has(userId));
 
   const save = (next: { seconds: number; autoWrong: boolean }) =>
     fetcher.submit(
@@ -49,17 +69,20 @@ function useAnswerTimerSetting({ roomId, userId }: RoomProps) {
       { method: "post", action: `/room/${roomId}/settings` },
     );
 
-  return { seconds, autoWrong, canChange, save };
+  return { seconds, autoWrong, editable, canChange, save };
 }
 
 /** AnswerTimerSettings picks the answer time (Off / 10–60 s) and whether
- * running out of time marks the answer wrong. */
-export function AnswerTimerSettings({ roomId, userId }: RoomProps) {
+ * running out of time marks the answer wrong. Read-only (the current values
+ * shown, controls disabled) for everyone but the admin. */
+export function AnswerTimerSettings({
+  roomId,
+  userId,
+  isAdmin = false,
+}: RoomProps & SettingsAccessProps) {
   const { t } = useTranslation();
-  const { seconds, autoWrong, canChange, save } = useAnswerTimerSetting({
-    roomId,
-    userId,
-  });
+  const { seconds, autoWrong, editable, canChange, save } =
+    useAnswerTimerSetting({ roomId, userId, isAdmin });
   const labelId = React.useId();
 
   return (
@@ -114,9 +137,11 @@ export function AnswerTimerSettings({ roomId, userId }: RoomProps) {
         {t("room.answerTimeAutoWrong")}
       </label>
       <p className="text-xs text-slate-400">
-        {canChange
-          ? t("room.answerTimeHelp")
-          : t("room.answerTimeBetweenQuestions")}
+        {!editable
+          ? t("room.answerTimeAdminOnly")
+          : canChange
+            ? t("room.answerTimeHelp")
+            : t("room.answerTimeBetweenQuestions")}
       </p>
     </div>
   );
@@ -124,12 +149,43 @@ export function AnswerTimerSettings({ roomId, userId }: RoomProps) {
 
 /** AnswerTimerControl is the room's header button showing the answer time
  * ("⏱ Off" / "⏱ 15 s"); it opens the answer time settings. Like Pause, it
- * is only available between questions. */
-export function AnswerTimerControl({ roomId, userId }: RoomProps) {
+ * is only available between questions. For everyone but the admin it only
+ * shows the value ("Only the admin can change this"). */
+export function AnswerTimerControl({
+  roomId,
+  userId,
+  isAdmin = false,
+}: RoomProps & SettingsAccessProps) {
   const { t } = useTranslation();
   const { answerTimeSec, activeClue, type } = useEngineContext();
   const [open, setOpen] = React.useState(false);
   const canChange = activeClue === null && type !== GameState.GameOver;
+  const value =
+    answerTimeSec === 0
+      ? t("room.answerTimeOff")
+      : t("room.answerTimeSeconds", { seconds: answerTimeSec });
+  const content = (
+    <>
+      <span className="text-base" aria-hidden>
+        {TIMER_SYMBOL}
+      </span>
+      <span>{value}</span>
+    </>
+  );
+
+  if (!mayEditSettings(roomId, isAdmin)) {
+    const label = t("room.answerTimeReadOnly", { value });
+    return (
+      <span
+        title={label}
+        data-testid="answer-time-readonly"
+        className="flex cursor-default items-center gap-2 rounded-lg px-3 py-1.5 text-sm whitespace-nowrap text-slate-300"
+      >
+        {content}
+        <span className="sr-only">{t("room.answerTimeAdminOnly")}</span>
+      </span>
+    );
+  }
 
   return (
     <>
@@ -145,14 +201,7 @@ export function AnswerTimerControl({ roomId, userId }: RoomProps) {
         }
         className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm whitespace-nowrap text-slate-300 transition-colors hover:bg-white/10 hover:text-white disabled:pointer-events-none disabled:opacity-40"
       >
-        <span className="text-base" aria-hidden>
-          {TIMER_SYMBOL}
-        </span>
-        <span>
-          {answerTimeSec === 0
-            ? t("room.answerTimeOff")
-            : t("room.answerTimeSeconds", { seconds: answerTimeSec })}
-        </span>
+        {content}
       </button>
       <Dialog
         isOpen={open && canChange}
@@ -160,7 +209,11 @@ export function AnswerTimerControl({ roomId, userId }: RoomProps) {
         title={t("room.answerTimeSettings")}
         description={null}
       >
-        <AnswerTimerSettings roomId={roomId} userId={userId} />
+        <AnswerTimerSettings
+          roomId={roomId}
+          userId={userId}
+          isAdmin={isAdmin}
+        />
         <div className="mt-4">
           <Dialog.Footer>
             <Button type="button" onClick={() => setOpen(false)}>

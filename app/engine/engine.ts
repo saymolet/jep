@@ -102,8 +102,10 @@ export enum ActionType {
   /** RenameTeam gives the player's own team a custom name ("" resets the
    * default name). Ignored after game over. */
   RenameTeam = "rename_team",
-  /** SetSettings changes the room settings (the answer timer). Any player
-   * may change them, between questions only; the last change wins. */
+  /** SetSettings changes the room settings (the answer timer), between
+   * questions only; the last change wins. In rooms only the site admin may
+   * change them (payload `admin: true`, inserted by the server); events from
+   * before that rule (from a player, without the flag) stay valid. */
   SetSettings = "set_settings",
   /** Restore replaces the entire state (used for restoring saved solo games). */
   Restore = "restore",
@@ -1373,11 +1375,14 @@ export function gameEngine(state: State, action: Action): State {
         throw new Error("SetSettings action must have a user and settings");
       }
       return produce(state, (draft) => {
-        const { userId, answerTimeSec, autoWrongOnTimeout } = action.payload;
-        // Any player may change the settings, between questions only: a
-        // change mid-question would move the running answer timer.
+        const { userId, answerTimeSec, autoWrongOnTimeout, admin } =
+          action.payload;
+        // The site admin (whether playing or not), or a player: solo play
+        // and room events from before only the admin could change them.
+        // Between questions only: a change mid-question would move the
+        // running answer timer.
         if (
-          !draft.players.has(userId) ||
+          (admin !== true && !draft.players.has(userId)) ||
           draft.type === GameState.GameOver ||
           draft.activeClue !== null ||
           !isAnswerTimeSec(answerTimeSec)

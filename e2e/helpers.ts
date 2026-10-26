@@ -283,3 +283,14 @@ export function trackHydrationErrors(page: Page): string[] {
   });
   return errors;
 }
+
+/** logInAsAdmin opens an admin session (the e2e setup sets ADMIN_PASSWORD,
+ * see scripts/with-local-supabase.sh) in the page's browser context. */
+export async function logInAsAdmin(page: Page) {
+  await goto(page, "/admin/login");
+  await page
+    .getByLabel("Admin password")
+    .fill(process.env.ADMIN_PASSWORD ?? "");
+  await page.getByRole("button", { name: "Log in" }).click();
+  await expect(page).toHaveURL(/\/admin$/);
+}

@@ -89,6 +89,7 @@ function GameOverSummaryRedirect({ roomName }: { roomName: string }) {
 
 export default function GameComponent({
   game,
+  isAdmin = false,
   name,
   playerColor,
   roomId,
@@ -100,6 +101,9 @@ export default function GameComponent({
   onWatchingChange,
 }: {
   game: Game;
+  /** The visitor is logged in as the site admin: they may change the room
+   * settings (answer timer), even without playing. */
+  isAdmin?: boolean;
   name: string;
   playerColor?: PlayerColor;
   roomName: string;
@@ -143,6 +147,7 @@ export default function GameComponent({
       <Preview
         disabled={suppressDialogs}
         gameTitle={game.title}
+        isAdmin={isAdmin}
         name={name}
         numRounds={game.boards.length}
         onDismiss={isSingleLongFormClue ? playFinalSfx : playBoardFillSfx}
@@ -172,8 +177,12 @@ export default function GameComponent({
                 className="px-2 text-sm whitespace-nowrap text-slate-300"
               />
               <StandingsButton userId={userId} />
-              {isPlayer ? (
-                <AnswerTimerControl roomId={roomId} userId={userId} />
+              {isPlayer || isAdmin ? (
+                <AnswerTimerControl
+                  roomId={roomId}
+                  userId={userId}
+                  isAdmin={isAdmin}
+                />
               ) : null}
               {isPlayer ? <PauseControl roomId={roomId} /> : null}
               <GameClock roomId={roomId} readOnly={!isPlayer} />

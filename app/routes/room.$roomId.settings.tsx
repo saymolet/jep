@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { getAdmin } from "~/admin/auth.server";
 import { ActionType } from "~/engine";
 import { isAnswerTimeSec } from "~/engine/answer-timer";
 import { applyRoomEventsToState } from "~/engine/room-event";
@@ -7,7 +8,10 @@ import { GameState, stateFromGame } from "~/engine/state";
 import { createT, getRequestLocale } from "~/i18n";
 import { getValidAuthSession } from "~/models/auth";
 import { getGame } from "~/models/game.server";
-import { createRoomEvent, getRoomEvents } from "~/models/room-event.server";
+import {
+  createRoomEventAsServer,
+  getRoomEvents,
+} from "~/models/room-event.server";
 import { getRoom } from "~/models/room.server";
 import { requireSessionUserId } from "~/session.server";
 import { parseFormData } from "~/utils/http.server";
@@ -15,7 +19,7 @@ import { parseFormData } from "~/utils/http.server";
 import type { Route } from "./+types/room.$roomId.settings";
 
 const formSchema = z.object({
-  /** The player changing the settings: any player, only as themselves. */
+  /** The visitor changing the settings, only as themselves. */
   userId: z.string().min(1),
   /** Seconds for the answer timer, 0 = off. */
   answerTimeSec: z.coerce.number().int().refine(isAnswerTimeSec),
@@ -23,7 +27,13 @@ const formSchema = z.object({
   autoWrongOnTimeout: z.enum(["true", "false"]).transform((v) => v === "true"),
 });
 
-/** Changes the room settings (the answer timer). Last change wins. */
+/** Changes the room settings (the answer timer). Last change wins.
+ *
+ * In a room only the site admin (a valid admin session, see /admin) may
+ * change them, whether they play in the room or not. The event is inserted
+ * with the service role: the browser key may not insert set_settings events
+ * (RLS), so this check can't be skipped by writing to the table directly.
+ * Solo play (roomId -1) has no room events: the player keeps the setting. */
 export async function action({ request, params }: Route.ActionArgs) {
   const t = createT(getRequestLocale(request));
   const formData = await request.formData();
@@ -40,6 +50,10 @@ export async function action({ request, params }: Route.ActionArgs) {
 
   if (roomId === -1) {
     return { type: ActionType.SetSettings, payload, ts: Date.now() };
+  }
+
+  if (!(await getAdmin(request))) {
+    throw new Response(t("room.error.settingsAdminOnly"), { status: 403 });
   }
 
   const authSession = await getValidAuthSession(request);
@@ -59,9 +73,6 @@ export async function action({ request, params }: Route.ActionArgs) {
     stateFromGame(game),
     await getRoomEvents(room.id, authSession?.accessToken),
   );
-  if (!state.players.has(userId)) {
-    throw new Response(t("room.error.notInGame"), { status: 403 });
-  }
   if (state.type === GameState.GameOver) {
     throw new Response(t("room.error.gameIsOver"), { status: 409 });
   }
@@ -71,12 +82,10 @@ export async function action({ request, params }: Route.ActionArgs) {
     });
   }
 
-  await createRoomEvent(
-    room.id,
-    ActionType.SetSettings,
-    payload,
-    authSession?.accessToken,
-  );
+  await createRoomEventAsServer(room.id, ActionType.SetSettings, {
+    ...payload,
+    admin: true,
+  });
 
   return null;
 }

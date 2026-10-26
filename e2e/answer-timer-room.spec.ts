@@ -1,11 +1,19 @@
 import type { Browser, Page } from "@playwright/test";
 
 import { expect, test } from "./fixtures";
-import { goto, openClue, uploadGame, waitForConnected } from "./helpers";
+import {
+  goto,
+  logInAsAdmin,
+  openClue,
+  uploadGame,
+  waitForConnected,
+} from "./helpers";
 
 /** Upload the 1×1 game, open a room and join it with the host and an
- * anonymous guest. */
+ * anonymous guest. The host is logged in as the site admin, who alone may
+ * change the answer timer. */
 async function roomWithTwoPlayers(host: Page, browser: Browser) {
+  await logInAsAdmin(host);
   await goto(host, "/profile");
   const gameId = await uploadGame(host);
   await goto(host, `/game/${gameId}/play`);

@@ -78,6 +78,7 @@ export const room = {
     "teams can only be changed between questions",
   "room.error.settingsBetweenQuestions":
     "settings can only be changed between questions",
+  "room.error.settingsAdminOnly": "only the admin can change the answer time",
   "room.error.notOnTeam": "you can only rename your own team",
   "room.error.teamNameTooLong": "the team name is too long",
   "room.error.gameIsOver": "the game is over",
@@ -90,11 +91,14 @@ export const room = {
   "room.startNewRoom": "Start a new room",
   "room.answerTime": "Answer time",
   "room.answerTimeHelp":
-    "How long the player whose turn it is has to answer and mark it. Any player can change it between questions.",
+    "How long the player whose turn it is has to answer and mark it. It can be changed between questions.",
   "room.answerTimeOff": "Off",
   "room.answerTimeSeconds": "{seconds} s",
   "room.answerTimeAutoWrong": "Mark wrong when time runs out",
   "room.answerTimeSettings": "Answer time settings",
   "room.answerTimeBetweenQuestions":
     "The answer time can be changed between questions",
+  "room.answerTimeAdminOnly": "Only the admin can change this.",
+  "room.answerTimeReadOnly":
+    "Answer time: {value}. Only the admin can change this.",
 } as const;
