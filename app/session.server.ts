@@ -101,3 +101,39 @@ export async function getOrCreateUserSession(
   }
   return userId;
 }
+
+const ADMIN_SESSION_KEY = "admin";
+
+const AdminSessionSchema = z.object({
+  /** When the admin session ends (ms since the epoch). */
+  until: z.number(),
+  /** Fingerprint of the admin password it was opened with. */
+  key: z.string(),
+  /** Token every admin form must send back (CSRF protection). */
+  csrf: z.string(),
+});
+export type AdminSession = z.infer<typeof AdminSessionSchema>;
+
+/** getAdminSessionData reads the admin part of the session cookie (not yet
+ * checked for expiry or the password fingerprint; see `~/admin/auth.server`). */
+export async function getAdminSessionData(
+  request: Request,
+): Promise<AdminSession | null> {
+  const session = await getSession(request.headers.get("Cookie"));
+  const result = AdminSessionSchema.safeParse(session.get(ADMIN_SESSION_KEY));
+  return result.success ? result.data : null;
+}
+
+/** setAdminSessionData stores (or with null, removes) the admin part of the
+ * session cookie. Appends to existing headers if provided. */
+export async function setAdminSessionData(
+  request: Request,
+  data: AdminSession | null,
+  headers = new Headers(),
+) {
+  const session = await getSession(request.headers.get("Cookie"));
+  if (data) session.set(ADMIN_SESSION_KEY, data);
+  else session.unset(ADMIN_SESSION_KEY);
+  headers.append("Set-Cookie", await commitSession(session));
+  return headers;
+}

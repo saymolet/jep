@@ -12,6 +12,12 @@ export const INDEXABLE_PATHS = [
 
 export const INDEX_DIRECTIVES = "index, follow";
 export const NO_INDEX_DIRECTIVES = "noindex, follow";
+/** The admin panel is never indexed and its links never followed. */
+export const ADMIN_ROBOTS_DIRECTIVES = "noindex, nofollow";
+
+export function isAdminPath(pathname: string) {
+  return pathname === "/admin" || pathname.startsWith("/admin/");
+}
 export const SITE_DESCRIPTION =
   "A website for sharing J! trivia and playing collaboratively with friends in real time.";
 
@@ -37,6 +43,9 @@ export function getSearchMetadata(
   publicGamePreview = false,
 ) {
   const normalizedPathname = normalizePathname(pathname);
+  if (isAdminPath(normalizedPathname)) {
+    return { canonicalUrl: undefined, robots: ADMIN_ROBOTS_DIRECTIVES };
+  }
   const indexable =
     INDEXABLE_PATHS.some((publicPath) => publicPath === normalizedPathname) ||
     (publicGamePreview &&
