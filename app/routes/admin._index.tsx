@@ -71,10 +71,6 @@ export default function AdminDashboard({ loaderData }: Route.ComponentProps) {
             label={t("admin.dash.rooms24h")}
             value={stats.rooms_active_24h}
           />
-          <StatTile
-            label={t("admin.dash.rooms7d")}
-            value={stats.rooms_active_7d}
-          />
           <StatTile label={t("admin.dash.roomsTotal")} value={stats.rooms} />
           <StatTile
             label={t("admin.dash.roomEvents")}

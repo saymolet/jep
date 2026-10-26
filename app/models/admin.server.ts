@@ -17,6 +17,7 @@ import { GameState, stateFromGame } from "~/engine/state";
 import { summarizePlayers } from "~/models/active-rooms";
 import type { Game } from "~/models/convert.server";
 import { getGame, type GameVisibility } from "~/models/game.server";
+import { cleanupInactiveRooms } from "~/models/room-cleanup";
 import { getRoomEvents } from "~/models/room-event.server";
 import { GAME_MEDIA_BUCKET } from "~/models/siq/media-store.server";
 import { getSupabaseAdmin } from "~/supabase/admin.server";
@@ -44,6 +45,7 @@ const AdminStatsSchema = z.object({
   accounts: z.number(),
   rooms: z.number(),
   rooms_active_24h: z.number(),
+  /** No longer shown: idle rooms are deleted after 5 h (feature 19). */
   rooms_active_7d: z.number(),
   room_events: z.number(),
   reports: z.number(),
@@ -382,6 +384,18 @@ export async function deleteRoom(roomId: number) {
     .delete()
     .eq("id", roomId);
   if (error) fail(error);
+}
+
+/** countInactiveRooms counts the rooms the inactive-room cleanup would
+ * delete now (see ROOM_MAX_IDLE_HOURS). */
+export function countInactiveRooms(): Promise<number> {
+  return cleanupInactiveRooms(getSupabaseAdmin(), { dryRun: true });
+}
+
+/** deleteInactiveRooms runs the inactive-room cleanup now (the same SQL
+ * function as the hourly job) and returns how many rooms it deleted. */
+export function deleteInactiveRooms(): Promise<number> {
+  return cleanupInactiveRooms(getSupabaseAdmin());
 }
 
 /* Reports */

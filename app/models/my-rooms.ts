@@ -6,7 +6,10 @@ import { type ActiveRoom, summarizePlayers } from "~/models/active-rooms";
 import type { Game } from "~/models/convert.server";
 import type { DbRoomEvent } from "~/models/room-event.server";
 
-/** How far back to look for rooms in "Your games in progress". */
+/** How far back to look for rooms in "Your games in progress". Rooms idle
+ * for ROOM_MAX_IDLE_HOURS (5 h) are deleted (see room-cleanup.js), so in
+ * practice only rooms active in the last few hours are found; the wider
+ * window is harmless and keeps the list working if the cleanup is off. */
 export const MY_ROOMS_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 
 /** At most this many rooms are listed. */
