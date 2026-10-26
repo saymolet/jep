@@ -1,6 +1,7 @@
 import type { en } from "./en";
 import type { Dictionary } from "./types";
 import { about } from "./uk/about";
+import { admin } from "./uk/admin";
 import { auth } from "./uk/auth";
 import { common } from "./uk/common";
 import { community } from "./uk/community";
@@ -51,4 +52,5 @@ export const uk: Dictionary<typeof en> = {
   ...team,
   ...soundboard,
   ...standings,
+  ...admin,
 };

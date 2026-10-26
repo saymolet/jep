@@ -1,5 +1,6 @@
 /** Every English message area (see `../en.ts`). */
 export { about } from "./about";
+export { admin } from "./admin";
 export { auth } from "./auth";
 export { common } from "./common";
 export { community } from "./community";

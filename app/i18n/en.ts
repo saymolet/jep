@@ -1,5 +1,6 @@
 import {
   about,
+  admin,
   auth,
   common,
   community,
@@ -52,4 +53,5 @@ export const en = {
   ...team,
   ...soundboard,
   ...standings,
+  ...admin,
 } as const satisfies Messages;
