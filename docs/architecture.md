@@ -41,6 +41,9 @@ DB tables: `games`, `categories`, `clues`, `accounts`, `rooms`, `room_events`,
 SQL functions (RPC): `random_board_categories(max_count)` / `random_final_clues(max_count)` —
 random candidates from PUBLIC games for the random board generator
 (see [features/10-random-board.md](./features/10-random-board.md)).
+`user_rooms_in_progress(user_ids, since, max_count)` — rooms a user joined (partial index
+`room_events_join_user_id_idx` on `join` events' `payload->>'userId'`), for "Your games in
+progress" (see [features/17-standings-resume.md](./features/17-standings-resume.md)).
 
 ## Realtime / rooms
 

@@ -113,11 +113,17 @@ Difficulty estimates from the original planning discussion.
       an icon menu in the header or in Settings; `theme` cookie → account setting → Classic,
       rendered server-side as `<html data-theme>` (no flash, System is pure CSS); theme tokens
       in `app/styles.css` — see [features/16-themes.md](./features/16-themes.md) — ⭐⭐ medium
+- [x] Live standings + resume my games (F12d) — 🏆 **Standings** drawer in rooms (ranked
+      players and teams, ties share a place, change on the previous question `+$400` /
+      `−$200`, who picks next; changes flash on the TV) and **Your games in progress** on the
+      home page (unfinished rooms you play in, last 7 days, one tap back in; guest rooms
+      still found after logging in) — see
+      [features/17-standings-resume.md](./features/17-standings-resume.md) — ⭐⭐ medium
 
 Question search ·
 admin panel · Discord login · keyboard shortcuts ·
 OBS/browser-source mode ·
-auto-reconnect · host controls from phone · game save/resume · live scoreboard ·
+auto-reconnect · host controls from phone ·
 "Своя Игра" theme (Classic and Dark are done, see above).
 
 ## Status log
@@ -199,3 +205,9 @@ auto-reconnect · host controls from phone · game save/resume · live scoreboar
   `prefers-color-scheme` in CSS), theme tokens (`page`, `paper`, `ink-*`, `accent`, `header`,
   game colors) in `app/styles.css`, switcher in the header and Settings. No migration, no new
   dependencies.
+- **2026-10-26** — Feature 17 on `feat/standings-resume`: live standings (`engine/standings.ts`:
+  ranking + score change on the previous question, `scoreChanges` in the engine context;
+  🏆 drawer in rooms, change chips on the TV) and "Your games in progress" on the home page
+  (account + guest cookie ids, replayed rooms, max 6 from the last 7 days). Migration
+  `20261026021235_user_rooms_in_progress.sql` (partial index on `join` events' userId + SQL
+  function `user_rooms_in_progress`). No new dependencies.
