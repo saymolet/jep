@@ -29,8 +29,11 @@ function PlayerScores({
   boardControlName,
   wagerable,
   longForm,
+  skipped,
 }: {
   answerers: PlayerScore[];
+  /** The site admin skipped the question. */
+  skipped: boolean;
   /** undefined when this user has board control. */
   boardControlName: string | undefined;
   wagerable: boolean;
@@ -38,6 +41,9 @@ function PlayerScores({
 }) {
   const { t } = useTranslation();
   if (!answerers.length) {
+    if (skipped) {
+      return <p className="font-bold text-white">{t("play.next.skipped")}</p>;
+    }
     if (wagerable && longForm) {
       return (
         <p className="font-bold text-white">{t("play.next.noOneCanWager")}</p>
@@ -79,6 +85,7 @@ function PlayerScores({
 export function ConnectedNextClueForm({ roomId, userId }: RoomProps) {
   const {
     activeClue,
+    activeClueSkipped,
     answeredBy,
     clue,
     getCheckCorrection,
@@ -144,6 +151,7 @@ export function ConnectedNextClueForm({ roomId, userId }: RoomProps) {
           boardControlName={boardControlName}
           wagerable={clue.wagerable ?? false}
           longForm={clue.longForm ?? false}
+          skipped={activeClueSkipped}
         />
       )}
       {correction && confirmingUndo ? (
