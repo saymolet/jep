@@ -1,5 +1,6 @@
 import { test, expect } from "./fixtures";
 import {
+  clickStartRound,
   goto,
   playOneClue,
   reload,
@@ -39,10 +40,7 @@ test.describe("solves tracking", () => {
     await waitForConnected(page);
 
     // Start round 1
-    await expect(
-      page.getByRole("button", { name: /start round/i }),
-    ).toBeVisible({ timeout: 10_000 });
-    await page.getByRole("button", { name: /start round/i }).click();
+    await clickStartRound(page);
 
     // Play through the single clue
     await playOneClue(page);

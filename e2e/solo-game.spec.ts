@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { goto, playOneClue, startMockGame } from "./helpers";
+import { clickStartRound, goto, playOneClue, startMockGame } from "./helpers";
 
 test.describe("solo game", () => {
   test("can play through a mock game clue", async ({ page }) => {
@@ -10,7 +10,7 @@ test.describe("solo game", () => {
     await page.getByRole("button", { name: /join game/i }).click();
 
     // Start round 1
-    await page.getByRole("button", { name: /start round/i }).click();
+    await clickStartRound(page);
 
     // Wait for board fill animation to finish, then click a $200 clue.
     // The accessible name has a space between "$" and "200" due to separate spans.

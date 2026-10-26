@@ -2,6 +2,7 @@ import type { Browser, Page } from "@playwright/test";
 
 import { expect, test } from "./fixtures";
 import {
+  clickStartRound,
   goto,
   logInAsAdmin,
   openClue,
@@ -54,11 +55,7 @@ async function setAnswerTime(page: Page, seconds: string) {
 /** The host opens the only question and wins the buzz (the guest doesn't
  * buzz). */
 async function hostWinsBuzz(host: Page) {
-  await expect(async () => {
-    const start = host.getByRole("button", { name: /start round/i });
-    if (await start.isVisible()) await start.click({ timeout: 2_000 });
-    await expect(start).toBeHidden({ timeout: 3_000 });
-  }).toPass({ timeout: 20_000 });
+  await clickStartRound(host);
   await openClue(host, host.getByRole("button", { name: "$ 200" }).first());
   const reveal = host.getByRole("button", { name: /reveal answer/i });
   await expect(async () => {

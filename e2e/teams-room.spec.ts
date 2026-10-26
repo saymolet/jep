@@ -1,7 +1,7 @@
 import type { Page } from "@playwright/test";
 
 import { expect, test } from "./fixtures";
-import { goto, uploadGame, waitForConnected } from "./helpers";
+import { clickStartRound, goto, uploadGame, waitForConnected } from "./helpers";
 
 /** Pick a team in the join dialog and join. */
 async function joinTeam(page: Page, team: RegExp) {
@@ -92,11 +92,7 @@ test.describe("team mode in a room", () => {
     await expect(teamDialog).toBeHidden();
 
     // The host scores; the team totals update everywhere.
-    await expect(async () => {
-      const start = host.getByRole("button", { name: /start round/i });
-      if (await start.isVisible()) await start.click({ timeout: 2_000 });
-      await expect(start).toBeHidden({ timeout: 3_000 });
-    }).toPass({ timeout: 20_000 });
+    await clickStartRound(host);
     await answerFirstClueRight(host);
 
     // The only question was played, so the game is over: players go to the
@@ -142,11 +138,7 @@ test.describe("team mode in a room", () => {
     await waitForConnected(guest);
     await joinTeam(guest, /^Yellow team/);
 
-    await expect(async () => {
-      const start = host.getByRole("button", { name: /start round/i });
-      if (await start.isVisible()) await start.click({ timeout: 2_000 });
-      await expect(start).toBeHidden({ timeout: 3_000 });
-    }).toPass({ timeout: 20_000 });
+    await clickStartRound(host);
     await answerFirstClueRight(host);
 
     // Back on the board: teams are grouped, the leading team first.

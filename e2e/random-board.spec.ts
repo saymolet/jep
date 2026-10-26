@@ -2,7 +2,7 @@ import { randomUUID } from "crypto";
 
 import { expect, test, type Page } from "@playwright/test";
 
-import { goto, waitForConnected } from "./helpers";
+import { clickStartRound, goto, waitForConnected } from "./helpers";
 
 /** A small game with `categories` uniquely named categories of 3 questions. */
 function gameJson(categories: number) {
@@ -73,9 +73,7 @@ test.describe("random board", () => {
     await expect(page.getByText(/Random board · /).first()).toBeVisible();
 
     await page.getByRole("button", { name: /join game/i }).click();
-    const startRound = page.getByRole("button", { name: /start round/i });
-    await startRound.click();
-    await expect(startRound).toBeHidden({ timeout: 15_000 });
+    await clickStartRound(page);
     await expect(page.getByRole("columnheader")).toHaveCount(3);
   });
 
@@ -102,9 +100,7 @@ test.describe("random board", () => {
     await expect(page).toHaveURL(/\/game\/[^/]+\/solo$/, { timeout: 15_000 });
     await expect(page.getByText(/Випадкова гра · /).first()).toBeVisible();
     await page.getByRole("button", { name: "Приєднатися" }).click();
-    const startRound = page.getByRole("button", { name: "Почати раунд" });
-    await startRound.click();
-    await expect(startRound).toBeHidden({ timeout: 15_000 });
+    await clickStartRound(page, "Почати раунд");
     await expect(page.getByRole("columnheader")).toHaveCount(4);
   });
 });

@@ -1,7 +1,13 @@
 import type { Browser, Page } from "@playwright/test";
 
 import { expect, test } from "./fixtures";
-import { goto, logInAsAdmin, uploadGame, waitForConnected } from "./helpers";
+import {
+  clickStartRound,
+  goto,
+  logInAsAdmin,
+  uploadGame,
+  waitForConnected,
+} from "./helpers";
 
 /** Upload the 1×1 game and open a room joined by the (non-admin) host and an
  * anonymous guest. */
@@ -110,11 +116,7 @@ test.describe("only the admin changes the answer timer", () => {
     }
 
     // On the board, the header shows the value without a button.
-    await expect(async () => {
-      const start = host.getByRole("button", { name: /start round/i });
-      if (await start.isVisible()) await start.click({ timeout: 2_000 });
-      await expect(start).toBeHidden({ timeout: 3_000 });
-    }).toPass({ timeout: 20_000 });
+    await clickStartRound(host);
     const readOnly = host.getByTestId("answer-time-readonly");
     await expect(readOnly).toContainText("15 s");
     await expect(readOnly).toHaveAttribute(

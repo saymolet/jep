@@ -3,7 +3,7 @@ import { randomUUID } from "crypto";
 import { expect, test } from "@playwright/test";
 
 import { buildSiq, fixtureContentXml } from "../app/test-fixtures/siq/build";
-import { goto, openClue } from "./helpers";
+import { clickStartRound, goto, openClue } from "./helpers";
 
 const STORAGE_PATH = "/storage/v1/object/public/game-media/";
 
@@ -79,9 +79,7 @@ test.describe("SIGame pack import", () => {
     // Play it solo: the first question shows the picture from storage.
     await goto(page, `/game/${gameId}/solo`);
     await page.getByRole("button", { name: /join game/i }).click();
-    const startRound = page.getByRole("button", { name: /start round/i });
-    await startRound.click();
-    await expect(startRound).toBeHidden();
+    await clickStartRound(page);
     await openClue(page, page.getByRole("button", { name: "$ 100" }).first());
     await expect(page.getByText("What color is this dot?")).toBeVisible();
     const image = page.locator(`img[src*="${STORAGE_PATH}"]`).first();

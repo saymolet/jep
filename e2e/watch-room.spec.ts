@@ -1,6 +1,7 @@
 import { qrSvg } from "../app/utils/qr";
 import { expect, test } from "./fixtures";
 import {
+  clickStartRound,
   goto,
   trackHydrationErrors,
   uploadGame,
@@ -45,7 +46,7 @@ test.describe("spectators and the TV screen", () => {
     });
 
     // The player opens the question: the spectator sees it, read-only.
-    await host.getByRole("button", { name: /start round/i }).click();
+    await clickStartRound(host);
     const clueButton = host.getByRole("button", { name: "$ 200" }).first();
     await expect(async () => {
       await clueButton.click();
@@ -127,7 +128,7 @@ test.describe("spectators and the TV screen", () => {
     await expect(tv.getByTestId("viewer-status")).toHaveText(
       /Round 1 is about to start/,
     );
-    await host.getByRole("button", { name: /start round/i }).click();
+    await clickStartRound(host);
     await expect(tv.getByTestId("viewer-status")).toHaveText(
       /is choosing a question/,
       { timeout: 10_000 },

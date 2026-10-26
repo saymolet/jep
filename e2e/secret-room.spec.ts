@@ -5,6 +5,7 @@ import type { Page } from "@playwright/test";
 
 import { expect, test } from "./fixtures";
 import {
+  clickStartRound,
   goto,
   stubExternalMedia,
   uploadGame,
@@ -81,7 +82,7 @@ test.describe("secret questions in a room", () => {
       timeout: 10_000,
     });
 
-    await host.getByRole("button", { name: /start round/i }).click();
+    await clickStartRound(host);
 
     // Animals $400 is a secret question on "Famous cats" worth $500.
     await chooseSecret(host, "$ 400");

@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { goto, pickEmoji } from "./helpers";
+import { clickStartRound, goto, pickEmoji } from "./helpers";
 
 test.describe("avatars", () => {
   test("join with an emoji avatar, then change it in game", async ({
@@ -13,12 +13,10 @@ test.describe("avatars", () => {
     const icons = page.getByTestId("player-icon");
     await expect(icons.filter({ hasText: "🦊" }).first()).toBeVisible();
 
-    await page.getByRole("button", { name: /start round/i }).click();
-    // The round preview dialog has its own "Change avatar" button; wait for
-    // it to close so the click below hits the one next to the board.
-    await expect(
-      page.getByRole("button", { name: /start round/i }),
-    ).toBeHidden();
+    // The round preview dialog has its own "Change avatar" button; this
+    // waits for it to close so the click below hits the one next to the
+    // board.
+    await clickStartRound(page);
 
     // Change it from the score box next to the name.
     await page.getByRole("button", { name: "Change avatar" }).click();

@@ -42,8 +42,6 @@ export async function reload(
   return response;
 }
 
-/** Navigate to a mock game route, join, start round 1, and wait for the board
- *  fill animation to complete. */
 /** The board is shown and done filling in. The board table sets `aria-busy`
  * while it is hidden behind the round preview or animating (cells ignore
  * clicks then). A single long-form board renders no table, so this simply
@@ -54,17 +52,15 @@ export async function waitForBoardReady(page: Page) {
   });
 }
 
-export async function startMockGame(
+/** Click "Start round" in the round preview dialog (on `page`, which must
+ * have board control) and wait until the dialog is gone and the board is
+ * ready. Pass `name` for another language ("Почати раунд"). Works for any
+ * round's preview, and for a long-form round with no board table. */
+export async function clickStartRound(
   page: Page,
-  route = "/mock",
-  {
-    join = /join game/i,
-    start = /start round/i,
-  }: { join?: string | RegExp; start?: string | RegExp } = {},
+  name: string | RegExp = /start round/i,
 ) {
-  await goto(page, route);
-  await page.getByRole("button", { name: join }).click();
-  const startRound = page.getByRole("button", { name: start });
+  const startRound = page.getByRole("button", { name });
   // The button appears once the Join event gives this player board control,
   // and the dialog can re-render (replacing the button) right as it's
   // clicked, losing the click under load. Click again until the dialog
@@ -84,6 +80,21 @@ export async function startMockGame(
   // it can't steal focus from whatever the test focuses next.
   await expect(page.getByRole("dialog")).toHaveCount(0, { timeout: 15_000 });
   await waitForBoardReady(page);
+}
+
+/** Navigate to a mock game route, join, start round 1, and wait for the board
+ *  fill animation to complete. */
+export async function startMockGame(
+  page: Page,
+  route = "/mock",
+  {
+    join = /join game/i,
+    start = /start round/i,
+  }: { join?: string | RegExp; start?: string | RegExp } = {},
+) {
+  await goto(page, route);
+  await page.getByRole("button", { name: join }).click();
+  await clickStartRound(page, start);
 }
 
 /** Play through a clue using only keyboard inputs.
