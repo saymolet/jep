@@ -1,7 +1,10 @@
 import * as React from "react";
 import { Form as fetcherForm, useFetcher } from "react-router";
 
-import { AnswerTimerSettings } from "~/components/answer-timer-settings";
+import {
+  AnswerTimerSettings,
+  type SettingsAccessProps,
+} from "~/components/answer-timer-settings";
 import Button from "~/components/button";
 import CopyLinkButton from "~/components/copy-link-button";
 import Dialog from "~/components/dialog";
@@ -130,6 +133,7 @@ function PreviewRoundDialog({
   url,
   roomId,
   userId,
+  isAdmin = false,
 }: {
   board: Board;
   boardControl: string | null;
@@ -140,7 +144,8 @@ function PreviewRoundDialog({
   round: number;
   type: GameState;
   url: string;
-} & RoomProps) {
+} & RoomProps &
+  SettingsAccessProps) {
   const { t, rich } = useTranslation();
   const isOpen = type === GameState.PreviewRound;
 
@@ -212,7 +217,11 @@ function PreviewRoundDialog({
         </div>
       ) : null}
       <div className="mb-4">
-        <AnswerTimerSettings roomId={roomId} userId={userId} />
+        <AnswerTimerSettings
+          roomId={roomId}
+          userId={userId}
+          isAdmin={isAdmin}
+        />
       </div>
       {correction ? (
         <div className="mb-2 flex justify-center">
@@ -250,6 +259,7 @@ function PreviewRoundDialog({
 export function Preview({
   disabled = false,
   gameTitle,
+  isAdmin = false,
   name,
   numRounds,
   onDismiss,
@@ -271,7 +281,8 @@ export function Preview({
   url: string;
   /** The visitor chose to watch instead of joining. */
   watching?: boolean;
-} & RoomProps) {
+} & RoomProps &
+  SettingsAccessProps) {
   const { type, board, boardControl, players, round, soloDispatch } =
     useEngineContext();
 
@@ -297,6 +308,7 @@ export function Preview({
         url={url}
         roomId={roomId}
         userId={userId}
+        isAdmin={isAdmin}
       />
     );
   }

@@ -13,7 +13,10 @@ import { GameEngineContext } from "~/engine";
 import type { State } from "~/engine/state";
 import { I18nProvider, type Locale } from "~/i18n";
 
-import { AnswerTimerSettings } from "./answer-timer-settings";
+import {
+  AnswerTimerControl,
+  AnswerTimerSettings,
+} from "./answer-timer-settings";
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
@@ -33,15 +36,34 @@ afterEach(() => {
   container.remove();
 });
 
-function render(state: State, locale: Locale = "en") {
+interface RenderOptions {
+  locale?: Locale;
+  isAdmin?: boolean;
+  roomId?: number;
+  /** Render the header control instead of the settings. */
+  control?: boolean;
+  userId?: string;
+}
+
+function render(
+  state: State,
+  {
+    locale = "en",
+    isAdmin = true,
+    roomId = 7,
+    control = false,
+    userId = ANN,
+  }: RenderOptions = {},
+) {
   const engine = engineFor(state);
+  const Component = control ? AnswerTimerControl : AnswerTimerSettings;
   const Stub = createRoutesStub([
     {
       path: "/play",
       Component: () => (
         <I18nProvider locale={locale}>
           <GameEngineContext.Provider value={engine}>
-            <AnswerTimerSettings roomId={7} userId={ANN} />
+            <Component roomId={roomId} userId={userId} isAdmin={isAdmin} />
           </GameEngineContext.Provider>
         </I18nProvider>
       ),
@@ -109,12 +131,102 @@ describe("AnswerTimerSettings", () => {
   });
 
   it("is in Ukrainian", () => {
-    render(play(STEPS.join), "uk");
+    render(play(STEPS.join), { locale: "uk" });
     expect(container.textContent).toContain("Час на відповідь");
     expect(options()[0].textContent).toBe("Вимк.");
     expect(options()[1].textContent).toBe("10 с");
     expect(container.textContent).toContain(
       "Зараховувати як неправильну, коли час вийде",
     );
+  });
+});
+
+describe("AnswerTimerSettings for everyone but the admin", () => {
+  it("shows the values read-only", () => {
+    let state = play(STEPS.join);
+    state = { ...state, answerTimeSec: 15, autoWrongOnTimeout: false };
+    render(state, { isAdmin: false });
+    expect(options().every((o) => o.disabled)).toBe(true);
+    expect(options()[2].getAttribute("aria-checked")).toBe("true");
+    expect(checkbox()?.disabled).toBe(true);
+    expect(checkbox()?.checked).toBe(false);
+    expect(container.textContent).toContain("Only the admin can change this.");
+  });
+
+  it("sends nothing on a click", async () => {
+    render(play(STEPS.join), { isAdmin: false });
+    await act(async () => {
+      options()[2].click();
+    });
+    expect(sent).toEqual([]);
+  });
+
+  it("says so in Ukrainian", () => {
+    render(play(STEPS.join), { isAdmin: false, locale: "uk" });
+    expect(container.textContent).toContain(
+      "Змінити це може лише адміністратор.",
+    );
+  });
+
+  it("lets the admin change them without playing", async () => {
+    render(play(STEPS.join), { userId: "admin-visitor" });
+    await act(async () => {
+      options()[1].click();
+    });
+    expect(sent).toEqual([
+      [
+        "settings",
+        {
+          userId: "admin-visitor",
+          answerTimeSec: "10",
+          autoWrongOnTimeout: "true",
+        },
+      ],
+    ]);
+  });
+
+  it("lets the solo player change them", async () => {
+    render(play(STEPS.join), { isAdmin: false, roomId: -1 });
+    expect(options().some((o) => !o.disabled)).toBe(true);
+    expect(container.textContent).not.toContain("Only the admin");
+  });
+});
+
+describe("AnswerTimerControl", () => {
+  function readOnly() {
+    return container.querySelector('[data-testid="answer-time-readonly"]');
+  }
+
+  it("is a button that opens the settings for the admin", () => {
+    render(play(STEPS.join), { control: true });
+    const button = container.querySelector("button");
+    expect(button?.getAttribute("aria-label")).toBe("Answer time settings");
+    expect(button?.textContent).toContain("Off");
+    expect(readOnly()).toBeNull();
+  });
+
+  it("only shows the value to everyone else", () => {
+    const state = { ...play(STEPS.join), answerTimeSec: 15 };
+    render(state, { control: true, isAdmin: false });
+    expect(container.querySelector("button")).toBeNull();
+    expect(readOnly()?.textContent).toContain("15 s");
+    expect(readOnly()?.getAttribute("title")).toBe(
+      "Answer time: 15 s. Only the admin can change this.",
+    );
+  });
+
+  it("only shows the value in Ukrainian", () => {
+    const state = { ...play(STEPS.join), answerTimeSec: 15 };
+    render(state, { control: true, isAdmin: false, locale: "uk" });
+    expect(readOnly()?.textContent).toContain("15 с");
+    expect(readOnly()?.getAttribute("title")).toBe(
+      "Час на відповідь: 15 с. Змінити це може лише адміністратор.",
+    );
+  });
+
+  it("stays a button in solo play", () => {
+    render(play(STEPS.join), { control: true, isAdmin: false, roomId: -1 });
+    expect(container.querySelector("button")).not.toBeNull();
+    expect(readOnly()).toBeNull();
   });
 });

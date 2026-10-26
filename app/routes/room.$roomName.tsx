@@ -2,6 +2,7 @@ import * as React from "react";
 import { data, redirect, useMatches } from "react-router";
 import { ENV } from "varlock/env";
 
+import { getAdmin } from "~/admin/auth.server";
 import GameComponent from "~/components/game";
 import { ActionType, GameEngineContext, useGameEngine } from "~/engine";
 import type { PresenceRole } from "~/engine/presence";
@@ -60,6 +61,9 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   const playerColor = gameDefaults?.playerColor;
 
   const state = applyRoomEventsToState(stateFromGame(game), roomEvents);
+  // Only whether the visitor is the site admin (may change the answer
+  // timer), never anything about the admin session itself.
+  const isAdmin = (await getAdmin(request)) !== null;
 
   if (state.type === GameState.GameOver) {
     return redirect(`/room/${roomName}/summary`);
@@ -98,6 +102,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
         BASE_URL: ENV.BASE_URL,
         serverNow: Date.now(),
         accessToken,
+        isAdmin,
       };
     }
 
@@ -112,6 +117,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
       BASE_URL: ENV.BASE_URL,
       serverNow: Date.now(),
       accessToken,
+      isAdmin,
     };
   }
 
@@ -129,6 +135,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
       userId,
       BASE_URL: ENV.BASE_URL,
       serverNow: Date.now(),
+      isAdmin,
     },
     { headers },
   );
@@ -171,6 +178,7 @@ export default function PlayGame({ loaderData }: Route.ComponentProps) {
     <GameEngineContext.Provider value={engine}>
       <GameComponent
         game={loaderData.game}
+        isAdmin={loaderData.isAdmin}
         name={loaderData.name}
         playerColor={loaderData.playerColor}
         roomId={loaderData.roomId}
