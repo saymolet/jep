@@ -52,7 +52,7 @@ authedTest.describe("auth (authenticated)", () => {
   );
 
   authedTest(
-    "header shows profile link instead of login",
+    "header keeps the profile link for an existing account session",
     async ({ authedPage: page }) => {
       await goto(page, "/");
 
@@ -61,7 +61,7 @@ authedTest.describe("auth (authenticated)", () => {
         page.getByRole("link", { name: /profile/i }),
       ).toBeVisible();
 
-      // "Log in" link should not be visible
+      // Logging in is hidden from the UI: no "Log in" link either way
       await authedExpect(
         page.getByRole("link", { name: /log in/i }),
       ).not.toBeVisible();
