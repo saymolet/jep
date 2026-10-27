@@ -18,7 +18,8 @@ clean up rooms and reports, and free Storage space taken by media nobody uses an
 1. Set `ADMIN_PASSWORD` in the server's `.env.local` (a long random value, e.g.
    `openssl rand -base64 24`) and rebuild/restart (Varlock bakes the env into the build:
    `jep-deploy`). Without it, every `/admin` URL answers **404**.
-2. Open **`/admin`** (there is no link to it anywhere on the site). You are sent to
+2. Open **`/admin`** — or tap the 🛡 button in the site header (see "Header admin button"
+   below). You are sent to
    `/admin/login`; enter the admin password. The admin session lasts **12 hours** (or until
    **Log out**, top right of the admin navigation).
 3. Pages (navigation at the top; cards, so it works on phones):
@@ -80,7 +81,8 @@ clean up rooms and reports, and free Storage space taken by media nobody uses an
   address is `X-Real-IP` (set by nginx), else the **last** `X-Forwarded-For` entry (the one
   nginx appended; earlier ones come from the client), else one shared "unknown" key —
   `react-router-serve` doesn't expose the socket address to loaders. A restart clears it.
-- **Not findable:** no link anywhere; `/admin/*` pages send `X-Robots-Tag: noindex,
+- **Not indexed:** (the header links to `/admin` since the "Header admin button" follow-up;
+  the whole site is behind HTTP Basic Auth); `/admin/*` pages send `X-Robots-Tag: noindex,
 nofollow` and `<meta name="robots" content="noindex, nofollow">` (`isAdminPath` in
   `app/utils/seo.ts`); `Cache-Control: no-store`. robots.txt doesn't list it (that would
   advertise the URL).
@@ -165,6 +167,52 @@ The admin session also counts in game rooms: only the admin may change a room's 
 loader exposes just `isAdmin` (a boolean from `getAdmin`), and the settings route answers 403
 without an admin session. Log in at `/admin` on the device you'll use, then open (or reload)
 the room.
+
+## Header admin button & hidden account login (follow-up `feat/header-admin-hide-login`)
+
+Owner's request: "add a button at the top for admin access so that I don't need to type in a
+URL. Also can you hide the log in function?"
+
+- **🛡 button in the site header** (`AdminButton` in `app/components/header.tsx`, shield icon,
+  next to the theme and EN/УКР controls), a link to `/admin` — which sends a visitor without
+  an admin session to `/admin/login?redirectTo=%2Fadmin`. Label and tooltip **Admin** /
+  **Адміністратор**; with a valid admin session it is filled white and says **Admin panel** /
+  **Панель адміністратора** (`data-active="true"`). Visible to everyone (the site is for
+  friends behind HTTP Basic Auth; the button only leads to the password prompt). Hidden when
+  `ADMIN_PASSWORD` is unset (the admin area is a 404 then) and on chromeless pages (TV view),
+  like the whole header.
+- **Root loader** returns only two booleans, `adminEnabled` (`isAdminEnabled()`, new in
+  `app/admin/auth.server.ts`) and `isAdmin` (`getAdmin(request) !== null`) — never the
+  session, its CSRF token or the fingerprint. Rendered on the server from loader data, so no
+  hydration difference. The root loader is revalidated after the admin login/logout forms,
+  so the state changes at once.
+- **Account login is hidden from the UI.** Removed: the header **Log in** button and the
+  **Log in** button + "Log in to upload private games…" hint in the guest upload
+  confirmation (now **Upload publicly** / **Cancel** — Cancel clears the picked file). No
+  page links to `/login`, `/signup` or `/forgot-password` any more except those auth pages
+  themselves. Help pages (How to play, Upload help, About) never mentioned logging in.
+  Removed i18n keys: `header.logIn`, `upload.logInHint`; added `header.admin`,
+  `header.adminActive`, `upload.cancel` (EN + UK).
+- **The routes still work:** `/login`, `/signup`, `/forgot-password`, `/reset-password`,
+  `/auth/callback` answer as before (direct URLs, e2e fixtures). `/profile` and `/settings`
+  still send a logged-out visitor to `/login?redirectTo=…` — nothing links there for a
+  logged-out visitor, so only someone typing the URL lands on the (working) login page; left
+  as is on purpose (the auth e2e spec checks it).
+- **Old account sessions:** someone still logged in from before keeps the round profile
+  button in the header (profile, settings, log out), so they can still log out; once logged
+  out there is no way back in from the UI.
+- **Fix found on the way:** the button navigates in the browser, so the admin loaders see
+  React Router's `/admin.data` request; `requireAdmin` now strips the `.data` suffix before
+  building `redirectTo` (it used to send you to `/admin/login?redirectTo=%2Fadmin.data`).
+- Header on a 390 px phone: Jep!, theme, EN/УКР, 🛡 (and the game menu ⓘ on game pages) —
+  the removed Log in button made the room.
+
+Verification: `app/components/header.test.tsx` (button hidden when the admin area is off,
+normal vs active label/tooltip/state, no log in / sign up text or links, profile kept for an
+account session, Ukrainian); `e2e/header-admin.spec.ts` (🛡 → admin login → after logging in
+the header shows "Admin panel" active, also on the home page; Ukrainian label; a guest sees no
+log in / sign up link or button on the home page, a game page and a room);
+`e2e/i18n.spec.ts` now checks the admin button instead of the Log in link.
 
 ## Production setup
 
