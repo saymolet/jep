@@ -27,6 +27,7 @@ export { PencilSquare } from "./pencil-square";
 export { Play } from "./play";
 export { QuestionMarkCircle } from "./question-mark-circle";
 export { SadFile } from "./sad-file";
+export { ShieldCheck } from "./shield-check";
 export { SpeakerWave } from "./speaker-wave";
 export { SpeakerXMark } from "./speaker-x-mark";
 export { Sun } from "./sun";

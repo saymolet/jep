@@ -3,7 +3,8 @@ import type { Dictionary } from "../types";
 
 /** Ukrainian messages: header. */
 export const header: Dictionary<typeof en> = {
-  "header.logIn": "Увійти",
+  "header.admin": "Адміністратор",
+  "header.adminActive": "Панель адміністратора",
   "header.profile": "Профіль",
   "header.learnMore": "Докладніше",
   "header.howToPlay": "Як грати",

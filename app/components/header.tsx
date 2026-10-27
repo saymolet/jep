@@ -1,6 +1,6 @@
+import clsx from "clsx";
 import { Link as RouterLink, useMatches } from "react-router";
 
-import { ButtonLink } from "~/components/button";
 import CopyLinkButton from "~/components/copy-link-button";
 import * as DropdownMenu from "~/components/dropdown-menu";
 import LanguageSwitcher from "~/components/language-switcher";
@@ -22,18 +22,30 @@ import {
   ExclamationTriangle,
   Eye,
   InformationCircle,
+  ShieldCheck,
 } from "./icons";
 
-function LoginButton({ pathname }: { pathname: string }) {
+/** AdminButton leads to the password-protected admin area (`/admin`, which
+ * asks for the admin password first). Filled when this browser already has an
+ * admin session. */
+function AdminButton({ active }: { active: boolean }) {
   const { t } = useTranslation();
-  const to =
-    pathname === "/"
-      ? "/login"
-      : `/login?redirectTo=${encodeURIComponent(pathname)}`;
+  const label = active ? t("header.adminActive") : t("header.admin");
   return (
-    <ButtonLink to={to} variant="inverse">
-      {t("header.logIn")}
-    </ButtonLink>
+    <RouterLink
+      to="/admin"
+      aria-label={label}
+      title={label}
+      data-active={active}
+      className={clsx(
+        "flex h-8 w-8 shrink-0 items-center justify-center rounded-md border transition-colors",
+        active
+          ? "border-white bg-white text-blue-bright hover:bg-white/80"
+          : "border-white/60 text-white hover:bg-white/20",
+      )}
+    >
+      <ShieldCheck className="h-5 w-5" />
+    </RouterLink>
   );
 }
 
@@ -183,9 +195,15 @@ function GameSettings({
 export default function Header({
   user,
   BASE_URL,
+  adminEnabled = false,
+  isAdmin = false,
 }: {
   user?: { id: string; email: string };
   BASE_URL?: string;
+  /** The admin area exists (ADMIN_PASSWORD is set). */
+  adminEnabled?: boolean;
+  /** This browser has a valid admin session. */
+  isAdmin?: boolean;
 }) {
   const { t } = useTranslation();
   const matches = useMatches();
@@ -214,11 +232,10 @@ export default function Header({
           )}
           <ThemeMenu />
           <LanguageSwitcher />
-          {user ? (
-            <AccountButton user={user} />
-          ) : (
-            <LoginButton pathname={pathname} />
-          )}
+          {adminEnabled ? <AdminButton active={isAdmin} /> : null}
+          {/* Accounts are hidden: there is no way to log in from the UI. An
+              old account session still gets its profile (and log out). */}
+          {user ? <AccountButton user={user} /> : null}
           {game && (
             <GameSettings
               game={game}

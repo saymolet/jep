@@ -14,8 +14,7 @@ export const upload: Dictionary<typeof en> = {
   "upload.unknownFile": "без назви",
   "upload.guestWarning":
     "Як гість ти не зможеш потім редагувати чи видалити цю гру.",
-  "upload.logInHint":
-    "Увійди, щоб завантажувати приватні ігри, редагувати й видаляти їх.",
+  "upload.cancel": "Скасувати",
   "upload.guidelines":
     "Ігри мають відповідати <link>правилам спільноти</link>.",
   "upload.uploadPublicly": "Завантажити публічно",

@@ -15,6 +15,7 @@ import {
 } from "react-router";
 import { ENV } from "varlock/env";
 
+import { getAdmin, isAdminEnabled } from "~/admin/auth.server";
 import { CodeBlock } from "~/components/code";
 import Footer from "~/components/footer";
 import Header from "~/components/header";
@@ -126,6 +127,9 @@ function requestLocale(request: Request, account?: string) {
 export async function loader({ request }: Route.LoaderArgs) {
   const authSession = await getValidAuthSession(request);
   const showAnalytics = ENV.NODE_ENV === "production" && ENV.VERCEL === "1";
+  // For the header's admin button: booleans only, never the session itself.
+  const adminEnabled = isAdminEnabled();
+  const isAdmin = adminEnabled && (await getAdmin(request)) !== null;
 
   try {
     const user = authSession
@@ -145,6 +149,8 @@ export async function loader({ request }: Route.LoaderArgs) {
       userSettings,
       BASE_URL: ENV.BASE_URL,
       showAnalytics,
+      adminEnabled,
+      isAdmin,
       locale,
       localeSource,
       theme,
@@ -160,6 +166,8 @@ export async function loader({ request }: Route.LoaderArgs) {
       userSettings: undefined,
       BASE_URL: ENV.BASE_URL,
       showAnalytics,
+      adminEnabled,
+      isAdmin,
       locale,
       localeSource,
       theme,
@@ -309,6 +317,8 @@ export default function App({ loaderData }: Route.ComponentProps) {
                   <Header
                     user={loaderData.user}
                     BASE_URL={loaderData.BASE_URL}
+                    adminEnabled={loaderData.adminEnabled}
+                    isAdmin={loaderData.isAdmin}
                   />
                 )}
                 <Outlet />

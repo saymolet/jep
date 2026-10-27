@@ -27,6 +27,11 @@ function adminPassword(): string | undefined {
   return ENV.ADMIN_PASSWORD || undefined;
 }
 
+/** isAdminEnabled tells whether the admin panel is on (ADMIN_PASSWORD set). */
+export function isAdminEnabled(): boolean {
+  return adminPassword() !== undefined;
+}
+
 /** requireAdminEnabled answers 404 when no ADMIN_PASSWORD is configured: the
  * admin panel is off and looks like it doesn't exist. */
 export function requireAdminEnabled(): string {
@@ -66,7 +71,9 @@ export async function requireAdmin(
   requireAdminEnabled();
   const session = await getAdmin(request);
   if (!session) {
-    const path = new URL(request.url).pathname;
+    // Without React Router's ".data" suffix (client-side navigations, e.g.
+    // the header's admin button, fetch "/admin.data").
+    const path = new URL(request.url).pathname.replace(/\.data$/, "");
     const params = new URLSearchParams([["redirectTo", path]]);
     throw redirect(`${ADMIN_LOGIN_PATH}?${params}`);
   }

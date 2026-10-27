@@ -121,7 +121,7 @@ Difficulty estimates from the original planning discussion.
       still found after logging in) — see
       [features/17-standings-resume.md](./features/17-standings-resume.md) — ⭐⭐ medium
 
-- [x] Admin panel (F12e) — `/admin` (no link anywhere, `noindex`), gated by its own
+- [x] Admin panel (F12e) — `/admin` (🛡 button in the header since the follow-up, `noindex`), gated by its own
       `ADMIN_PASSWORD` (server env; unset = 404), constant-time check, per-IP lockout, 12 h
       admin session + CSRF token in the session cookie; dashboard (counts, Storage and DB
       usage of the free plan), games (search, visibility, delete with the media no other
@@ -287,3 +287,10 @@ scripts/cleanup-inactive-rooms.mjs`, admin Rooms button; 7-day dashboard tile re
   questions (game JSON + SIQ display-time hints). Migration
   `20261026192800_clues_read_time_sec.sql` (additive nullable `clues.read_time_sec`, 0–60). No
   new dependencies.
+- **2026-10-27** — Follow-up on `feat/header-admin-hide-login` (owner's request): 🛡 admin
+  button in the site header (links to `/admin`; filled "Admin panel" with a valid admin
+  session; hidden when `ADMIN_PASSWORD` is unset; root loader exposes two booleans only) and
+  account login hidden from the UI (header Log in button and the guest upload dialog's Log in
+  button/hint removed; `/login` & co. still work by URL; an existing account session keeps
+  its profile menu) — see [features/18-admin.md](./features/18-admin.md). No migration, no new
+  dependencies.

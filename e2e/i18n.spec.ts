@@ -6,7 +6,9 @@ test.describe("language", () => {
   test("is English by default", async ({ page }) => {
     await goto(page, "/");
     await expect(page.locator("html")).toHaveAttribute("lang", "en");
-    await expect(page.getByRole("link", { name: "Log in" })).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: "Admin", exact: true }),
+    ).toBeVisible();
     await expect(page.getByRole("button", { name: "EN" })).toHaveAttribute(
       "aria-pressed",
       "true",
@@ -21,14 +23,18 @@ test.describe("language", () => {
     await page.getByRole("button", { name: "УКР" }).click();
 
     await expect(page.locator("html")).toHaveAttribute("lang", "uk");
-    await expect(page.getByRole("link", { name: "Увійти" })).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: "Адміністратор", exact: true }),
+    ).toBeVisible();
     await expect(
       page.getByRole("link", { name: "Як грати" }).first(),
     ).toBeVisible();
 
     await reload(page);
     await expect(page.locator("html")).toHaveAttribute("lang", "uk");
-    await expect(page.getByRole("link", { name: "Увійти" })).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: "Адміністратор", exact: true }),
+    ).toBeVisible();
     await expect(page.getByRole("button", { name: "УКР" })).toHaveAttribute(
       "aria-pressed",
       "true",
@@ -36,7 +42,9 @@ test.describe("language", () => {
 
     // And back to English.
     await page.getByRole("button", { name: "EN" }).click();
-    await expect(page.getByRole("link", { name: "Log in" })).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: "Admin", exact: true }),
+    ).toBeVisible();
     await reload(page);
     await expect(page.locator("html")).toHaveAttribute("lang", "en");
 

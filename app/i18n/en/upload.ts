@@ -12,8 +12,7 @@ export const upload = {
   "upload.unknownFile": "unknown",
   "upload.guestWarning":
     "As a guest, you will not be able to edit or delete the game later.",
-  "upload.logInHint":
-    "Log in to upload private games, edit games, or delete games.",
+  "upload.cancel": "Cancel",
   "upload.guidelines":
     "Games must follow the <link>community guidelines</link>.",
   "upload.uploadPublicly": "Upload publicly",

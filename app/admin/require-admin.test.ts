@@ -23,7 +23,7 @@ const db = vi.hoisted(() => ({
 vi.mock("~/supabase/admin.server", () => db);
 vi.mock("~/supabase", () => ({ getSupabase: db.getSupabaseAdmin }));
 
-import { ADMIN_SESSION_MS, adminLogin } from "./auth.server";
+import { ADMIN_SESSION_MS, adminLogin, requireAdmin } from "./auth.server";
 import { LoginThrottle } from "./throttle";
 
 const PASSWORD = "test-admin-password";
@@ -199,6 +199,26 @@ describe("admin routes", () => {
       // Otherwise the page rendered its data (e.g. the storage page before a
       // scan, or the dashboard showing the database error).
     });
+  });
+});
+
+describe("requireAdmin", () => {
+  it("redirects a client-side navigation back to the page, not its .data URL", async () => {
+    // The header's admin button navigates in the browser: React Router
+    // fetches "/admin.data" (and "/admin/games.data") for the loaders.
+    for (const [url, redirectTo] of [
+      ["http://localhost/admin.data", "%2Fadmin"],
+      ["http://localhost/admin/games.data?page=2", "%2Fadmin%2Fgames"],
+      ["http://localhost/admin", "%2Fadmin"],
+    ]) {
+      const result = await requireAdmin(new Request(url)).catch(
+        (error: unknown) => error,
+      );
+      if (!(result instanceof Response)) throw new Error("expected redirect");
+      expect(result.headers.get("Location")).toBe(
+        `/admin/login?redirectTo=${redirectTo}`,
+      );
+    }
   });
 });
 
