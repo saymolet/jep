@@ -1,6 +1,7 @@
 /** English messages: header. Keys start with "header.". */
 export const header = {
-  "header.logIn": "Log in",
+  "header.admin": "Admin",
+  "header.adminActive": "Admin panel",
   "header.profile": "Profile",
   "header.learnMore": "Learn more",
   "header.howToPlay": "How to Play",

@@ -2,9 +2,9 @@ import clsx from "clsx";
 import * as React from "react";
 import { useDropzone } from "react-dropzone";
 import type { FetcherWithComponents } from "react-router";
-import { useLocation, useSubmit } from "react-router";
+import { useSubmit } from "react-router";
 
-import Button, { ButtonLink } from "~/components/button";
+import Button from "~/components/button";
 import Dialog from "~/components/dialog";
 import { WarningMessage } from "~/components/error";
 import {
@@ -151,7 +151,6 @@ export default function Upload({
   const [showModal, setShowModal] = React.useState(false);
   const [file, setFile] = React.useState<File | undefined>();
   const submit = useSubmit();
-  const location = useLocation();
 
   function handleChangeUpload(newFile?: File) {
     setFile(newFile);
@@ -187,7 +186,6 @@ export default function Upload({
       >
         <div className="mb-4 flex flex-col gap-2 text-sm text-slate-300">
           <WarningMessage>{t("upload.guestWarning")}</WarningMessage>
-          <p>{t("upload.logInHint")}</p>
           <p>
             {rich("upload.guidelines", {
               link: (chunks) => <Link to="/community">{chunks}</Link>,
@@ -203,17 +201,17 @@ export default function Upload({
           >
             {t("upload.uploadPublicly")}
           </Button>
-          <ButtonLink
+          <Button
             variant="primary"
             autoFocus
-            to={
-              location.pathname === "/"
-                ? "/login"
-                : `/login?redirectTo=${encodeURIComponent(location.pathname)}`
-            }
+            onClick={() => {
+              formRef.current?.reset();
+              setFile(undefined);
+              setShowModal(false);
+            }}
           >
-            {t("header.logIn")}
-          </ButtonLink>
+            {t("upload.cancel")}
+          </Button>
         </Dialog.Footer>
       </Dialog>
       <UploadBox

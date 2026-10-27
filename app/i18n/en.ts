@@ -28,7 +28,7 @@ import type { Messages } from "./types";
 
 /** English UI messages: the source of truth. Every key must also be in
  * `uk.ts` (type-checked). Messages are split by area into `en/<area>.ts`;
- * keys start with the area name, e.g. "header.logIn". */
+ * keys start with the area name, e.g. "header.about". */
 export const en = {
   ...common,
   ...header,
