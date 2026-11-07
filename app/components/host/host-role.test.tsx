@@ -77,7 +77,10 @@ afterEach(() => {
 function render(
   steps: Step[],
   userId: string,
-  { locale = "en" as Locale, watching = false } = {},
+  {
+    locale = "en",
+    watching = false,
+  }: { locale?: Locale; watching?: boolean } = {},
 ) {
   const full = play(steps);
   const hidden = userId !== HOST && full.host !== null;

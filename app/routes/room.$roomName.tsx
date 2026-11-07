@@ -10,7 +10,6 @@ import { applyRoomEventsToState } from "~/engine/room-event";
 import { GameState, stateFromGame } from "~/engine/state";
 import { createT, getRequestLocale } from "~/i18n";
 import { getValidAuthSession } from "~/models/auth";
-import type { Json } from "~/models/database.types";
 import { getGame } from "~/models/game.server";
 import {
   createRoomEventAsServer,
@@ -21,6 +20,7 @@ import { getUserByEmail } from "~/models/user";
 import { parseUserSettings } from "~/models/user-settings";
 import {
   getAnswerToReveal,
+  revealPayload,
   shouldWithholdAnswers,
   withholdAnswers,
 } from "~/models/withhold-answers";
@@ -77,7 +77,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     await createRoomEventAsServer(
       room.id,
       ActionType.RevealAnswer,
-      reveal as unknown as Json,
+      revealPayload(reveal),
     );
     roomEvents = await getRoomEvents(room.id, accessToken);
     state = applyRoomEventsToState(stateFromGame(game), roomEvents);

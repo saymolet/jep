@@ -2,13 +2,12 @@ import { ActionType } from "~/engine";
 import { applyRoomEventsToState, hasHostSeatEvents } from "~/engine/room-event";
 import { stateFromGame } from "~/engine/state";
 import type { AuthSession } from "~/models/auth";
-import type { Json } from "~/models/database.types";
 import { getGame } from "~/models/game.server";
 import {
   createRoomEventAsServer,
   getRoomEvents,
 } from "~/models/room-event.server";
-import { getAnswerToReveal } from "~/models/withhold-answers";
+import { getAnswerToReveal, revealPayload } from "~/models/withhold-answers";
 
 /** revealResolvedAnswer inserts the reveal_answer event of the active
  * question when it was just resolved in host mode (feature 22): players'
@@ -33,7 +32,7 @@ export async function revealResolvedAnswer(
       await createRoomEventAsServer(
         room.id,
         ActionType.RevealAnswer,
-        reveal as unknown as Json,
+        revealPayload(reveal),
       );
     }
   } catch (error: unknown) {

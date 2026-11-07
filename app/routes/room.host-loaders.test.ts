@@ -88,7 +88,10 @@ type LoaderGame = {
 async function loadRoom(): Promise<LoaderGame> {
   const result = await roomLoader(args(`/room/${ROOM.name}`));
   // Visitors without an account get data() with the session cookie.
-  return ("data" in result ? result.data : result) as unknown as LoaderGame;
+  const loaded: LoaderGame = JSON.parse(
+    JSON.stringify("data" in result ? result.data : result),
+  );
+  return loaded;
 }
 
 const answers = (game: typeof MOCK_GAME) =>

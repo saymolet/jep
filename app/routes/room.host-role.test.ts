@@ -119,7 +119,8 @@ async function outcome(promise: Promise<unknown>) {
   try {
     const result = await promise;
     if (result && typeof result === "object" && "init" in result) {
-      const d = result as { data: { error: string }; init: { status: number } };
+      const d: { data: { error: string }; init: { status: number } } =
+        JSON.parse(JSON.stringify(result));
       return { status: d.init.status, error: d.data.error };
     }
     return { status: 200, result };

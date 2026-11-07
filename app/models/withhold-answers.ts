@@ -1,5 +1,6 @@
 import type { State } from "~/engine/state";
 import type { Clue, Game } from "~/models/convert.server";
+import type { Json } from "~/models/database.types";
 import type { MediaBlock } from "~/utils/media";
 
 /** Host mode (feature 22) mimics SIGame: only the host sees the answers.
@@ -95,4 +96,13 @@ export function getAnswerToReveal(
     answer: clue.answer,
     ...(clue.answerMedia?.length ? { answerMedia: clue.answerMedia } : {}),
   };
+}
+
+/** revealPayload is a reveal as the JSON stored in its room event. A JSON
+ * round trip is exactly what is written to the database, and yields a value
+ * typed as JSON without asserting the reveal's own types onto it. */
+export function revealPayload(
+  reveal: NonNullable<ReturnType<typeof getAnswerToReveal>>,
+): Json {
+  return JSON.parse(JSON.stringify(reveal));
 }
