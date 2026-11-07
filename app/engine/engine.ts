@@ -590,10 +590,16 @@ function finishBoard(draft: Draft<State>, ts: number) {
 
 /** markSkipped marks question (i, j) of the current round as played and
  * skipped by the admin. */
-function markSkipped(draft: Draft<State>, i: number, j: number) {
+function markSkipped(
+  draft: Draft<State>,
+  i: number,
+  j: number,
+  byHost: boolean,
+) {
   const cell = draft.isAnswered[draft.round][i][j];
   cell.isAnswered = true;
   cell.skipped = true;
+  if (byHost) cell.skippedByHost = true;
   cell.answerOrder = getNextAnswerOrder(draft.isAnswered);
   draft.numAnswered += 1;
 }
@@ -1661,7 +1667,7 @@ export function gameEngine(state: State, action: Action): State {
         if (!canSkipClue(draft, i, j)) {
           return;
         }
-        markSkipped(draft, i, j);
+        markSkipped(draft, i, j, isHostAction(action));
 
         // From the board: played without opening it.
         if (draft.type === GameState.ShowBoard) {
@@ -1708,6 +1714,7 @@ export function gameEngine(state: State, action: Action): State {
           delta: change,
           question: getScoreAdjustmentQuestion(draft),
           ts: action.ts,
+          ...(isHostAction(action) ? { byHost: true } : {}),
         });
       });
     case ActionType.ClaimHost: {

@@ -146,13 +146,21 @@ export function stateToGameEngine(
   const scoreChanges = getScoreChanges(state);
 
   let numSkipped = 0;
+  let numSkippedByHost = 0;
   for (const rows of state.isAnswered) {
     for (const row of rows) {
       for (const cell of row) {
         if (cell.skipped) numSkipped += 1;
+        if (cell.skippedByHost) numSkippedByHost += 1;
       }
     }
   }
+  const activeCell = state.activeClue
+    ? state.isAnswered
+        .at(state.round)
+        ?.at(state.activeClue[0])
+        ?.at(state.activeClue[1])
+    : undefined;
 
   const clueKey = `${state.round},${
     state.activeClue ? state.activeClue[0] : -1
@@ -229,13 +237,12 @@ export function stateToGameEngine(
     scoreAdjustments: state.scoreAdjustments,
     /** How many questions the site admin skipped so far (all rounds). */
     numSkipped,
-    /** The site admin skipped the active question. */
-    activeClueSkipped: state.activeClue
-      ? (state.isAnswered
-          .at(state.round)
-          ?.at(state.activeClue[0])
-          ?.at(state.activeClue[1])?.skipped ?? false)
-      : false,
+    /** How many of them the room's host skipped (feature 22). */
+    numSkippedByHost,
+    /** The site admin (or the host) skipped the active question. */
+    activeClueSkipped: activeCell?.skipped ?? false,
+    /** The host (not the admin) skipped the active question. */
+    activeClueSkippedByHost: activeCell?.skippedByHost ?? false,
     /** The host seat (feature 22): null plays the self-marking game. */
     host: state.host,
     /** What the game waits for from a player (the admin panel). */

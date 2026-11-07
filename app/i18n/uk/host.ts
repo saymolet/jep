@@ -42,7 +42,7 @@ export const host: Dictionary<typeof en> = {
   "host.panel.title": "Керування ведучого",
   "host.panel.description":
     "Допоможіть, коли гравець застряг. Усі бачать, що ви змінюєте.",
-  "host.toast.score": "🎤 Ведучий: {name} {amount}",
+  "host.toast.score": "Ведучий: {name} {amount}",
   "host.toast.skipped": "Ведучий пропустив питання.",
   "host.skipped": "Ведучий пропустив це питання.",
   "host.admin.seat": "Місце ведучого",

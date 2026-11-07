@@ -28,6 +28,8 @@ import { formatDollars, getPlayerColor } from "~/utils";
 import { useFullscreen } from "~/utils/use-fullscreen";
 import { useWakeLock } from "~/utils/use-wake-lock";
 
+import { HostBadge } from "~/components/host/host-badge";
+
 import { WatcherCount } from "./spectator-bar";
 import { getWinners, sortByScore } from "./status";
 import {
@@ -375,6 +377,7 @@ export function Presenter({ game, joinUrl }: { game: Game; joinUrl: string }) {
             ? ` · ${t("watch.roundOf", { round: round + 1, total: game.boards.length })}`
             : null}
         </p>
+        <HostBadge />
         <div className="ml-auto flex items-center gap-2">
           <WatcherCount count={watchers} className="text-sm text-slate-300" />
           <GameClock roomId={-1} readOnly />

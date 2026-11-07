@@ -39,6 +39,8 @@ export interface ClueAnswer {
   /** The site admin skipped this question (ActionType.SkipClue): it counts
    * as played, without points for anyone for the skip itself. */
   skipped?: boolean;
+  /** The room's host (not the site admin) skipped it (feature 22). */
+  skippedByHost?: boolean;
 }
 
 /** QuestionRef names a question of the game: round and board cell. */
@@ -60,6 +62,8 @@ export interface ScoreAdjustment {
    * question). See getScoreChanges in standings.ts. */
   question: QuestionRef | null;
   ts: number;
+  /** The room's host (not the site admin) made the change (feature 22). */
+  byHost?: boolean;
 }
 
 export interface CheckCorrection {

@@ -39,7 +39,7 @@ export const host = {
   "host.panel.title": "Host controls",
   "host.panel.description":
     "Step in when a player is stuck. Everyone sees what you change.",
-  "host.toast.score": "🎤 Host: {name} {amount}",
+  "host.toast.score": "Host: {name} {amount}",
   "host.toast.skipped": "The host skipped a question.",
   "host.skipped": "The host skipped this question.",
   "host.admin.seat": "Host seat",
