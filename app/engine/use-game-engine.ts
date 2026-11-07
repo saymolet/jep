@@ -12,7 +12,7 @@ import { canSkipOpenClue, getAdminStep } from "./admin";
 import type { Action } from "./engine";
 import {
   gameEngine,
-  getTiebreakerSeed,
+  getStateTiebreakerSeed,
   getWinningBuzzer,
   parseUtcMs,
 } from "./engine";
@@ -119,7 +119,7 @@ export function stateToGameEngine(
 
   const winningBuzz = getWinningBuzzer(
     state.buzzes,
-    getTiebreakerSeed(clue),
+    getStateTiebreakerSeed(state),
     getBuzzWindowMs(state),
   );
   const winningBuzzer = winningBuzz?.userId ?? undefined;
