@@ -87,7 +87,13 @@ const BOB_ANSWERING: Payloads = [
   [ActionType.Buzz, { userId: ANN, i: 0, j: 0, deltaMs: CLUE_TIMEOUT_MS + 1 }],
 ];
 
-type Action = (args: Parameters<typeof hostAction>[0]) => Promise<unknown>;
+type Action = (args: {
+  request: Request;
+  url: URL;
+  pattern: string;
+  params: { roomId: string };
+  context: RouterContextProvider;
+}) => Promise<unknown>;
 
 async function call(
   route: Action,
