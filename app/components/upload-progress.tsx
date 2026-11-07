@@ -57,7 +57,7 @@ export function UploadProgressOverlay({
           <DialogPrimitive.Content
             ref={contentRef}
             data-testid="upload-progress"
-            className="w-full max-w-md animate-content-show rounded-md bg-blue-1000 p-5 text-white opacity-0 shadow-xl focus:outline-none"
+            className="w-full max-w-md animate-content-show rounded-md bg-blue-1000 p-5 text-white opacity-0 shadow-xl focus:outline-none dark:ring-1 dark:ring-white/15"
             onEscapeKeyDown={(e) => e.preventDefault()}
             onPointerDownOutside={(e) => e.preventDefault()}
             onInteractOutside={(e) => e.preventDefault()}
@@ -81,8 +81,10 @@ export function UploadProgressOverlay({
             <p className="mb-4 text-sm text-slate-300">
               {uploading
                 ? t("upload.progress.bytes", {
-                    loaded: formatBytes(progress.loaded, t),
-                    total: formatBytes(progress.total || progress.size, t),
+                    // The request is a bit larger than the file (multipart
+                    // framing): show the file's share.
+                    loaded: formatBytes((progress.size * percent) / 100, t),
+                    total: formatBytes(progress.size, t),
                   })
                 : formatBytes(progress.size, t)}
             </p>
