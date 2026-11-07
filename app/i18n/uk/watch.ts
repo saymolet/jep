@@ -13,6 +13,12 @@ export const watch: Dictionary<typeof en> = {
     other: "{count} глядача",
   },
   "watch.showOnTv": "Показати на телевізорі",
+  "watch.soundOnTv": "📺 Підключено екран телевізора: звук грає на ньому.",
+  "watch.openTvWindow": "Відкрити екран для телевізора",
+  "watch.openTvWindowHelp":
+    "Відкриється в окремому вікні, на проєкторі, якщо його підключено (Chrome може попросити дозвіл керувати вікнами). Клацніть у ньому один раз для повного екрана і звуку.",
+  "watch.startTv": "Клацніть, щоб почати: повний екран і звук",
+  "watch.startTvHelp": "Esc — вийти з повного екрана.",
 
   "watch.presenterTitle": "{title} · ТВ",
   "watch.fullscreen": "На весь екран",
@@ -20,7 +26,6 @@ export const watch: Dictionary<typeof en> = {
   "watch.scanToJoin": "Скануй, щоб приєднатися",
   "watch.orOpen": "або відкрий {url}",
   "watch.qrLabel": "QR-код для приєднання до гри",
-  "watch.soundHint": "Торкнися екрана, щоб увімкнути звук",
   "watch.players": "Гравці",
   "watch.noPlayers": "Гравців поки немає",
   "watch.roundOf": "Раунд {round} з {total}",

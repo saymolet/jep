@@ -4,6 +4,7 @@ import type { Mock } from "vitest";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { MediaBlock } from "~/utils/media";
+import { SoundOnTvContext } from "~/utils/user-settings";
 
 import { AudioPlayer, PlayableMedia, VideoPlayer } from "./clue-media";
 import { ClueText } from "./prompt";
@@ -223,5 +224,16 @@ describe("host replay (feature 23)", () => {
     expect(container.querySelector("iframe")?.getAttribute("src")).toContain(
       "autoplay=1",
     );
+  });
+});
+
+describe("sound on the TV (feature 24)", () => {
+  it("doesn't autoplay while the room's TV screen plays the sound", () => {
+    render(
+      <SoundOnTvContext.Provider value>
+        <AudioPlayer block={AUDIO} autoPlay />
+      </SoundOnTvContext.Provider>,
+    );
+    expect(play).not.toHaveBeenCalled();
   });
 });

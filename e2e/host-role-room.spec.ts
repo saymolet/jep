@@ -83,6 +83,14 @@ test.describe("host role", () => {
       { timeout: 10_000 },
     );
 
+    // The host opens the TV screen in its own window (feature 24).
+    const [tvWindow] = await Promise.all([
+      host.waitForEvent("popup"),
+      host.getByTestId("open-tv-window").click(),
+    ]);
+    await expect(tvWindow).toHaveURL(/\/room\/\d+-\w+\/present$/);
+    await tvWindow.close();
+
     const ann = await newPage(browser);
     await goto(ann, roomUrl);
     await expect(ann.getByTestId("join-host-info")).toContainText(

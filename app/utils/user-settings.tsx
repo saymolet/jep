@@ -177,12 +177,20 @@ export function useGameDefaults() {
   };
 }
 
-/** useSoundSettings provides the same API shape as the old SoundContext. */
+/** SoundOnTvContext is true in a room whose sound plays on its TV screen
+ * (feature 24: a TV is connected), so this device stays quiet. */
+export const SoundOnTvContext = React.createContext(false);
+
+/** useSoundSettings provides the same API shape as the old SoundContext.
+ * `mute` is what to play by: also on while the room's TV plays the sound;
+ * `savedMute` is the device's own setting. */
 export function useSoundSettings() {
   const { settings, saveSettings } = useUserSettings();
+  const soundOnTv = React.useContext(SoundOnTvContext);
   const sound = settings.sound;
   const volume = sound?.volume ?? DEFAULT_VOLUME;
-  const mute = sound?.mute ?? DEFAULT_MUTE;
+  const savedMute = sound?.mute ?? DEFAULT_MUTE;
+  const mute = savedMute || soundOnTv;
 
   const setVolume = React.useCallback(
     (v: number) =>
@@ -204,7 +212,7 @@ export function useSoundSettings() {
     [saveSettings],
   );
 
-  return { volume, mute, setVolume, setMute };
+  return { volume, mute, savedMute, soundOnTv, setVolume, setMute };
 }
 
 /** useSetLanguage returns a function that switches the UI language: shown at

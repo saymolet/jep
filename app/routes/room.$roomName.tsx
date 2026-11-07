@@ -27,6 +27,7 @@ import {
 import { getOrCreateUserSession, getUserSession } from "~/session.server";
 import { getRandomEmoji } from "~/utils";
 import { noteServerTime } from "~/utils/server-clock";
+import { SoundOnTvContext } from "~/utils/user-settings";
 
 import type { Route } from "./+types/room.$roomName";
 
@@ -242,18 +243,21 @@ export default function PlayGame({ loaderData }: Route.ComponentProps) {
 
   return (
     <GameEngineContext.Provider value={engine}>
-      <GameComponent
-        game={loaderData.game}
-        isAdmin={loaderData.isAdmin}
-        name={loaderData.name}
-        playerColor={loaderData.playerColor}
-        roomId={loaderData.roomId}
-        roomName={loaderData.roomName}
-        userId={loaderData.userId}
-        url={loaderData.BASE_URL + pathname}
-        watching={watching}
-        onWatchingChange={setWatching}
-      />
+      {/* A TV screen is connected: it plays the sound (feature 24). */}
+      <SoundOnTvContext.Provider value={engine.tvScreens > 0}>
+        <GameComponent
+          game={loaderData.game}
+          isAdmin={loaderData.isAdmin}
+          name={loaderData.name}
+          playerColor={loaderData.playerColor}
+          roomId={loaderData.roomId}
+          roomName={loaderData.roomName}
+          userId={loaderData.userId}
+          url={loaderData.BASE_URL + pathname}
+          watching={watching}
+          onWatchingChange={setWatching}
+        />
+      </SoundOnTvContext.Provider>
     </GameEngineContext.Provider>
   );
 }

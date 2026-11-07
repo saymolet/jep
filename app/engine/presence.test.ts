@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { countWatchers, listWatchers } from "./presence";
+import { countPresenters, countWatchers, listWatchers } from "./presence";
 
 describe("countWatchers", () => {
   it("is 0 for an empty channel", () => {
@@ -45,5 +45,19 @@ describe("listWatchers", () => {
       { userId: "u1", name: "Ann" },
       { userId: "u2", name: "Zed" },
     ]);
+  });
+});
+
+describe("countPresenters", () => {
+  it("counts TV screens by their latest role", () => {
+    expect(
+      countPresenters({
+        a: [{ role: "presenter" }],
+        b: [{ role: "player" }],
+        c: [{ role: "spectator" }, { role: "presenter" }],
+        d: [{ role: "presenter" }, { role: "spectator" }],
+      }),
+    ).toBe(2);
+    expect(countPresenters({})).toBe(0);
   });
 });

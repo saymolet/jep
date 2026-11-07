@@ -24,3 +24,4 @@ See the backlog in [../README.md](../README.md#feature-backlog).
 - [21 — Room timers](./21-room-timers.md)
 - [22 — Host role (SIGame showman)](./22-host-role.md)
 - [23 — Host replays audio/video](./23-host-media-replay.md)
+- [24 — The game on a projector](./24-projector.md)

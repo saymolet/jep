@@ -3,6 +3,7 @@ import * as React from "react";
 
 import BoardComponent from "~/components/board";
 import Connection from "~/components/connection";
+import { FitToBox } from "~/components/fit-to-box";
 import GameClock from "~/components/game-clock";
 import { HostBadge } from "~/components/host/host-badge";
 import { PausedOverlay } from "~/components/pause";
@@ -56,9 +57,11 @@ function FullscreenButton() {
 }
 
 /** useNeedsSoundGesture is true until the viewer interacts with the page:
- * browsers block audio that starts without a tap/click/key press first. */
+ * browsers block audio that starts without a tap/click/key press first.
+ * `done` ends it (the start overlay's click). */
 function useNeedsSoundGesture() {
   const [needed, setNeeded] = React.useState(false);
+  const done = React.useCallback(() => setNeeded(false), []);
   React.useEffect(() => {
     if (
       "userActivation" in navigator &&
@@ -68,15 +71,35 @@ function useNeedsSoundGesture() {
     }
 
     setNeeded(true);
-    const done = () => setNeeded(false);
-    document.addEventListener("pointerdown", done, { once: true });
     document.addEventListener("keydown", done, { once: true });
-    return () => {
-      document.removeEventListener("pointerdown", done);
-      document.removeEventListener("keydown", done);
-    };
-  }, []);
-  return needed;
+    return () => document.removeEventListener("keydown", done);
+  }, [done]);
+  return { needed, done };
+}
+
+/** StartOverlay asks for the one click the TV needs (feature 24): it turns
+ * on the sound and goes fullscreen, e.g. on the projector. */
+function StartOverlay({ onStart }: { onStart: () => void }) {
+  const { t } = useTranslation();
+  return (
+    <button
+      type="button"
+      className="fixed inset-0 z-50 flex cursor-pointer flex-col items-center justify-center gap-3 bg-black/60 text-white"
+      data-testid="presenter-start"
+      onClick={() => {
+        onStart();
+        if (!document.fullscreenElement && document.fullscreenEnabled) {
+          document.documentElement.requestFullscreen().catch(() => {});
+        }
+      }}
+    >
+      <span className="rounded-2xl bg-blue-bright px-8 py-5 text-3xl font-bold shadow-xl lg:text-4xl">
+        <span aria-hidden>▶ </span>
+        {t("watch.startTv")}
+      </span>
+      <span className="text-lg text-slate-200">{t("watch.startTvHelp")}</span>
+    </button>
+  );
 }
 
 function JoinQr({
@@ -151,6 +174,56 @@ function PlayerList({ players }: { players: Player[] }) {
   );
 }
 
+/** PlayerStrip lists the players in one row under the open question (the
+ * question has the rest of the screen), team totals first in team mode. */
+function PlayerStrip({
+  players,
+  teamStandings,
+}: {
+  players: Player[];
+  teamStandings: TeamStanding[] | null;
+}) {
+  const { t } = useTranslation();
+  const { boardControl } = useEngineContext();
+  const changes = useRecentScoreChanges();
+  if (players.length === 0) return null;
+  const best = players[0].score;
+  return (
+    <div className="flex shrink-0 items-stretch justify-center gap-3 px-4 pb-2">
+      {teamStandings
+        ? teamStandings.map((s) => (
+            <div
+              key={s.team}
+              className="flex items-center gap-2 rounded-2xl border-l-8 bg-white/5 px-3 text-xl font-bold"
+              style={{ borderColor: TEAM_COLORS[s.team] }}
+            >
+              <span className="max-w-40 truncate">
+                {getTeamName(t, s.team, s.name)}
+              </span>
+              <span className="font-inter">{formatDollars(s.score)}</span>
+            </div>
+          ))
+        : null}
+      <ol
+        className="flex min-w-0 justify-center gap-3"
+        aria-label={t("watch.players")}
+        data-testid="presenter-player-strip"
+      >
+        {players.map((p) => (
+          <li key={p.userId} className="w-56 min-w-0 shrink">
+            <PlayerScore
+              player={p}
+              hasBoardControl={p.userId === boardControl}
+              winning={players.length > 1 && p.score === best}
+              scoreChange={changes.get(p.userId)}
+            />
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
+
 /** useTeamStandings is the team standings, or null when no one has a team. */
 function useTeamStandings(): TeamStanding[] | null {
   const { players, leftPlayers, teamNames } = useEngineContext();
@@ -212,7 +285,7 @@ function Lobby({ joinUrl, game }: { joinUrl: string; game: Game }) {
   const { t } = useTranslation();
   const { players, round } = useEngineContext();
   return (
-    <div className="flex grow flex-col items-center justify-center gap-6 overflow-y-auto p-6 lg:flex-row lg:gap-16">
+    <div className="flex flex-col items-center justify-center gap-6 p-6 lg:flex-row lg:gap-16">
       <JoinQr joinUrl={joinUrl} size="large" />
       <div className="flex max-w-xl flex-col items-center gap-4 text-center lg:items-start lg:text-left">
         <h2 className="font-korinna text-4xl font-bold text-white uppercase text-shadow-md lg:text-6xl">
@@ -247,7 +320,7 @@ function GameOverScreen() {
   const teamStandings = useTeamStandings();
   const winningTeams = teamStandings ? getWinningTeams(teamStandings) : [];
   return (
-    <div className="flex grow flex-col items-center justify-center gap-6 overflow-y-auto p-6 text-center">
+    <div className="flex flex-col items-center justify-center gap-6 p-6 text-center">
       <h2 className="font-korinna text-5xl font-bold text-white uppercase text-shadow-md lg:text-7xl">
         {t("watch.status.gameOver")}
       </h2>
@@ -331,7 +404,7 @@ export function Presenter({ game, joinUrl }: { game: Game; joinUrl: string }) {
     watchers,
   } = useEngineContext();
   const status = useViewerStatus();
-  const needsSoundGesture = useNeedsSoundGesture();
+  const soundGesture = useNeedsSoundGesture();
   useWakeLock();
 
   const sorted = sortByScore(players);
@@ -342,9 +415,17 @@ export function Presenter({ game, joinUrl }: { game: Game; joinUrl: string }) {
 
   let main: React.ReactNode;
   if (lobby) {
-    main = <Lobby joinUrl={joinUrl} game={game} />;
+    main = (
+      <FitToBox>
+        <Lobby joinUrl={joinUrl} game={game} />
+      </FitToBox>
+    );
   } else if (gameOver) {
-    main = <GameOverScreen />;
+    main = (
+      <FitToBox>
+        <GameOverScreen />
+      </FitToBox>
+    );
   } else if (promptOpen) {
     main = (
       <div
@@ -356,10 +437,11 @@ export function Presenter({ game, joinUrl }: { game: Game; joinUrl: string }) {
     );
   } else {
     main = (
-      // Let the board use the whole width of a big screen.
-      <div className="flex min-h-0 grow flex-col justify-center overflow-y-auto [&_[data-columns]]:max-w-none!">
+      // Let the board use the whole width of a big screen, and shrink it
+      // until every row fits the window.
+      <FitToBox className="[&_[data-columns]]:max-w-none!">
         <BoardComponent roomId={-1} userId={NO_USER} readOnly />
-      </div>
+      </FitToBox>
     );
   }
 
@@ -392,7 +474,14 @@ export function Presenter({ game, joinUrl }: { game: Game; joinUrl: string }) {
       ) : null}
       <div className="flex min-h-0 grow flex-col gap-4 p-4 pt-0 lg:flex-row">
         <main className="flex min-h-0 min-w-0 grow flex-col">{main}</main>
-        <aside className="flex shrink-0 flex-col gap-4 lg:w-80 xl:w-96">
+        <aside
+          className={clsx(
+            "flex shrink-0 flex-col gap-4 lg:w-80 xl:w-96",
+            // The open question takes the whole screen; the players move to
+            // the strip below it.
+            promptOpen && "hidden",
+          )}
+        >
           <div className="flex min-h-0 grow flex-col gap-4 overflow-y-auto">
             {teamStandings ? <TeamTotals standings={teamStandings} /> : null}
             <PlayerList players={sorted} />
@@ -404,6 +493,9 @@ export function Presenter({ game, joinUrl }: { game: Game; joinUrl: string }) {
           )}
         </aside>
       </div>
+      {promptOpen ? (
+        <PlayerStrip players={sorted} teamStandings={teamStandings} />
+      ) : null}
       <div className="px-4 pb-2">
         <Connection
           state={connectionState}
@@ -411,11 +503,8 @@ export function Presenter({ game, joinUrl }: { game: Game; joinUrl: string }) {
           reconnect={reconnect}
         />
       </div>
-      {needsSoundGesture ? (
-        <p className="fixed bottom-3 left-1/2 z-40 -translate-x-1/2 rounded-full bg-black/70 px-4 py-2 text-sm text-white">
-          <span aria-hidden>🔊 </span>
-          {t("watch.soundHint")}
-        </p>
+      {soundGesture.needed ? (
+        <StartOverlay onStart={soundGesture.done} />
       ) : null}
       <PausedOverlay roomId={-1} canResume={false} />
       {/* Players' reaction sounds: the TV only listens. */}

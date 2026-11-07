@@ -22,7 +22,7 @@ export function SoundControl({
 
   // Local state for responsive slider — writes through to context
   const [volume, setLocalVolume] = React.useState(sound.volume);
-  const [mute, setLocalMute] = React.useState(sound.mute);
+  const [mute, setLocalMute] = React.useState(sound.savedMute);
 
   function setVolume(v: number) {
     setLocalVolume(v);
@@ -59,6 +59,19 @@ export function SoundControl({
         )}
       </form>
       {showSoundboard ? <SoundboardMuteToggle className="pt-1" /> : null}
+      {sound.soundOnTv ? (
+        <span
+          className="text-xs opacity-70"
+          data-testid="sound-on-tv"
+          title={t("watch.soundOnTv")}
+        >
+          {showLabel ? (
+            t("watch.soundOnTv")
+          ) : (
+            <span aria-label={t("watch.soundOnTv")}>📺</span>
+          )}
+        </span>
+      ) : null}
     </div>
   );
 }
