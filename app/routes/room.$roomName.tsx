@@ -184,6 +184,13 @@ export default function PlayGame({ loaderData }: Route.ComponentProps) {
   // later.
   const [presence, setPresence] = React.useState<PresenceRole | null>(null);
 
+  // Spectators say who they are (the admin may make one the host). The name
+  // is the one the visitor got when the page loaded (guests get a random
+  // one per load), so revalidations don't re-announce it.
+  const [identity] = React.useState(() => ({
+    userId: loaderData.userId,
+    name: loaderData.name,
+  }));
   const engine = useGameEngine(
     loaderData.game,
     loaderData.roomEvents,
@@ -192,7 +199,7 @@ export default function PlayGame({ loaderData }: Route.ComponentProps) {
     presence,
     {
       answersHidden: loaderData.answersHidden,
-      presenceIdentity: { userId: loaderData.userId, name: loaderData.name },
+      presenceIdentity: identity,
     },
   );
 

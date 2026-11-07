@@ -382,6 +382,8 @@ export function useGameEngine(
   const [watchers, setWatchers] = React.useState(0);
   const [watcherList, setWatcherList] = React.useState(NO_WATCHERS);
   const presenceRef = React.useRef({ role: presence, presenceIdentity });
+  /** What this client last announced on the live channel. */
+  const announcedRef = React.useRef<string | null>(null);
   const channelRef = React.useRef<RealtimeChannel | null>(null);
   const identityUserId = presenceIdentity?.userId;
   const identityName = presenceIdentity?.name;
@@ -392,7 +394,11 @@ export function useGameEngine(
         : undefined;
     presenceRef.current = { role: presence, presenceIdentity: identity };
     const channel = channelRef.current;
-    if (channel?.state === "joined") {
+    // Re-announce only a real change: tracking the same presence again
+    // right after a reload of the page's data can close the channel.
+    const key = presenceKey(presence, identity);
+    if (channel?.state === "joined" && announcedRef.current !== key) {
+      announcedRef.current = key;
       announcePresence(channel, presence, identity);
     }
   }, [presence, identityUserId, identityName]);
@@ -521,6 +527,10 @@ export function useGameEngine(
             hasConnectedOnce.current = true;
             clearReconnectingTimer();
             setConnectionState(ConnectionState.CONNECTED);
+            announcedRef.current = presenceKey(
+              presenceRef.current.role,
+              presenceRef.current.presenceIdentity,
+            );
             announcePresence(
               channel,
               presenceRef.current.role,
@@ -618,6 +628,13 @@ export function useGameEngine(
     watcherList,
     soundboard,
   });
+}
+
+/** presenceKey identifies what announcePresence sends. */
+function presenceKey(role: PresenceRole | null, identity?: PresenceIdentity) {
+  return role === "spectator" && identity
+    ? `${role}:${identity.userId}:${identity.name}`
+    : String(role);
 }
 
 /** announcePresence tracks this client's role on the channel, or stops
