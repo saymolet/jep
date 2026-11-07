@@ -230,11 +230,11 @@ export default function GameComponent({
           actor={isAdmin ? "admin" : "host"}
           userId={userId}
           name={name}
-          raised={!isPlayer && watching && Boolean(onWatchingChange)}
+          raised={!runsGame && watching && Boolean(onWatchingChange)}
         />
       ) : null}
       <AdminToasts />
-      {!isPlayer && watching && onWatchingChange ? (
+      {!runsGame && watching && onWatchingChange ? (
         <>
           {/* Room for the floating bar below the page content. */}
           <div className="h-16" aria-hidden />
