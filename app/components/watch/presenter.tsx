@@ -4,6 +4,7 @@ import * as React from "react";
 import BoardComponent from "~/components/board";
 import Connection from "~/components/connection";
 import GameClock from "~/components/game-clock";
+import { HostBadge } from "~/components/host/host-badge";
 import { PausedOverlay } from "~/components/pause";
 import { PlayerIcon, PlayerScore } from "~/components/player";
 import { PROMPT_STATES } from "~/components/prompt/prompt";
@@ -27,8 +28,6 @@ import { TEAM_COLORS } from "~/models/team";
 import { formatDollars, getPlayerColor } from "~/utils";
 import { useFullscreen } from "~/utils/use-fullscreen";
 import { useWakeLock } from "~/utils/use-wake-lock";
-
-import { HostBadge } from "~/components/host/host-badge";
 
 import { WatcherCount } from "./spectator-bar";
 import { getWinners, sortByScore } from "./status";

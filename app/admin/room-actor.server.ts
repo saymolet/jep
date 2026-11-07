@@ -1,7 +1,7 @@
+import { hasHostSeatEvents } from "~/engine/room-event";
 import type { State } from "~/engine/state";
 import type { createT } from "~/i18n";
 import type { AuthSession } from "~/models/auth";
-import { hasHostSeatEvents } from "~/engine/room-event";
 import { getRoomEvents } from "~/models/room-event.server";
 import { getRoomState } from "~/models/room-state.server";
 import { getRoom } from "~/models/room.server";

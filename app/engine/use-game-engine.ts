@@ -22,6 +22,7 @@ import {
   type PresenceIdentity,
   type PresenceRole,
 } from "./presence";
+import { withRevealedAnswers } from "./revealed";
 import {
   createListenerSet,
   NO_BROADCAST,
@@ -34,7 +35,6 @@ import {
   mergeRoomEvents,
   roomEventToAction,
 } from "./room-event";
-import { withRevealedAnswers } from "./revealed";
 import { getBuzzWindowMs } from "./room-timers";
 import { getScoreChanges, scoreChangesKey } from "./standings";
 import {
