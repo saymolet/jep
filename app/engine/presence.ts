@@ -24,6 +24,17 @@ export function countWatchers(presenceState: PresenceState): number {
   return count;
 }
 
+/** countPresenters counts the TV screens (presenter views) in a Realtime
+ * presence state: while one is connected the sound plays on it only
+ * (feature 24). */
+export function countPresenters(presenceState: PresenceState): number {
+  let count = 0;
+  for (const metas of Object.values(presenceState)) {
+    if (metas.at(-1)?.role === "presenter") count++;
+  }
+  return count;
+}
+
 /** listWatchers lists the spectators who announced who they are (one entry
  * per user id, e.g. a phone and a laptop of the same person), sorted by
  * name. */

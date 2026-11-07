@@ -29,6 +29,7 @@ import type { PlayerColor } from "~/models/player-color";
 import type { TeamId } from "~/models/team";
 import { getPlayerColor } from "~/utils";
 import { useJoinAvatar } from "~/utils/avatar-storage";
+import { openTvWindow } from "~/utils/tv-window";
 import useSoloAction from "~/utils/use-solo-action";
 
 export function JoinGameDialog({
@@ -234,6 +235,22 @@ function PreviewRoundDialog({
             ? t("host.startRoundHelp")
             : t("host.badge", { name: host.name })}
         </p>
+      ) : null}
+      {isHost || isAdmin ? (
+        // The host's laptop drives the projector (feature 24).
+        <div className="mb-4 flex flex-col items-start gap-1">
+          <Button
+            type="button"
+            onClick={() => void openTvWindow(`${url}/present`)}
+            data-testid="open-tv-window"
+          >
+            <span aria-hidden>📽️ </span>
+            {t("watch.openTvWindow")}
+          </Button>
+          <p className="text-sm text-slate-300">
+            {t("watch.openTvWindowHelp")}
+          </p>
+        </div>
       ) : null}
       {round === 0 ? (
         <div className="flex flex-col gap-2">

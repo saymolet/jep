@@ -48,6 +48,7 @@ export const GameEngineContext = React.createContext<
   wagerStartedAt: null,
   longFormStartedAt: null,
   watchers: 0,
+  tvScreens: 0,
   watcherList: [],
   soundboard: NO_BROADCAST,
   scoreChanges: NO_SCORE_CHANGES,

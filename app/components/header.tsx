@@ -10,6 +10,7 @@ import { ThemeMenu } from "~/components/theme-switcher";
 import WagerHintsControl from "~/components/wager-hints-control";
 import { useTranslation } from "~/i18n";
 import type { Game } from "~/models/game.server";
+import { openTvWindow } from "~/utils/tv-window";
 
 function isGameLoaderData(data: unknown): data is { game: Game } {
   return typeof data === "object" && data !== null && "game" in data;
@@ -144,12 +145,17 @@ function GameSettings({
           </DropdownMenu.Item>
           {ROOM_PATH.test(pathname) ? (
             <DropdownMenu.Item asChild>
-              {/* The TV view opens in a new tab: on a laptop connected to a
-                  TV, or copy its address to the TV's browser. */}
+              {/* The TV view opens in its own window (on the other screen
+                  when a projector is connected, feature 24); or copy its
+                  address to the TV's browser. */}
               <RouterLink
                 to={`${pathname}/present`}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={(e) => {
+                  e.preventDefault();
+                  void openTvWindow(`${pathname}/present`);
+                }}
               >
                 <Eye className="absolute left-0 m-1 h-5 w-5" />
                 <p className="pl-7">{t("watch.showOnTv")}</p>

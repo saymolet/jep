@@ -17,6 +17,7 @@ import {
   parseUtcMs,
 } from "./engine";
 import {
+  countPresenters,
   countWatchers,
   listWatchers,
   type PresenceIdentity,
@@ -94,6 +95,7 @@ export function stateToGameEngine(
     reconnect,
     watchers = 0,
     watcherList = NO_WATCHERS,
+    tvScreens = 0,
     soundboard = NO_BROADCAST,
   }: {
     connectionState: ConnectionState;
@@ -101,6 +103,7 @@ export function stateToGameEngine(
     reconnect?: () => void;
     watchers?: number;
     watcherList?: PresenceIdentity[];
+    tvScreens?: number;
     soundboard?: RoomBroadcast;
   },
 ) {
@@ -219,6 +222,9 @@ export function stateToGameEngine(
     wagerStartedAt: state.wagerStartedAt,
     /** When the current Final answer step started (server clock), or null. */
     longFormStartedAt: state.longFormStartedAt,
+    /** How many TV screens (presenter views) show the room; while there is
+     * one, the sound plays on the TV only (feature 24). */
+    tvScreens,
     /** How many people are watching the room without playing (spectators,
      * counted with Realtime presence; 0 in solo play). */
     watchers,
@@ -397,6 +403,7 @@ export function useGameEngine(
   // and re-announced on the live channel.
   const [watchers, setWatchers] = React.useState(0);
   const [watcherList, setWatcherList] = React.useState(NO_WATCHERS);
+  const [tvScreens, setTvScreens] = React.useState(0);
   const presenceRef = React.useRef({ role: presence, presenceIdentity });
   /** What this client last announced on the live channel. */
   const announcedRef = React.useRef<string | null>(null);
@@ -530,6 +537,7 @@ export function useGameEngine(
         if (disposed) return;
         setWatchers(countWatchers(channel.presenceState()));
         setWatcherList(listWatchers(channel.presenceState()));
+        setTvScreens(countPresenters(channel.presenceState()));
       })
       .on("broadcast", { event: SOUNDBOARD_EVENT }, (message) => {
         if (disposed) return;
@@ -642,6 +650,7 @@ export function useGameEngine(
     reconnect,
     watchers,
     watcherList,
+    tvScreens,
     soundboard,
   });
 }

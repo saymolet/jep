@@ -7,6 +7,12 @@ export const watch = {
   "watch.spectatorHint": "You're watching. Join any time to play.",
   "watch.watchers": { one: "{count} watching", other: "{count} watching" },
   "watch.showOnTv": "Show on TV",
+  "watch.soundOnTv": "📺 A TV screen is connected: the sound plays there.",
+  "watch.openTvWindow": "Open the TV screen",
+  "watch.openTvWindowHelp":
+    "Opens in its own window, on the projector if one is connected (Chrome may ask to manage windows). Click it once there for fullscreen and sound.",
+  "watch.startTv": "Click to start: fullscreen and sound",
+  "watch.startTvHelp": "Press Esc to leave fullscreen.",
 
   // Presenter (TV) screen
   "watch.presenterTitle": "{title} · TV",
@@ -15,7 +21,6 @@ export const watch = {
   "watch.scanToJoin": "Scan to join",
   "watch.orOpen": "or open {url}",
   "watch.qrLabel": "QR code to join the game",
-  "watch.soundHint": "Tap anywhere to turn on sound",
   "watch.players": "Players",
   "watch.noPlayers": "No players yet",
   "watch.roundOf": "Round {round} of {total}",
