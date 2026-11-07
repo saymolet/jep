@@ -1723,6 +1723,10 @@ export function gameEngine(state: State, action: Action): State {
           return;
         }
         draft.host = seat;
+        // Someone who left the game before it got underway isn't in it.
+        if (!isGameUnderway(draft)) {
+          draft.leftPlayers.delete(seat.userId);
+        }
       });
     }
     case ActionType.AssignHost: {
@@ -1738,6 +1742,10 @@ export function gameEngine(state: State, action: Action): State {
           return;
         }
         draft.host = seat;
+        // Someone who left the game before it got underway isn't in it.
+        if (!isGameUnderway(draft)) {
+          draft.leftPlayers.delete(seat.userId);
+        }
       });
     }
     case ActionType.ReleaseHost: {
