@@ -48,7 +48,7 @@ function HostAnswer({ clue }: { clue: Clue }) {
   const media = clue.answerMedia ?? [];
   return (
     <section
-      className="mx-auto flex w-full max-w-screen-md flex-col items-center gap-2 rounded-xl border-2 border-cyan-300/60 bg-blue-1000/60 px-4 py-3 text-center"
+      className="mx-auto flex w-[calc(100%-2rem)] max-w-screen-md shrink-0 flex-col items-center gap-2 rounded-xl border-2 border-cyan-300/60 bg-blue-1000/60 px-4 py-3 text-center"
       data-testid="host-answer"
       aria-label={t("host.answer")}
     >
