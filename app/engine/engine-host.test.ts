@@ -908,3 +908,45 @@ describe("replay_media (feature 23)", () => {
     expect(state.mediaReplay).toEqual({ round: 0, i: 1, j: 1, count: 1 });
   });
 });
+
+describe("a player switches to hosting (before the game is underway)", () => {
+  const switchToHost = (p: { userId: string; name: string }): TestAction => ({
+    type: ActionType.ClaimHost,
+    payload: { ...p, fromPlayer: true },
+  });
+
+  it("leaves the players for the host seat; board control moves on", () => {
+    const state = run([join(P1), join(P2), switchToHost(P1)]);
+    expect(state.host).toEqual(P1);
+    expect([...state.players.keys()]).toEqual([P2.userId]);
+    expect(state.leftPlayers.has(P1.userId)).toBe(false);
+    expect(state.boardControl).toBe(P2.userId);
+  });
+
+  it("the only player becomes the host; the next to join gets control", () => {
+    const state = run([join(P1), switchToHost(P1), join(P2)]);
+    expect(state.host).toEqual(P1);
+    expect([...state.players.keys()]).toEqual([P2.userId]);
+    expect(state.boardControl).toBe(P2.userId);
+  });
+
+  it("a host alone can't start the round", () => {
+    const state = run([join(P1), switchToHost(P1), start(P1.userId)]);
+    expect(state.type).toBe(GameState.PreviewRound);
+  });
+
+  it("is ignored without the server's flag, or once the game is underway", () => {
+    expect(run([join(P1), claim(P1)]).host).toBeNull();
+    const underway = run([
+      join(P1),
+      join(P2),
+      start(P1.userId),
+      choose(0, 0, P1.userId),
+      skip(0, 0),
+      next(P1.userId, 0, 0),
+      switchToHost(P1),
+    ]);
+    expect(underway.host).toBeNull();
+    expect(underway.players.has(P1.userId)).toBe(true);
+  });
+});

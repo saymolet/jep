@@ -27,6 +27,7 @@ import {
   isTransferPlayerAction,
   parseHostSeat,
   parseReleaseHost,
+  isFromPlayerClaim,
   parseReplayMedia,
   parseRevealAnswer,
 } from "./actions";
@@ -1729,10 +1730,22 @@ export function gameEngine(state: State, action: Action): State {
         if (
           draft.host !== null ||
           draft.type === GameState.GameOver ||
-          draft.activeClue !== null ||
-          draft.players.has(seat.userId)
+          draft.activeClue !== null
         ) {
           return;
+        }
+        if (draft.players.has(seat.userId)) {
+          // A player may switch to hosting only before the game is underway
+          // (the server tags that claim `fromPlayer: true`).
+          if (!isFromPlayerClaim(action) || isGameUnderway(draft)) {
+            return;
+          }
+          transferBoardControl(draft, seat.userId);
+          draft.players.delete(seat.userId);
+          if (draft.boardControl === seat.userId) {
+            // They were the only player: the next to join gets control.
+            draft.boardControl = null;
+          }
         }
         draft.host = seat;
         // Someone who left the game before it got underway isn't in it.

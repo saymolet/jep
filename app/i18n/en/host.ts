@@ -14,6 +14,11 @@ export const host = {
   "host.secretAnswering": "Cat in the bag: {name} is answering",
   "host.right": "Right",
   "host.wrong": "Wrong",
+  "host.waitingToStart":
+    "Waiting for players: share the room link (or show the TV screen's QR code). You can start once someone joins.",
+  "host.switchToHost": "Host instead of playing",
+  "host.switchToHostHelp":
+    "You leave the players and run the game: you see the answers and judge what players say out loud.",
   "host.replayMedia": "Replay for everyone",
   "host.replayMediaHelp": "Restarts the audio or video on every screen.",
   "host.rightFor": "Right: {name}",

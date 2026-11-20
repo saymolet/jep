@@ -167,12 +167,6 @@ describe("host seat route", () => {
   });
 
   it("409: a player can't host, a taken seat, a question open", async () => {
-    mocks.session.userId = ANN;
-    expect(await outcome(claim(ANN))).toMatchObject({
-      status: 409,
-      error: "players can't host: leave the game first",
-    });
-
     mocks.session.userId = VISITOR;
     mocks.getRoomEvents.mockResolvedValue(toEvents(HOSTED_LOBBY));
     expect(await outcome(claim())).toMatchObject({
@@ -574,6 +568,54 @@ describe("replaying media (feature 23)", () => {
     );
     expect((await outcome(replay())).status).toBe(409);
     expect(inserted()).toEqual([]);
+  });
+});
+
+describe("a host alone; switching to hosting", () => {
+  it("409 when the host starts a round nobody has joined", async () => {
+    mocks.session.userId = HOST;
+    mocks.getRoomEvents.mockResolvedValue(
+      toEvents([[ActionType.ClaimHost, { userId: HOST, name: "Host" }]]),
+    );
+    const res = await outcome(
+      call(startAction, "start", { round: "0", userId: HOST }),
+    );
+    expect(res.status).toBe(409);
+    expect(inserted()).toEqual([]);
+  });
+
+  it("a player switches to hosting before the game is underway", async () => {
+    mocks.session.userId = ANN;
+    expect(
+      await outcome(
+        call(hostAction, "host", { intent: "claim", userId: ANN, name: "Ann" }),
+      ),
+    ).toMatchObject({ status: 200 });
+    expect(inserted()).toEqual([
+      [ActionType.ClaimHost, { userId: ANN, name: "Ann", fromPlayer: true }],
+    ]);
+  });
+
+  it("409 for a player once the game is underway", async () => {
+    mocks.session.userId = ANN;
+    mocks.getRoomEvents.mockResolvedValue(
+      toEvents([
+        ...LOBBY,
+        [ActionType.StartRound, { round: 0, userId: ANN }],
+        [ActionType.ChooseClue, { userId: ANN, i: 0, j: 0 }],
+      ]),
+    );
+    expect(
+      (
+        await outcome(
+          call(hostAction, "host", {
+            intent: "claim",
+            userId: ANN,
+            name: "Ann",
+          }),
+        )
+      ).status,
+    ).toBe(409);
   });
 });
 

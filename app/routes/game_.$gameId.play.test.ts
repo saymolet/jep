@@ -76,6 +76,14 @@ describe("new room loader", () => {
     expect(mocks.createRoomEventAsServer).not.toHaveBeenCalled();
   });
 
+  it("404s for a deleted game instead of failing to create a room", async () => {
+    mocks.getGame.mockResolvedValue(null);
+    expect((await thrown(loader(args("/game/g1/play")))).status).toBe(404);
+    mocks.getAdmin.mockResolvedValue(ADMIN);
+    expect((await thrown(loader(args("/game/g1/play")))).status).toBe(404);
+    expect(mocks.createRoom).not.toHaveBeenCalled();
+  });
+
   it("shows the admin the room timers first (defaults)", async () => {
     mocks.getAdmin.mockResolvedValue(ADMIN);
     const data = await loader(args("/game/g1/play?new"));

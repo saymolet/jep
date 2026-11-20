@@ -49,10 +49,12 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 
   const authSession = await getValidAuthSession(request);
   const isAdmin = (await getAdmin(request)) !== null;
-  const game =
-    isAdmin || !new URL(request.url).searchParams.has("new")
-      ? await getGame(gameId, authSession?.userId)
-      : null;
+  const fetchGame = isAdmin || !new URL(request.url).searchParams.has("new");
+  const game = fetchGame ? await getGame(gameId, authSession?.userId) : null;
+  // A deleted (or private) game: not found, not a failed room insert.
+  if (fetchGame && !game) {
+    throw new Response(t("room.error.gameNotFound"), { status: 404 });
+  }
 
   if (!new URL(request.url).searchParams.has("new")) {
     const activeRooms = game
