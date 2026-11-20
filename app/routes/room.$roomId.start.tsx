@@ -1,3 +1,4 @@
+import { data } from "react-router";
 import { z } from "zod";
 
 import {
@@ -5,9 +6,14 @@ import {
   requireHostModeFlow,
 } from "~/admin/room-actor.server";
 import { ActionType } from "~/engine";
+import { hasHostSeatEvents } from "~/engine/room-event";
 import { createT, getRequestLocale } from "~/i18n";
 import { getValidAuthSession } from "~/models/auth";
-import { createRoomEventAsServer } from "~/models/room-event.server";
+import {
+  createRoomEventAsServer,
+  getRoomEvents,
+} from "~/models/room-event.server";
+import { getRoomState } from "~/models/room-state.server";
 import { getRoom } from "~/models/room.server";
 import { parseFormData } from "~/utils/http.server";
 
@@ -51,6 +57,16 @@ export async function action({ request, params }: Route.ActionArgs) {
   }
   // Host mode (feature 22): the host runs the game.
   await requireHostModeFlow(room, userId, actor, authSession, t);
+  // A round needs players: say so instead of a start the game ignores (a
+  // host alone in the room). Only rooms that had a host can get here
+  // without players, so other rooms skip rebuilding the state.
+  const events = await getRoomEvents(room.id, authSession?.accessToken);
+  if (hasHostSeatEvents(events)) {
+    const { state } = await getRoomState(room, authSession, t);
+    if (state.players.size === 0) {
+      return data({ error: t("room.error.noPlayersYet") }, { status: 409 });
+    }
+  }
 
   await createRoomEventAsServer(room.id, ActionType.StartRound, {
     round,

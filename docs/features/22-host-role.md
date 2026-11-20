@@ -287,3 +287,23 @@ hosting this game", "you're hosting: stop hosting to play", "solo games have no 
    host / Take the host seat / Free the host seat.
 8. Laptop: **Stop hosting** between questions → players get "Reveal answer" again.
 9. Switch to УКР and to the Dark theme; try the laptop at phone width.
+
+## Fix (2026-11-20): host alone; switching to hosting
+
+Owner: "There is no button to become a host. Also i cant create a game where i am a host. It
+freezes when i click start round as host".
+
+- **Root cause of the freeze:** the engine ignores `start_round` while no one plays (a round
+  needs players). A host alone in a new room clicked Start round; the event was stored and
+  ignored, so the dialog stayed. Now the dialog says "Waiting for players: share the room link
+  (or show the TV screen's QR code)…" (`preview-waiting`), Start round is disabled until someone
+  joins, and the start route answers 409 "nobody has joined yet". This check only runs in rooms
+  with host-seat events, so other rooms skip it.
+- **No way to host after joining:** "Host this game" was only in the join dialog, so a player
+  (e.g. the room's creator who joined first) couldn't switch. The round-1 preview now offers
+  players **🎤 Host instead of playing** (`switch-to-host`) while no one hosts. The host route
+  accepts a claim from a player until the game is underway and tags it `fromPlayer: true`. The
+  engine then moves them from the players to the host seat (not to `leftPlayers`), and board
+  control passes on (or to the next player who joins). Claims without the flag, or once the
+  game is underway, are still ignored.
+- Opening a deleted game now answers 404 instead of a 500 (a failed room insert).

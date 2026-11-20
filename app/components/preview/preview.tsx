@@ -196,6 +196,13 @@ function PreviewRoundDialog({
     board.categories[0].clues.length === 1 &&
     board.categories[0].clues[0].longForm;
 
+  // A host alone in the room can't start yet (a round needs players).
+  const waitingForPlayers = hostMode && players.size === 0;
+  // A player may switch to hosting before the game is underway (rooms only).
+  const me = players.get(userId);
+  const canSwitchToHost =
+    roomId !== -1 && !hostMode && me !== undefined && round === 0;
+
   const borderColor = boardController
     ? getPlayerColor(boardController)
     : "gray";
@@ -212,7 +219,9 @@ function PreviewRoundDialog({
         </div>
       }
       description={
-        isSingleLongFormClue ? null : (
+        isSingleLongFormClue ? null : waitingForPlayers ? (
+          <span data-testid="preview-waiting">{t("host.waitingToStart")}</span>
+        ) : (
           <>
             {rich("room.startsWithControl", {
               name: (
@@ -235,6 +244,25 @@ function PreviewRoundDialog({
             ? t("host.startRoundHelp")
             : t("host.badge", { name: host.name })}
         </p>
+      ) : null}
+      {canSwitchToHost && me ? (
+        <Form
+          method="POST"
+          action={`/room/${roomId}/host`}
+          className="mb-4 flex flex-col items-start gap-1"
+        >
+          <input type="hidden" name="intent" value="claim" />
+          <input type="hidden" name="userId" value={userId} />
+          <input type="hidden" name="name" value={me.name} />
+          {me.avatar ? (
+            <input type="hidden" name="avatar" value={me.avatar} />
+          ) : null}
+          <Button type="submit" data-testid="switch-to-host">
+            <span aria-hidden>🎤 </span>
+            {t("host.switchToHost")}
+          </Button>
+          <p className="text-sm text-slate-300">{t("host.switchToHostHelp")}</p>
+        </Form>
       ) : null}
       {isHost || isAdmin ? (
         // The host's laptop drives the projector (feature 24).
@@ -308,7 +336,12 @@ function PreviewRoundDialog({
           <Form method="POST" action={`/room/${roomId}/start`}>
             <input type="hidden" name="round" value={round} />
             <input type="hidden" name="userId" value={userId} />
-            <Button variant="primary" type="submit" onClick={onDismiss}>
+            <Button
+              variant="primary"
+              type="submit"
+              onClick={onDismiss}
+              disabled={waitingForPlayers}
+            >
               {t("room.startRound")}
             </Button>
           </Form>

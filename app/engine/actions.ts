@@ -150,6 +150,7 @@ const HostSeatPayload = z.object({
   ),
 });
 const ReleaseHostPayload = z.object({ userId: z.string() });
+const FromPlayerFlagPayload = z.object({ fromPlayer: z.literal(true) });
 const MediaBlockPayload = z.object({
   type: z.enum(MEDIA_TYPES),
   src: z.string(),
@@ -429,6 +430,13 @@ export function parseHostSeat(action: Action): Host | null {
   if (!parsed.success) return null;
   const { userId, name, avatar } = parsed.data;
   return { userId, name, ...(avatar ? { avatar } : {}) };
+}
+
+/** isFromPlayerClaim is true for a claim_host the server inserted for a
+ * player who switches to hosting before the game is underway (payload
+ * `fromPlayer: true`): they leave the players for the host seat. */
+export function isFromPlayerClaim(action: Action) {
+  return FromPlayerFlagPayload.safeParse(action.payload).success;
 }
 
 /** parseReleaseHost reads a release_host payload (null when malformed). */

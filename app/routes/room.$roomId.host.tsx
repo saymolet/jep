@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { getAdmin } from "~/admin/auth.server";
 import { ActionType } from "~/engine";
+import { isGameUnderway } from "~/engine/engine";
 import { GameState } from "~/engine/state";
 import { createT, getRequestLocale } from "~/i18n";
 import { getValidAuthSession } from "~/models/auth";
@@ -122,7 +123,10 @@ export async function action({ request, params }: Route.ActionArgs) {
   }
 
   const { userId, name, avatar } = form;
-  if (state.players.has(userId)) {
+  // A player may switch to hosting until the game is underway (they leave
+  // the players); after that they leave the game first.
+  const fromPlayer = state.players.has(userId);
+  if (fromPlayer && (form.intent !== "claim" || isGameUnderway(state))) {
     return conflict(t("room.error.hostIsPlayer"));
   }
   if (form.intent === "claim" && state.host) {
@@ -140,6 +144,7 @@ export async function action({ request, params }: Route.ActionArgs) {
       name,
       ...(avatar ? { avatar } : {}),
       ...(form.intent === "assign" ? { admin: true } : {}),
+      ...(fromPlayer ? { fromPlayer: true } : {}),
     },
   );
   return null;

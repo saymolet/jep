@@ -228,4 +228,43 @@ test.describe("host role", () => {
       )
       .toBeLessThan(1);
   });
+
+  test("a player switches to hosting; a host alone waits for players", async ({
+    authedPage: uploader,
+    browser,
+  }) => {
+    test.setTimeout(120_000);
+    await goto(uploader, "/profile");
+    const gameId = await uploadGame(uploader, MOCK_3x3_PATH);
+    await goto(uploader, `/game/${gameId}/play`);
+    await expect(uploader).toHaveURL(/\/room\/\d+-\w+$/);
+    const roomUrl = uploader.url();
+
+    // The room's creator joins as a player first, then switches to hosting.
+    const host = await newPage(browser);
+    await goto(host, roomUrl);
+    await join(host);
+    await host.getByTestId("switch-to-host").click();
+    await expect(host.getByTestId("host-badge")).toContainText(
+      "You're the host",
+      { timeout: 10_000 },
+    );
+
+    // Alone, the host can't start: the dialog says why.
+    await expect(host.getByTestId("preview-waiting")).toBeVisible();
+    await expect(
+      host.getByRole("button", { name: /start round/i }),
+    ).toBeDisabled();
+
+    // A friend joins: now the host starts the round.
+    const ann = await newPage(browser);
+    await goto(ann, roomUrl);
+    await join(ann);
+    await expect(host.getByTestId("preview-waiting")).toBeHidden({
+      timeout: 10_000,
+    });
+    await clickStartRound(host);
+    await waitForBoardReady(ann);
+    await expect(ann.getByText("You control the board")).toBeVisible();
+  });
 });

@@ -146,6 +146,8 @@ export const room: Dictionary<typeof en> = {
   "room.error.hostIsPlayer":
     "гравець не може бути ведучим: спершу вийдіть із гри",
   "room.error.hostSeatTaken": "{name} уже веде цю гру",
+  "room.error.noPlayersYet":
+    "ще ніхто не приєднався: спершу поділіться посиланням на кімнату",
   "room.error.noMediaToReplay":
     "у цьому питанні немає аудіо чи відео для повтору",
   "room.error.joinWhileHosting":
