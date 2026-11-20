@@ -4,7 +4,7 @@ export const upload = {
   "upload.uploadOrImport": "Upload or import a game",
   "upload.invalidFileType": "Invalid file type",
   "upload.dropFileHere": "Drop file here",
-  "upload.hint": "Jep! game (.jep.json) or SIGame pack (.siq, up to 100 MB)",
+  "upload.hint": "Jep! game (.jep.json) or SIGame pack (.siq, up to 150 MB)",
   "upload.help": "Upload help",
   "upload.confirmPublic": "Confirm public upload",
   "upload.confirmPublicDescription":
@@ -25,7 +25,7 @@ export const upload = {
   "upload.error.prefix": "Error uploading game: {reason}",
   "upload.error.noGameKey": "no game key returned.",
   "upload.error.tooLarge":
-    "the file is too large (SIGame packs: at most 100 MB, JSON games: at most 1 MB).",
+    "the file is too large (SIGame packs: at most 150 MB, JSON games: at most 1 MB).",
   "upload.error.unsupported":
     "Unsupported file. Upload a Jep! game (.jep.json) or a SIGame pack (.siq).",
   "upload.error.jsonTooLarge": "JSON games must be at most 1 MB.",
