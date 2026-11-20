@@ -41,6 +41,7 @@ import { Countdown } from "./countdown";
 import { Fade } from "./fade";
 import { Kbd } from "./kbd";
 import { Lockout } from "./lockout";
+import { useBuzzerOpener } from "./use-buzzer-opener";
 import { ConnectedNextClueForm as NextClueForm } from "./next-clue-form";
 import { ConnectedPassCluePrompt } from "./pass-clue";
 import { ReadClueTimer } from "./read-clue-timer";
@@ -57,10 +58,10 @@ import { ConnectedWagerForm as WagerForm } from "./wager-form";
  * "time's up" sound after this long as a hint (nothing is enforced). */
 const ANSWER_HINT_MS = 5000;
 
-/** LOCKOUT_MS applies a 250ms lockout if a contestant buzzes before the clue is
- * done being read.
+/** LOCKOUT_MS locks a contestant out for a second when they buzz before the
+ * buzzers open (like SIGame): there is no countdown to time it (feature 27).
  */
-const LOCKOUT_MS = 250;
+const LOCKOUT_MS = 1000;
 
 const TIMES_UP_SFX = "/sounds/times-up.mp3";
 const LONG_FORM_SFX = "/sounds/long-form.mp3";
@@ -477,8 +478,10 @@ function ReadCluePrompt({
     clue,
     getClueValue,
     players,
-    readTimeSec,
     buzzWindowSec,
+    buzzersOpen,
+    boardControl,
+    host,
     soloDispatch,
   } = useEngineContext();
   const buzzWindowMs = getBuzzWindowMs({ buzzWindowSec });
@@ -489,28 +492,29 @@ function ReadCluePrompt({
   const { mute } = useSoundSettings();
   if (!clue) throw new Error("No clue found");
 
-  // Compute clueDurationMs once at mount so the ReadClueTimer CSS animation
-  // doesn't restart when server buzz events arrive mid-animation. The
-  // component remounts between ReadClue phases, so this captures the right
-  // value for re-reads (after a wrong answer) too.
+  // The component remounts between ReadClue phases, so this captures
+  // re-reads (after a wrong answer) too.
   const [isReRead] = React.useState(
     () =>
       !clue.wagerable &&
       Array.from(buzzes.values()).some((b) => b === CANT_BUZZ_FLAG),
   );
-  const [clueDurationMs] = React.useState(() =>
-    getRoomReadMs(clue, readTimeSec, { reRead: isReRead }),
-  );
+
+  // Without a host, a player's device opens and closes the buzzers (the
+  // board-control player's first; feature 27). In host mode the host's does.
+  useBuzzerOpener({
+    roomId,
+    userId,
+    enabled: host === null,
+    designated: boardControl === userId,
+  });
 
   const [optimisticBuzzes, setOptimisticBuzzes] = React.useState(buzzes);
   const myBuzzDurationMs = optimisticBuzzes.get(userId);
 
-  // Initialize timestamps once at mount. The component remounts between
-  // ReadClue phases, so these capture the right values for each phase.
-  const [clueShownAt] = React.useState(() =>
-    myBuzzDurationMs !== undefined ? 0 : Date.now(),
-  );
-
+  // When the buzzers opened on this device (the server's open_buzzers
+  // arrived): buzz times count from here. The component remounts between
+  // ReadClue phases.
   const [buzzerOpenAt, setBuzzerOpenAt] = React.useState<number | undefined>(
     myBuzzDurationMs !== undefined ? 0 : undefined,
   );
@@ -576,9 +580,12 @@ function ReadCluePrompt({
     };
   }, [buzzes, buzzerOpenAt, myBuzzDurationMs, userId, submitBuzz, noBuzzMs]);
 
-  // Open the buzzer after the clue is done being "read".
-  const delayMs = myBuzzDurationMs === undefined ? clueDurationMs : null;
-  useTimeout(() => setBuzzerOpenAt(Date.now()), delayMs);
+  // Open the buzzer when the server says so (feature 27).
+  React.useEffect(() => {
+    if (buzzersOpen && buzzerOpenAt === undefined) {
+      setBuzzerOpenAt(Date.now());
+    }
+  }, [buzzersOpen, buzzerOpenAt]);
 
   // If nothing happens for the room's buzz window after the buzzer opens,
   // close the buzzer and send a "no buzz" (one millisecond past the window)
@@ -616,12 +623,11 @@ function ReadCluePrompt({
       return;
     }
 
-    const lockoutDeltaMs = clickedAtMs - clueShownAt;
-    if (lockoutDeltaMs < clueDurationMs) {
+    // Too early: the buzzers aren't open yet.
+    if (buzzerOpenAt === undefined) {
       return onLockout();
     }
-
-    if (buzzerOpenAt === undefined || !activeClue) {
+    if (!activeClue) {
       return;
     }
 
@@ -639,16 +645,22 @@ function ReadCluePrompt({
 
   return (
     <>
-      <ReadClueTimer
-        clueDurationMs={clueDurationMs}
-        buzzWindowMs={buzzWindowMs}
-        shouldAnimate={myBuzzDurationMs === undefined}
-        wonBuzz={
-          myBuzzDurationMs !== undefined &&
-          myBuzzDurationMs !== CANT_BUZZ_FLAG &&
-          myBuzzDurationMs <= buzzWindowMs
-        }
-      />
+      {buzzerOpenAt === undefined ? (
+        // No countdown while the question is read: nobody can time the
+        // buzzers (feature 27).
+        <div className="mt-2 h-8 shrink-0" aria-hidden />
+      ) : (
+        <ReadClueTimer
+          clueDurationMs={0}
+          buzzWindowMs={buzzWindowMs}
+          shouldAnimate={myBuzzDurationMs === undefined}
+          wonBuzz={
+            myBuzzDurationMs !== undefined &&
+            myBuzzDurationMs !== CANT_BUZZ_FLAG &&
+            myBuzzDurationMs <= buzzWindowMs
+          }
+        />
+      )}
       <div className="flex justify-between gap-2 p-4">
         <CategoryFor category={category} value={clueValue} />
         <span className="text-sm text-slate-300 buzzbar:hidden">
@@ -696,7 +708,6 @@ function ReadCluePrompt({
           players,
           buzzWindowMs,
         })}
-        clueDurationMs={clueDurationMs}
         onBuzz={() => handleClick(Date.now())}
         mute={mute}
       />

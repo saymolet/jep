@@ -58,7 +58,6 @@ function render(
       <I18nProvider locale={locale}>
         <BuzzButton
           state={state}
-          clueDurationMs={3000}
           onBuzz={onBuzz}
           armDelayMs={armDelayMs}
           mute={mute}
@@ -213,18 +212,8 @@ describe("BuzzButton", () => {
     if (hint) expect(el.textContent).toContain(hint);
   });
 
-  it("shows the read-timer progress only while waiting", () => {
+  it("shows no countdown while the question is read (feature 27)", () => {
     render({ kind: "waiting" });
-    const progress = container.querySelector<HTMLElement>(
-      "[data-testid=buzz-progress]",
-    );
-    expect(progress?.style.animation).toContain("3s");
-    // The bar keeps running through a short lockout.
-    render({ kind: "tooEarly" });
-    expect(container.querySelector("[data-testid=buzz-progress]")).toBe(
-      progress,
-    );
-    render({ kind: "open" });
     expect(container.querySelector("[data-testid=buzz-progress]")).toBeNull();
   });
 

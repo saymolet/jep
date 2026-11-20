@@ -41,6 +41,9 @@ export interface ClueAnswer {
   skipped?: boolean;
   /** The room's host (not the site admin) skipped it (feature 22). */
   skippedByHost?: boolean;
+  /** Points multipliers the host gave right answers (×0.5 / ×2, feature
+   * 27), by player. Missing means ×1. */
+  multipliers?: Map<string, number>;
 }
 
 /** QuestionRef names a question of the game: round and board cell. */
@@ -161,6 +164,13 @@ export interface State {
    * (replay_media events), for the question at `round,i,j`. Older saved
    * states have none. */
   readonly mediaReplay?: MediaReplay | null;
+  /** The buzzers of the open question are open (open_buzzers, feature 27):
+   * players may buzz in. Reset whenever a question is (re-)read. Older saved
+   * states have none. */
+  readonly buzzersOpen?: boolean;
+  /** The host (or the admin) turned the room's soundboard off (feature
+   * 27). Older states have none: on. */
+  readonly soundboardOff?: boolean;
 
   // per round state
   readonly activeClue: [number, number] | null;
@@ -237,6 +247,7 @@ export function stateFromGame(game: Game) {
     host: null,
     revealed: new Map(),
     mediaReplay: null,
+    buzzersOpen: false,
     numAnswered: 0,
     numCluesInBoard: getNumCluesInBoard(game, 0),
     numExpectedWagers: 0,

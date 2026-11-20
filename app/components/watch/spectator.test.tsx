@@ -143,10 +143,11 @@ describe("spectators", () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(20_000);
     });
+    // A spectator never opens the buzzers either (feature 27).
     expect(roomAction).not.toHaveBeenCalled();
     expect(
       document.body.querySelector('[data-testid="viewer-status"]')?.textContent,
-    ).toBe("Buzzers open!");
+    ).toBe("Get ready to buzz...");
   });
 
   it("clicking the board as a spectator sends nothing", async () => {

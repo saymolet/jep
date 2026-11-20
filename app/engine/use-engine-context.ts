@@ -61,6 +61,8 @@ export const GameEngineContext = React.createContext<
   adminStep: { kind: "none" },
   host: null,
   mediaReplayCount: 0,
+  buzzersOpen: false,
+  soundboardEnabled: true,
   canSkipOpenClue: false,
 });
 

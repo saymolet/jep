@@ -82,6 +82,13 @@ export const STEPS = {
   ],
   start: [{ type: ActionType.StartRound, payload: { round: 0, userId: ANN } }],
   chooseFirst: [{ type: ActionType.ChooseClue, payload: at(ANN, 0, 0) }],
+  /** The buzzers of the first question open (feature 27). */
+  openFirst: [
+    {
+      type: ActionType.OpenBuzzers,
+      payload: { userId: ANN, round: 0, i: 0, j: 0 },
+    },
+  ],
   buzzFirst: [
     { type: ActionType.Buzz, payload: { ...at(ANN, 0, 0), deltaMs: 100 } },
     {

@@ -324,26 +324,34 @@ describe("Final answer time", () => {
   });
 });
 
-describe("buzz window and reading time", () => {
-  it("opens the buzzers at once with 0 s reading and sends no-buzz after the 3 s window", async () => {
+describe("buzz window and reading time (feature 27)", () => {
+  // No random extra delay, to keep the timings exact.
+  beforeEach(() => {
+    vi.spyOn(Math, "random").mockReturnValue(0);
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+  const opens = () =>
+    sent.filter(([verb, f]) => verb === "buzzers" && f.intent === "open");
+
+  it("the board-control player's device opens the buzzers after reading time + delay", async () => {
     const state = play(
       STEPS.join,
       timers({ readTimeSec: 0, buzzWindowSec: 3 }),
       STEPS.start,
       STEPS.chooseFirst,
     );
-    vi.setSystemTime(1_000_000);
-    renderPrompt(state, BOB);
-    await advanceInSteps(2_900);
-    expect(sent).toEqual([]);
-    // (The prompt fades in first, so allow a little more.)
-    await advanceInSteps(1_500);
-    expect(sent).toEqual([
-      ["buzz", { i: "0", j: "0", userId: BOB, deltaMs: "3001" }],
+    renderPrompt(state, ANN);
+    await advanceInSteps(300);
+    expect(opens()).toEqual([]);
+    await advanceInSteps(500);
+    expect(opens()).toEqual([
+      ["buzzers", { intent: "open", userId: ANN, round: "0", i: "0", j: "0" }],
     ]);
   });
 
-  it("keeps the default 5 s window", async () => {
+  it("other players' devices only step in late", async () => {
     const state = play(
       STEPS.join,
       timers({ readTimeSec: 0 }),
@@ -351,12 +359,10 @@ describe("buzz window and reading time", () => {
       STEPS.chooseFirst,
     );
     renderPrompt(state, BOB);
-    await advanceInSteps(4_900);
-    expect(sent).toEqual([]);
-    await advanceInSteps(1_500);
-    expect(sent).toEqual([
-      ["buzz", { i: "0", j: "0", userId: BOB, deltaMs: "5001" }],
-    ]);
+    await advanceInSteps(4_000);
+    expect(opens()).toEqual([]);
+    await advanceInSteps(1_000);
+    expect(opens()).toHaveLength(1);
   });
 
   it("a fixed reading time keeps the buzzers closed that long", async () => {
@@ -366,11 +372,26 @@ describe("buzz window and reading time", () => {
       STEPS.start,
       STEPS.chooseFirst,
     );
+    renderPrompt(state, ANN);
+    await advanceInSteps(10_300);
+    expect(opens()).toEqual([]);
+    await advanceInSteps(500);
+    expect(opens()).toHaveLength(1);
+  });
+
+  it("once open, a player who doesn't buzz sends no-buzz after the window", async () => {
+    const state = play(
+      STEPS.join,
+      timers({ readTimeSec: 0, buzzWindowSec: 3 }),
+      STEPS.start,
+      STEPS.chooseFirst,
+      STEPS.openFirst,
+    );
     renderPrompt(state, BOB);
-    await advanceInSteps(12_900);
-    expect(sent).toEqual([]);
+    await advanceInSteps(2_900);
+    expect(sent.filter(([verb]) => verb === "buzz")).toEqual([]);
     await advanceInSteps(1_500);
-    expect(sent).toEqual([
+    expect(sent.filter(([verb]) => verb === "buzz")).toEqual([
       ["buzz", { i: "0", j: "0", userId: BOB, deltaMs: "3001" }],
     ]);
   });

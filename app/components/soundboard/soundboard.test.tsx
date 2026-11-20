@@ -28,7 +28,7 @@ import {
 import { UserSettingsProvider } from "~/utils/user-settings";
 
 import { Soundboard } from "./soundboard";
-import { MEDIA_DUCK, TOAST_MS } from "./use-soundboard";
+import { MEDIA_DUCK, SOUNDBOARD_VOLUME, TOAST_MS } from "./use-soundboard";
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
@@ -152,7 +152,7 @@ describe("Soundboard", () => {
 
     act(() => soundButton(panel, "Ta-da!").click());
     expect(channel.sent).toEqual([{ sound: "tada", userId: ANN, name: "Ann" }]);
-    expect(playSound).toHaveBeenCalledWith("tada", 0.5);
+    expect(playSound).toHaveBeenCalledWith("tada", 0.5 * SOUNDBOARD_VOLUME);
     expect(toastTexts()).toEqual(["🎺 Ann"]);
     expect(toasts()[0].dataset.played).toBe("true");
 
@@ -183,7 +183,7 @@ describe("Soundboard", () => {
   it("plays sounds from other players with a toast", () => {
     render();
     channel.receive({ sound: "airhorn", userId: BOB, name: "Bob" });
-    expect(playSound).toHaveBeenCalledWith("airhorn", 0.5);
+    expect(playSound).toHaveBeenCalledWith("airhorn", 0.5 * SOUNDBOARD_VOLUME);
     expect(toastTexts()).toEqual(["📯 Bob"]);
     expect(toasts()[0].textContent).toContain("Bob played “Air horn”");
   });
@@ -247,8 +247,34 @@ describe("Soundboard", () => {
     expect(toasts()[0].dataset.played).toBe("false");
   });
 
-  it("is quieter while a question's audio or video may be playing", () => {
-    const base = engineFor(playUntil("chooseFirst"));
+  it("is silent while a question is read or answered (feature 27)", () => {
+    render({
+      engine: {
+        ...engineFor(playUntil("chooseFirst")),
+        soundboard: channel.broadcast,
+      },
+    });
+    expect(fab()).toBeNull();
+    channel.receive({ sound: "ding", userId: BOB, name: "Bob" });
+    expect(playSound).not.toHaveBeenCalled();
+    expect(toasts()).toHaveLength(0);
+  });
+
+  it("is off when the host turns it off for the room (feature 27)", () => {
+    render({
+      engine: {
+        ...engineFor(play(STEPS.join)),
+        soundboard: channel.broadcast,
+        soundboardEnabled: false,
+      },
+    });
+    expect(fab()).toBeNull();
+    channel.receive({ sound: "ding", userId: BOB, name: "Bob" });
+    expect(playSound).not.toHaveBeenCalled();
+  });
+
+  it("is quieter while the answer's audio or video may be playing", () => {
+    const base = engineFor(playUntil("checkFirst"));
     render({
       engine: {
         ...base,
@@ -261,7 +287,10 @@ describe("Soundboard", () => {
       settings: { sound: { volume: 0.8, mute: false } },
     });
     channel.receive({ sound: "ding", userId: BOB, name: "Bob" });
-    expect(playSound).toHaveBeenCalledWith("ding", 0.8 * MEDIA_DUCK);
+    expect(playSound).toHaveBeenCalledWith(
+      "ding",
+      0.8 * SOUNDBOARD_VOLUME * MEDIA_DUCK,
+    );
   });
 
   it("only listens for spectators and on the TV", () => {

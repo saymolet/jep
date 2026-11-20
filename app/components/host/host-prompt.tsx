@@ -28,6 +28,7 @@ import {
   useWagerTimer,
   WagerTimer,
 } from "~/components/prompt/step-timers";
+import { useBuzzerOpener } from "~/components/prompt/use-buzzer-opener";
 import {
   useViewerStatus,
   ViewerStatusLine,
@@ -112,7 +113,7 @@ function ReplayMediaButton({
 function useJudge(roomId: number) {
   const { activeClue } = useEngineContext();
   const fetcher = useFetcher();
-  const judge = (userId: string, correct: boolean) => {
+  const judge = (userId: string, correct: boolean, multiplier?: 0.5 | 2) => {
     if (!activeClue) return;
     const [i, j] = activeClue;
     fetcher.submit(
@@ -122,6 +123,7 @@ function useJudge(roomId: number) {
         userId,
         result: correct ? "correct" : "incorrect",
         host: "true",
+        ...(multiplier ? { multiplier: String(multiplier) } : {}),
       },
       { method: "post", action: `/room/${roomId}/check` },
     );
@@ -134,11 +136,14 @@ function JudgeButtons({
   onJudge,
   disabled,
   size = "lg",
+  multipliers = false,
 }: {
   name: string;
-  onJudge: (correct: boolean) => void;
+  onJudge: (correct: boolean, multiplier?: 0.5 | 2) => void;
   disabled: boolean;
   size?: "lg" | "sm";
+  /** Also offer "Right ×0.5" and "Right ×2" (feature 27). */
+  multipliers?: boolean;
 }) {
   const { t } = useTranslation();
   const sm = size === "sm";
@@ -170,6 +175,27 @@ function JudgeButtons({
       >
         ✓ {t("host.right")}
       </button>
+      {multipliers
+        ? ([0.5, 2] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              className={clsx(
+                JUDGE_BUTTON,
+                "min-w-20 bg-emerald-800 hover:bg-emerald-900",
+              )}
+              disabled={disabled}
+              onClick={() => onJudge(true, m)}
+              aria-label={t("host.rightTimesFor", {
+                name,
+                times: m === 0.5 ? "0.5" : "2",
+              })}
+              data-testid={`host-right-x${m === 0.5 ? "half" : "2"}`}
+            >
+              ✓ ×{m === 0.5 ? "½" : "2"}
+            </button>
+          ))
+        : null}
     </div>
   );
 }
@@ -272,9 +298,10 @@ function HostAnswering({ roomId, userId }: RoomProps) {
           <JudgeButtons
             name={name}
             disabled={busy || marked}
-            onJudge={(correct) => {
+            multipliers
+            onJudge={(correct, multiplier) => {
               setMarked(true);
-              judge(winningBuzzer, correct);
+              judge(winningBuzzer, correct, multiplier);
             }}
           />
           <HostSkipButton roomId={roomId} />
@@ -373,6 +400,14 @@ function HostPromptContent({ roomId, userId }: RoomProps) {
   const status = useViewerStatus();
   const wagerTimer = useWagerTimer();
   const finalTimer = useFinalAnswerTimer();
+  // The host's device opens and closes the buzzers (feature 27).
+  useBuzzerOpener({
+    roomId,
+    userId,
+    enabled: true,
+    designated: true,
+    asHost: true,
+  });
 
   if (!PROMPT_STATES.has(type) || !clue || !activeClue || !board) {
     return null;

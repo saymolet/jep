@@ -123,6 +123,9 @@ describe("Presenter", () => {
   it("shows the question being read, without the answer", () => {
     render(playUntil("chooseFirst"));
     expect(text()).toContain("This pet says meow");
+    // The buzzers open when the server says so (feature 27).
+    expect(status()).toBe("Get ready to buzz...");
+    render(playUntil("openFirst"));
     expect(status()).toBe("Buzzers open!");
     const answer = Array.from(container.querySelectorAll("span")).find(
       (s) => s.textContent === "Cat",

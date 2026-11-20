@@ -28,12 +28,14 @@ import {
   parseHostSeat,
   parseReleaseHost,
   isFromPlayerClaim,
+  parseBuzzerControl,
   parseReplayMedia,
   parseRevealAnswer,
 } from "./actions";
 import { isAnswerTimeSec } from "./answer-timer";
 import {
   getBuzzWindowMs,
+  getNoBuzzMs,
   isBuzzWindowSec,
   isFinalAnswerTimeSec,
   isReadTimeSec,
@@ -157,6 +159,16 @@ export enum ActionType {
    * true` / `admin: true`): restart the open question's audio/video on
    * every device (feature 23). */
   ReplayMedia = "replay_media",
+  /** OpenBuzzers (feature 27, inserted by the server): the buzzers of the
+   * open question open now. Sent by the room's "opener" — the host's device
+   * in host mode (tagged `host: true`), else the device of the player with
+   * board control — once the question is read (and its audio/video is
+   * over) plus a short random delay, so players can't time it. */
+  OpenBuzzers = "open_buzzers",
+  /** CloseBuzzers (feature 27, inserted by the server): the buzz time is
+   * over. Players whose device hasn't reported count as not buzzing, so a
+   * phone that's asleep or lagging never holds up the game. */
+  CloseBuzzers = "close_buzzers",
   /** Restore replaces the entire state (used for restoring saved solo games). */
   Restore = "restore",
 }
@@ -656,6 +668,77 @@ function mayRunFlow(
 
 /** gameEngine is the reducer (aka state machine) which implements the game. */
 export function gameEngine(state: State, action: Action): State {
+  const next = reduceGame(state, action);
+  // A question that is (re-)read starts with its buzzers closed (feature 27).
+  if (
+    next.buzzersOpen &&
+    next.type === GameState.ReadClue &&
+    (state.type !== GameState.ReadClue || next.activeClue !== state.activeClue)
+  ) {
+    return produce(next, (draft) => {
+      draft.buzzersOpen = false;
+    });
+  }
+  return next;
+}
+
+/** canControlBuzzers: who may open and close the buzzers (feature 27): in
+ * host mode the host (the server tags their events) or the admin; else any
+ * player or the admin. */
+function canControlBuzzers(state: State, action: Action, userId: string) {
+  if (isAdminAction(action)) return true;
+  if (state.host) return isHostAction(action) && isHostId(state, userId);
+  return state.players.has(userId);
+}
+
+/** resolveBuzzes decides the open question once every player buzzed in or
+ * not: the winner answers, or with no winner the answer is shown to all. */
+function resolveBuzzes(
+  draft: Draft<State>,
+  i: number,
+  j: number,
+  lastUserId: string,
+  ts: number,
+) {
+  const board = draft.game.boards.at(draft.round);
+  const clue = board?.categories.at(j)?.clues.at(i);
+
+  const winningBuzzer = getWinningBuzzer(
+    draft.buzzes,
+    getStateTiebreakerSeed(draft),
+    getBuzzWindowMs(draft),
+  );
+  if (!winningBuzzer) {
+    // Reveal the answer to everyone and mark it as answered. If the clue
+    // was wagerable and the player didn't buzz, deduct their wager from
+    // their score.
+    if (clue?.wagerable) {
+      const clueValue = getClueValue(draft, [i, j], lastUserId);
+      const player = draft.players.get(lastUserId);
+      if (player) {
+        player.score = player.score - clueValue;
+      }
+    }
+
+    draft.type = GameState.RevealAnswerToAll;
+    const clueAnswer = draft.isAnswered[draft.round][i][j];
+    clueAnswer.isAnswered = true;
+    clueAnswer.answerOrder = getNextAnswerOrder(draft.isAnswered);
+    if (clue?.wagerable) {
+      clueAnswer.answeredBy.set(lastUserId, false);
+    }
+    draft.numAnswered += 1;
+    return;
+  }
+
+  // Reveal the answer to the winning buzzer and let them evaluate its
+  // correctness. Their answer turn (and answer timer) starts now.
+  draft.type = GameState.RevealAnswerToBuzzer;
+  draft.answerStartedAt = ts;
+  draft.answerTimedOut = null;
+}
+
+function reduceGame(state: State, action: Action): State {
   // The server tags events the host made with `host: true`; without a host
   // such an event is ignored.
   if (
@@ -1037,42 +1120,7 @@ export function gameEngine(state: State, action: Action): State {
           return;
         }
 
-        const board = draft.game.boards.at(draft.round);
-        const clue = board?.categories.at(j)?.clues.at(i);
-
-        const winningBuzzer = getWinningBuzzer(
-          draft.buzzes,
-          getStateTiebreakerSeed(draft),
-          getBuzzWindowMs(draft),
-        );
-        if (!winningBuzzer) {
-          // Reveal the answer to everyone and mark it as answered. If the clue
-          // was wagerable and the player didn't buzz, deduct their wager from
-          // their score.
-          if (clue?.wagerable) {
-            const clueValue = getClueValue(draft, [i, j], userId);
-            const player = draft.players.get(userId);
-            if (player) {
-              player.score = player.score - clueValue;
-            }
-          }
-
-          draft.type = GameState.RevealAnswerToAll;
-          const clueAnswer = draft.isAnswered[draft.round][i][j];
-          clueAnswer.isAnswered = true;
-          clueAnswer.answerOrder = getNextAnswerOrder(draft.isAnswered);
-          if (clue?.wagerable) {
-            clueAnswer.answeredBy.set(userId, false);
-          }
-          draft.numAnswered += 1;
-          return;
-        }
-
-        // Reveal the answer to the winning buzzer and let them evaluate its
-        // correctness. Their answer turn (and answer timer) starts now.
-        draft.type = GameState.RevealAnswerToBuzzer;
-        draft.answerStartedAt = action.ts;
-        draft.answerTimedOut = null;
+        resolveBuzzes(draft, i, j, userId, action.ts);
       });
     case ActionType.Answer:
       if (!isAnswerAction(action)) {
@@ -1209,9 +1257,19 @@ export function gameEngine(state: State, action: Action): State {
         recordCheckCorrection(draft, i, j, userId, correct);
 
         const clueValue = getClueValue(draft, [i, j], userId);
+        // The host's ×0.5 / ×2 on a right answer (feature 27).
+        const multiplier =
+          correct && (action.payload.host || isAdminAction(action))
+            ? (action.payload.multiplier ?? 1)
+            : 1;
         const newScore = correct
-          ? player.score + clueValue
+          ? player.score + Math.round(clueValue * multiplier)
           : player.score - clueValue;
+        if (multiplier !== 1) {
+          const cell = draft.isAnswered[draft.round][i][j];
+          cell.multipliers ??= new Map();
+          cell.multipliers.set(userId, multiplier);
+        }
 
         const numExpectedChecks = isLongForm
           ? (draft.answers.get(key)?.size ?? 0)
@@ -1629,6 +1687,7 @@ export function gameEngine(state: State, action: Action): State {
           buzzWindowSec,
           finalAnswerTimeSec,
           wagerTimeSec,
+          soundboard,
           admin,
           host,
         } = action.payload;
@@ -1661,6 +1720,7 @@ export function gameEngine(state: State, action: Action): State {
           draft.finalAnswerTimeSec = finalAnswerTimeSec;
         }
         if (wagerTimeSec !== undefined) draft.wagerTimeSec = wagerTimeSec;
+        if (soundboard !== undefined) draft.soundboardOff = !soundboard;
       });
     case ActionType.SkipClue:
       // Ignored (not thrown) when malformed: a bad event must not break the
@@ -1797,6 +1857,41 @@ export function gameEngine(state: State, action: Action): State {
       if (state.revealed.has(key)) return state;
       return produce(state, (draft) => {
         draft.revealed.set(key, answer);
+      });
+    }
+    case ActionType.OpenBuzzers:
+    case ActionType.CloseBuzzers: {
+      const control = parseBuzzerControl(action);
+      if (!control) return state;
+      const { userId, round, i, j } = control;
+      if (
+        state.type !== GameState.ReadClue ||
+        state.round !== round ||
+        state.activeClue?.[0] !== i ||
+        state.activeClue[1] !== j ||
+        !canControlBuzzers(state, action, userId)
+      ) {
+        return state;
+      }
+      if (action.type === ActionType.OpenBuzzers) {
+        if (state.buzzersOpen) return state;
+        return produce(state, (draft) => {
+          draft.buzzersOpen = true;
+        });
+      }
+      // Close: only open buzzers; everyone who hasn't reported didn't buzz.
+      if (!state.buzzersOpen) return state;
+      return produce(state, (draft) => {
+        const noBuzzMs = getNoBuzzMs(draft);
+        let last = userId;
+        for (const playerId of draft.players.keys()) {
+          if (!draft.buzzes.has(playerId)) {
+            draft.buzzes.set(playerId, noBuzzMs);
+            last = playerId;
+          }
+        }
+        resumeClock(draft, action.ts);
+        resolveBuzzes(draft, i, j, last, action.ts);
       });
     }
     case ActionType.ReplayMedia: {

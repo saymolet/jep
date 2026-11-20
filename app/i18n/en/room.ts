@@ -109,6 +109,8 @@ export const room = {
     "When it runs out, what each player typed is sent. No limit: the Final waits for every answer.",
   "room.timers.wagerTime": "Wager time",
   "room.timers.noLimit": "No limit",
+  "room.timers.soundboard":
+    "Soundboard: players' reaction sounds (between questions only)",
   "room.timers.wagerTimeHelp":
     "When it runs out, the player wagers the smallest amount allowed: $5 on a Double Down, $0 in the Final.",
   "room.answerTime": "Answer time",
@@ -183,6 +185,8 @@ export const room = {
   "room.admin.skipConfirm": "Skip this question?",
   "room.admin.skipYes": "Yes, skip",
   "room.admin.cancel": "Cancel",
+  "room.admin.openBuzzers": "Open the buzzers now",
+  "room.admin.closeBuzzers": "Close the buzzers now",
   "room.admin.kickConfirm": "Kick {name}?",
   "room.admin.kickYes": "Yes, kick",
   "room.admin.kickOnBoard": "Players can be kicked between questions.",

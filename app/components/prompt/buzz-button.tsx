@@ -103,14 +103,11 @@ const STATE_CLASSES: Record<BuzzButtonState["kind"], string> = {
  * desktops, where players click the question or press Enter. */
 export function BuzzButton({
   state,
-  clueDurationMs,
   onBuzz,
   mute = false,
   armDelayMs = ARM_DELAY_MS,
 }: {
   state: BuzzButtonState;
-  /** How long the question is read; drives the progress fill while waiting. */
-  clueDurationMs: number;
   onBuzz: () => void;
   /** Haptics follow the sound setting: no vibration when muted. */
   mute?: boolean;
@@ -145,7 +142,6 @@ export function BuzzButton({
   }
 
   const { label, hint } = labels(state, t);
-  const showProgress = state.kind === "waiting" || state.kind === "tooEarly";
 
   return (
     <div
@@ -177,16 +173,6 @@ export function BuzzButton({
           WebkitTapHighlightColor: "transparent",
         }}
       >
-        {showProgress ? (
-          <span
-            aria-hidden
-            data-testid="buzz-progress"
-            className="absolute inset-y-0 left-0 bg-white/25"
-            style={{
-              animation: `${clueDurationMs / 1000}s linear 0s 1 growFromLeft forwards`,
-            }}
-          />
-        ) : null}
         <span className="relative text-2xl leading-tight font-black uppercase">
           {label}
         </span>
