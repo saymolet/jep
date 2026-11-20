@@ -132,7 +132,7 @@ export default function PlayGame({ loaderData }: Route.ComponentProps) {
         </h2>
         <TeamStandings state={state} />
         {state.clockAccumulatedMs > 0 && (
-          <ClockDisplay displayMs={state.clockAccumulatedMs} disabled />
+          <ClockDisplay displayMs={state.clockAccumulatedMs} />
         )}
         <div className={PLAYER_TILE_GRID}>
           {loaderData.sortedPlayers.map((p) => (

@@ -224,6 +224,46 @@ test.describe("admin interventions", () => {
     await adminContext.close();
   });
 
+  test("a guest names themselves before joining; the admin kicks them", async ({
+    authedPage: host,
+    browser,
+  }) => {
+    test.setTimeout(120_000);
+    await goto(host, "/profile");
+    const gameId = await uploadGame(host, MOCK_3x3_PATH);
+    await goto(host, `/game/${gameId}/play`);
+    await expect(host).toHaveURL(/\/room\/\d+-\w+$/);
+    const roomUrl = host.url();
+    const roomId = roomIdOf(roomUrl);
+    await join(host);
+
+    // The guest types a name in the join dialog before joining.
+    const guest = await (await browser.newContext()).newPage();
+    await goto(guest, roomUrl);
+    await waitForConnected(guest);
+    await guest.getByTestId("join-name").fill("Kicky");
+    await join(guest);
+    const [, guestPlayer] = await joinedPlayers(host, roomId);
+    expect(guestPlayer.name).toBe("Kicky");
+    await expect(host.getByText("Kicky").first()).toBeVisible();
+
+    const admin = await (await browser.newContext()).newPage();
+    await logInAsAdmin(admin);
+    await goto(admin, roomUrl);
+    await waitForConnected(admin);
+    await admin.getByRole("button", { name: "Just watch" }).click();
+    await clickStartRound(host);
+
+    const panel = await openAdminPanel(admin);
+    const row = panel.locator(
+      `[data-testid="admin-score-row"][data-user-id="${guestPlayer.userId}"]`,
+    );
+    await row.getByTestId("admin-kick").click();
+    await row.getByTestId("admin-kick-yes").click();
+    await expect(host.getByText("Kicky")).toHaveCount(0, { timeout: 10_000 });
+    await expect(row).toHaveCount(0);
+  });
+
   test("Ukrainian admin controls", async ({ authedPage: host, browser }) => {
     test.setTimeout(90_000);
     await goto(host, "/profile");

@@ -29,6 +29,7 @@ import type { PlayerColor } from "~/models/player-color";
 import type { TeamId } from "~/models/team";
 import { getPlayerColor } from "~/utils";
 import { useJoinAvatar } from "~/utils/avatar-storage";
+import { MAX_JOIN_NAME_LENGTH, useJoinName } from "~/utils/join-name";
 import { openTvWindow } from "~/utils/tv-window";
 import useSoloAction from "~/utils/use-solo-action";
 
@@ -57,6 +58,7 @@ export function JoinGameDialog({
 } & RoomProps) {
   const { t } = useTranslation();
   const [avatar, setAvatar] = useJoinAvatar();
+  const joinName = useJoinName(name);
   const { teamNames, host, activeClue } = useEngineContext();
   // Host mode (feature 22): a visitor may take the free host seat instead of
   // playing (rooms only; the seat changes between questions).
@@ -85,11 +87,28 @@ export function JoinGameDialog({
       <div className="mb-4 flex flex-col gap-3">
         <div className="flex items-center gap-3">
           <PlayerIcon
-            player={{ name, userId, color: playerColor, avatar }}
+            player={{
+              name: joinName.submitName,
+              userId,
+              color: playerColor,
+              avatar,
+            }}
             size="tile"
           />
-          <p className="text-slate-300">{t("room.pickAvatarOptional")}</p>
+          <label className="flex min-w-0 grow flex-col gap-1">
+            <span className="text-slate-300">{t("room.yourName")}</span>
+            <input
+              type="text"
+              value={joinName.name}
+              onChange={(e) => joinName.setName(e.target.value)}
+              maxLength={MAX_JOIN_NAME_LENGTH}
+              autoComplete="nickname"
+              data-testid="join-name"
+              className="w-full rounded-lg border border-slate-500 bg-blue-1000 px-3 py-2 font-handwriting text-xl font-bold text-white focus:border-blue-400 focus:outline-none"
+            />
+          </label>
         </div>
+        <p className="text-slate-300">{t("room.pickAvatarOptional")}</p>
         <AvatarPicker value={avatar} onChange={setAvatar} />
       </div>
       {host ? (
@@ -121,7 +140,7 @@ export function JoinGameDialog({
           <Form method="POST" action={`/room/${roomId}/host`}>
             <input type="hidden" name="intent" value="claim" />
             <input type="hidden" name="userId" value={userId} />
-            <input type="hidden" name="name" value={name} />
+            <input type="hidden" name="name" value={joinName.submitName} />
             {avatar ? (
               <input type="hidden" name="avatar" value={avatar} />
             ) : null}
@@ -132,7 +151,7 @@ export function JoinGameDialog({
         ) : null}
         <Form method="POST" action={`/room/${roomId}/player`}>
           <input type="hidden" name="userId" value={userId} />
-          <input type="hidden" name="name" value={name} />
+          <input type="hidden" name="name" value={joinName.submitName} />
           {playerColor != null && (
             <input type="hidden" name="color" value={playerColor} />
           )}

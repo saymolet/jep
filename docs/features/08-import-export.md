@@ -23,7 +23,7 @@ before deploying this branch)
   `.jep.json` game.
 - **Upload / import:** the upload box on the home page and the profile ("Upload or import a
   game") takes a Jep! game (`.jep.json`, up to 1 MB) **or** a SIGame pack (`.siq`, up to
-  150 MB). Drag and drop works too. Guests' uploads are public, logged-in users' unlisted (as
+  200 MB). Drag and drop works too. Guests' uploads are public, logged-in users' unlisted (as
   before).
 - After a `.siq` import the page shows a summary, e.g. _Imported SIGame pack "Пакет 1": 4
   rounds, 19 categories, 91 questions, 0 media files. 6 questions skipped. 1 warning._ and a
@@ -107,14 +107,14 @@ questions is rejected.
 
 ## Safety
 
-- Upload size: `parseFormData` `maxFileSize` is 150 MiB (`MAX_SIQ_SIZE`), one file per request;
+- Upload size: `parseFormData` `maxFileSize` is 200 MiB (`MAX_SIQ_SIZE`), one file per request;
   JSON is still capped at 1 MB in the handler. Too large → "the file is too large (SIGame packs:
-  at most 150 MB, JSON games: at most 1 MB)".
+  at most 200 MB, JSON games: at most 1 MB)".
 - The file type is decided by name (`.siq` → SIGame, `.json`/`application/json` → JSON; anything
   else → "Unsupported file"), and a `.siq` must start with the zip signature.
 - Everything happens in memory (no temp files).
 - **Zip bombs:** before decompressing anything, the central directory is checked: at most **5000
-  entries**, at most **450 MB** uncompressed in total, `content.xml` at most **20 MB**. fflate
+  entries**, at most **600 MB** uncompressed in total, `content.xml` at most **20 MB**. fflate
   decompresses each entry into a buffer of exactly its declared size, so a lying header can't
   grow it (unit test with a patched header). Entries are decompressed one at a time, only those
   used by kept questions.
@@ -192,10 +192,10 @@ the import summary.
   uses the maximum), `secretNoQuestion` (dropped when it has no content).
 - Media timing (placement, duration, background audio) is ignored; files are shown/played as in
   feature 03.
-- Large imports run within one request: a 150 MB pack with many files can take a while (the
+- Large imports run within one request: a 200 MB pack with many files can take a while (the
   upload screen shows "Importing the pack…", see below). Behind nginx the proxy timeouts must
   allow that.
-- A guest can import up to 150 MB of media publicly (same rules as JSON uploads: public,
+- A guest can import up to 200 MB of media publicly (same rules as JSON uploads: public,
   community guidelines).
 - The tiny fixture video is placeholder bytes (not playable); it's only used for mapping tests.
 
@@ -243,7 +243,7 @@ the import summary.
   sample packs from the SI repo (`1.siq`, `Package4_1.siq`, `Package5_1.siq`) imported cleanly in
   a scratch run (91 questions each, secret/stake mapped; not committed).
 - Unit (route): JSON upload, JSON > 1 MB, `.siq` import with summary/details and visibility,
-  cleanup when the DB insert fails, broken pack, unsupported file, over 150 MiB; `uploadKind`.
+  cleanup when the DB insert fails, broken pack, unsupported file, over 200 MiB; `uploadKind`.
 - E2E (`db` project, local Supabase with Storage): a guest uploads a generated v5 `.siq`
   (unique title) → summary and warnings shown → game listed on the home page → game page has
   **Download JSON**, the export has storage media and the secret flag → solo play, the first

@@ -681,8 +681,78 @@ function SkipQuestion({ roomId }: { roomId: number }) {
   return null;
 }
 
+/** KickButton (site admin only): remove a player from the game, after a
+ * confirmation. The engine allows it while the board or the round preview
+ * shows, never for the last player; once the game is underway the player
+ * keeps their points on the summary and gets their seat back if they join
+ * again. */
+function KickButton({ roomId, player }: { roomId: number; player: Player }) {
+  const { t } = useTranslation();
+  const { players, type } = useEngineContext();
+  const { fetcher, error, busy } = useAdminFetcher();
+  const [confirming, setConfirming] = React.useState(false);
+  const onBoard =
+    type === GameState.ShowBoard || type === GameState.PreviewRound;
+  const allowed = onBoard && players.size > 1;
+  const kick = () => {
+    setConfirming(false);
+    fetcher.submit(
+      { userId: player.userId, name: player.name },
+      { method: "delete", action: `/room/${roomId}/player` },
+    );
+  };
+  return (
+    <div className="flex flex-col gap-1">
+      {confirming ? (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-sm font-semibold">
+            {t("room.admin.kickConfirm", { name: player.name })}
+          </span>
+          <button
+            type="button"
+            className={DANGER}
+            disabled={busy}
+            onClick={kick}
+            data-testid="admin-kick-yes"
+          >
+            {t("room.admin.kickYes")}
+          </button>
+          <button
+            type="button"
+            className={SECONDARY}
+            onClick={() => setConfirming(false)}
+          >
+            {t("room.admin.cancel")}
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          className={clsx(SECONDARY, "self-start")}
+          disabled={busy || !allowed}
+          onClick={() => setConfirming(true)}
+          aria-label={t("room.kickPlayerNamed", { name: player.name })}
+          data-testid="admin-kick"
+        >
+          🚪 {t("room.kickPlayer")}
+        </button>
+      )}
+      {!allowed ? (
+        <p className="text-xs text-slate-400">
+          {players.size <= 1
+            ? t("room.admin.kickLastPlayer")
+            : t("room.admin.kickOnBoard")}
+        </p>
+      ) : null}
+      <ErrorText error={error} />
+    </div>
+  );
+}
+
 function ScoreRow({ roomId, player }: { roomId: number; player: Player }) {
   const { t } = useTranslation();
+  // Only the site admin kicks (the host doesn't).
+  const byAdmin = React.useContext(ActorContext) === "admin";
   const { fetcher, error, busy } = useAdminFetcher();
   const hostField = useHostField();
   return (
@@ -748,6 +818,7 @@ function ScoreRow({ roomId, player }: { roomId: number; player: Player }) {
         </button>
       </fetcher.Form>
       <ErrorText error={error} />
+      {byAdmin ? <KickButton roomId={roomId} player={player} /> : null}
     </li>
   );
 }

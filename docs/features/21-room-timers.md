@@ -35,13 +35,13 @@ packs have none, so the room settings are what matters.
 2. **Round preview** (before every round) and the **⏱** header button (admin only, between
    questions): the same **Room timers** panel:
 
-   | Timer                                  | Options                                        | Default  |
-   | -------------------------------------- | ---------------------------------------------- | -------- |
-   | Answer time (feature 14)               | Off / 10 / 15 / 20 / 30 / 60 s (+ mark wrong)  | Off      |
-   | Reading time (before the buzzers open) | Auto / 0, 1, 2, 3, 5, 10, 15, 20, 30, 45, 60 s | Auto     |
-   | Time to buzz in (buzz window)          | 3 / 5 / 7 / 10 / 15 / 20 s                     | 5 s      |
-   | Final answer time                      | No limit / 15 / 30 / 45 / 60 / 90 / 120 s      | 30 s     |
-   | Wager time                             | No limit / 15 / 30 / 60 s                      | No limit |
+   | Timer                                  | Options                                              | Default  |
+   | -------------------------------------- | ---------------------------------------------------- | -------- |
+   | Answer time (feature 14)               | Off / 10 / 15 / 20 / 30 / 60 s (+ mark wrong)        | Off      |
+   | Reading time (before the buzzers open) | Auto / 0, 1, 2, 3, 5, 10, 15, 20, 30, 45, 60 s       | Auto     |
+   | Time to buzz in (buzz window)          | 3 / 5 / 7 / 10 / 15 / 20 / 30 / 40 / 60 / 90 / 120 s | 5 s      |
+   | Final answer time                      | No limit / 15 / 30 / 45 / 60 / 90 / 120 s            | 30 s     |
+   | Wager time                             | No limit / 15 / 30 / 60 s                            | No limit |
 
    Players and spectators see the values read-only ("Only the admin can change this."). In solo
    play the player changes them.

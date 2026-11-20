@@ -461,7 +461,7 @@ export function Presenter({ game, joinUrl }: { game: Game; joinUrl: string }) {
         <HostBadge />
         <div className="ml-auto flex items-center gap-2">
           <WatcherCount count={watchers} className="text-sm text-slate-300" />
-          <GameClock roomId={-1} readOnly />
+          <GameClock />
           <SoundControl showLabel={false} showSlider={false} />
           <FullscreenButton />
         </div>

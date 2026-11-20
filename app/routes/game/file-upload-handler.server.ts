@@ -12,7 +12,7 @@ import { createGameMediaStore } from "~/models/siq/media-store.server";
 export const MAX_JSON_SIZE = 1_000_000;
 /** MAX_SIQ_SIZE is the largest SIGame pack (.siq) upload (nginx allows a bit
  * more, so the app reports the error). */
-export const MAX_SIQ_SIZE = 150 * 1024 * 1024;
+export const MAX_SIQ_SIZE = 200 * 1024 * 1024;
 
 export type UploadKind = "json" | "siq";
 
