@@ -23,7 +23,7 @@ export interface ArchiveLimits {
 
 export const DEFAULT_ARCHIVE_LIMITS: ArchiveLimits = {
   maxEntries: 5000,
-  maxTotalSize: 300 * MiB,
+  maxTotalSize: 450 * MiB,
   maxContentXmlSize: 20 * MiB,
 };
 
