@@ -9,7 +9,6 @@ import { HostBadge } from "~/components/host/host-badge";
 import { PausedOverlay } from "~/components/pause";
 import { PlayerIcon, PlayerScore } from "~/components/player";
 import { PROMPT_STATES } from "~/components/prompt/prompt";
-import { QrCode } from "~/components/qr-code";
 import SoundControl from "~/components/sound";
 import { Soundboard } from "~/components/soundboard";
 import { ScoreChange } from "~/components/standings/standings";
@@ -99,49 +98,6 @@ function StartOverlay({ onStart }: { onStart: () => void }) {
       </span>
       <span className="text-lg text-slate-200">{t("watch.startTvHelp")}</span>
     </button>
-  );
-}
-
-function JoinQr({
-  joinUrl,
-  size,
-}: {
-  joinUrl: string;
-  size: "large" | "small";
-}) {
-  const { t } = useTranslation();
-  const large = size === "large";
-  return (
-    <div
-      className={clsx(
-        "flex flex-col items-center gap-2 text-center",
-        large ? "gap-3" : "gap-1",
-      )}
-    >
-      <QrCode
-        value={joinUrl}
-        label={t("watch.qrLabel")}
-        className={clsx(
-          "rounded-lg",
-          large
-            ? "h-[min(45dvh,22rem)] w-[min(45dvh,22rem)]"
-            : "h-28 w-28 lg:h-36 lg:w-36",
-        )}
-      />
-      <p
-        className={clsx(
-          "font-bold text-white",
-          large ? "text-3xl lg:text-4xl" : "text-sm",
-        )}
-      >
-        {t("watch.scanToJoin")}
-      </p>
-      {large ? (
-        <p className="text-lg break-all text-slate-300 lg:text-xl">
-          {t("watch.orOpen", { url: joinUrl })}
-        </p>
-      ) : null}
-    </div>
   );
 }
 
@@ -280,21 +236,21 @@ function TeamTotals({ standings }: { standings: TeamStanding[] }) {
   );
 }
 
-/** Lobby is the round preview: a big QR code to join, and who is in. */
+/** Lobby is the round preview: the game, who is in, and the room's link in
+ * small type for anyone who still has to join (no QR code on the TV). */
 function Lobby({ joinUrl, game }: { joinUrl: string; game: Game }) {
   const { t } = useTranslation();
   const { players, round } = useEngineContext();
   return (
-    <div className="flex flex-col items-center justify-center gap-6 p-6 lg:flex-row lg:gap-16">
-      <JoinQr joinUrl={joinUrl} size="large" />
-      <div className="flex max-w-xl flex-col items-center gap-4 text-center lg:items-start lg:text-left">
+    <div className="flex flex-col items-center justify-center gap-6 p-6">
+      <div className="flex max-w-3xl flex-col items-center gap-4 text-center">
         <h2 className="font-korinna text-4xl font-bold text-white uppercase text-shadow-md lg:text-6xl">
           {game.title}
         </h2>
         <p className="text-2xl text-slate-300">
           {t("watch.roundOf", { round: round + 1, total: game.boards.length })}
         </p>
-        <ul className="flex flex-wrap justify-center gap-4 lg:justify-start">
+        <ul className="flex flex-wrap justify-center gap-4">
           {Array.from(players.values()).map((p) => (
             <li
               key={p.userId}
@@ -306,6 +262,12 @@ function Lobby({ joinUrl, game }: { joinUrl: string; game: Game }) {
             </li>
           ))}
         </ul>
+        <p
+          className="text-lg break-all text-slate-300"
+          data-testid="presenter-join-url"
+        >
+          {t("watch.joinAt", { url: joinUrl })}
+        </p>
       </div>
     </div>
   );
@@ -390,7 +352,7 @@ function GameOverScreen() {
 
 /** Presenter is the big-screen view of a room for a TV (or a laptop on a
  * projector): the board, the open question with its media, players and
- * scores, what is happening, and a QR code to join. It never sends anything:
+ * scores, what is happening, and the link to join. It never sends anything:
  * it only renders the shared engine state. */
 export function Presenter({ game, joinUrl }: { game: Game; joinUrl: string }) {
   const { t } = useTranslation();
@@ -486,11 +448,6 @@ export function Presenter({ game, joinUrl }: { game: Game; joinUrl: string }) {
             {teamStandings ? <TeamTotals standings={teamStandings} /> : null}
             <PlayerList players={sorted} />
           </div>
-          {lobby ? null : (
-            <div className="hidden lg:block">
-              <JoinQr joinUrl={joinUrl} size="small" />
-            </div>
-          )}
         </aside>
       </div>
       {promptOpen ? (
