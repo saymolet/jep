@@ -266,5 +266,18 @@ test.describe("host role", () => {
     await clickStartRound(host);
     await waitForBoardReady(ann);
     await expect(ann.getByText("You control the board")).toBeVisible();
+
+    // Ann answers; the host's Skip sits next to Right / Wrong.
+    await openClue(ann, ann.getByRole("button", { name: "$ 200" }).first());
+    await buzzIn(ann);
+    const judging = host.getByRole("button", { name: /^Wrong: / });
+    await expect(judging).toBeVisible();
+    await host.getByTestId("host-skip").click();
+    await host.getByTestId("host-skip-yes").click();
+    // Skipped: the question is over and nobody's score changed.
+    await expect(judging).toBeHidden({ timeout: 10_000 });
+    await expect(host.getByTestId("host-prompt")).toContainText("a1-answer", {
+      timeout: 10_000,
+    });
   });
 });

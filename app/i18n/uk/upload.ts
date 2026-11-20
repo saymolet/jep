@@ -6,7 +6,7 @@ export const upload: Dictionary<typeof en> = {
   "upload.uploadOrImport": "Завантажити або імпортувати гру",
   "upload.invalidFileType": "Непідтримуваний тип файлу",
   "upload.dropFileHere": "Перетягни файл сюди",
-  "upload.hint": "Гра Jep! (.jep.json) або пакет SIGame (.siq, до 150 МБ)",
+  "upload.hint": "Гра Jep! (.jep.json) або пакет SIGame (.siq, до 200 МБ)",
   "upload.help": "Як завантажити гру",
   "upload.confirmPublic": "Завантажити публічно?",
   "upload.confirmPublicDescription":
@@ -27,7 +27,7 @@ export const upload: Dictionary<typeof en> = {
   "upload.error.prefix": "Не вдалося завантажити гру: {reason}",
   "upload.error.noGameKey": "сервер не повернув ідентифікатор гри.",
   "upload.error.tooLarge":
-    "файл завеликий (пакети SIGame — до 150 МБ, ігри JSON — до 1 МБ).",
+    "файл завеликий (пакети SIGame — до 200 МБ, ігри JSON — до 1 МБ).",
   "upload.error.unsupported":
     "Непідтримуваний файл. Завантаж гру Jep! (.jep.json) або пакет SIGame (.siq).",
   "upload.error.jsonTooLarge": "Гра у форматі JSON має бути не більша за 1 МБ.",

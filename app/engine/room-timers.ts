@@ -10,7 +10,9 @@
 /** The default buzz window: the time players have to buzz in after the
  * question is read. */
 export const DEFAULT_BUZZ_WINDOW_SEC = 5;
-export const BUZZ_WINDOW_OPTIONS = [3, 5, 7, 10, 15, 20] as const;
+export const BUZZ_WINDOW_OPTIONS = [
+  3, 5, 7, 10, 15, 20, 30, 40, 60, 90, 120,
+] as const;
 
 /** Reading time: null is "Auto" (from the question's text and media, or the
  * pack's hint); otherwise a fixed number of seconds, 0–60. */

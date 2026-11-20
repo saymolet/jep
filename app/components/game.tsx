@@ -198,7 +198,7 @@ export default function GameComponent({
                 />
               ) : null}
               {runsGame ? <PauseControl roomId={roomId} /> : null}
-              <GameClock roomId={roomId} readOnly={!runsGame} />
+              <GameClock />
             </div>
           </div>
           <PlayerScores roomId={roomId} userId={userId} isAdmin={isAdmin} />

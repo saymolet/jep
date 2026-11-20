@@ -13,7 +13,7 @@ export const uploadHelp = {
     "To change an existing game, open it and use <strong>Download JSON</strong>, edit the file and upload it again (it becomes a new game).",
   "uploadHelp.siqTitle": "Import a SIGame pack",
   "uploadHelp.siqIntro":
-    'You can also upload a SIGame / SIQuester pack (a <code>.siq</code> file, up to 150 MB). Jep! converts it: rounds become rounds, themes become categories and each question keeps its price. Pictures, sound and video in the pack are stored by Jep! and shown with the question (or with the answer, for content after the answer marker). "Cat in the bag" questions become secret questions, stake (auction) questions become wager questions, and other special questions play as normal questions. Jep! plays one final question, so only the first theme of a final round is imported.',
+    'You can also upload a SIGame / SIQuester pack (a <code>.siq</code> file, up to 200 MB). Jep! converts it: rounds become rounds, themes become categories and each question keeps its price. Pictures, sound and video in the pack are stored by Jep! and shown with the question (or with the answer, for content after the answer marker). "Cat in the bag" questions become secret questions, stake (auction) questions become wager questions, and other special questions play as normal questions. Jep! plays one final question, so only the first theme of a final round is imported.',
   "uploadHelp.siqSkipped":
     "Files over 50 MB, missing files and unsupported content (such as HTML pages) are skipped, and questions left with no text or media are dropped. After the import you see a summary of what was skipped.",
   "uploadHelp.schemaTitle": "Schema definition",

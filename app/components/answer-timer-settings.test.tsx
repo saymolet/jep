@@ -180,6 +180,11 @@ describe("room timers", () => {
       "10 s",
       "15 s",
       "20 s",
+      "30 s",
+      "40 s",
+      "60 s",
+      "90 s",
+      "120 s",
     ]);
     expect(selected("buzz-window-settings")).toBe("5 s");
     expect(labels("final-answer-time-settings")).toEqual([

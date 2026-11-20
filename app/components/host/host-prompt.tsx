@@ -174,6 +174,65 @@ function JudgeButtons({
   );
 }
 
+/** HostSkipButton skips the open question (after a confirmation), next to
+ * the host's Right / Wrong: nobody's score changes and the game goes on. */
+function HostSkipButton({ roomId }: { roomId: number }) {
+  const { t } = useTranslation();
+  const { activeClue, canSkipOpenClue } = useEngineContext();
+  const fetcher = useFetcher();
+  const [confirming, setConfirming] = React.useState(false);
+  if (!canSkipOpenClue || !activeClue) return null;
+  const busy = fetcher.state !== "idle";
+  const skip = () => {
+    setConfirming(false);
+    fetcher.submit(
+      {
+        intent: "skip",
+        i: String(activeClue[0]),
+        j: String(activeClue[1]),
+        host: "true",
+      },
+      { method: "post", action: `/room/${roomId}/admin` },
+    );
+  };
+  if (confirming) {
+    return (
+      <div className="flex flex-wrap items-center justify-center gap-2">
+        <span className="font-semibold text-white">
+          {t("room.admin.skipConfirm")}
+        </span>
+        <button
+          type="button"
+          className={clsx(JUDGE_BUTTON, "bg-slate-600 hover:bg-slate-700")}
+          disabled={busy}
+          onClick={skip}
+          data-testid="host-skip-yes"
+        >
+          {t("room.admin.skipYes")}
+        </button>
+        <button
+          type="button"
+          className={clsx(JUDGE_BUTTON, "bg-white/15 hover:bg-white/25")}
+          onClick={() => setConfirming(false)}
+        >
+          {t("room.admin.cancel")}
+        </button>
+      </div>
+    );
+  }
+  return (
+    <button
+      type="button"
+      className={clsx(JUDGE_BUTTON, "bg-slate-600 hover:bg-slate-700")}
+      disabled={busy}
+      onClick={() => setConfirming(true)}
+      data-testid="host-skip"
+    >
+      ⏭ {t("host.skip")}
+    </button>
+  );
+}
+
 /** HostAnswering: the buzz winner (or the cat's receiver) answers out loud;
  * the host taps Right / Wrong. A multiple choice pick is judged by the
  * server. The answer timer's timeout is sent from here (the host's device is
@@ -209,14 +268,17 @@ function HostAnswering({ roomId, userId }: RoomProps) {
       ) : multipleChoice ? (
         <p className="text-sm text-slate-300">{t("host.pickAuto")}</p>
       ) : (
-        <JudgeButtons
-          name={name}
-          disabled={busy || marked}
-          onJudge={(correct) => {
-            setMarked(true);
-            judge(winningBuzzer, correct);
-          }}
-        />
+        <div className="flex flex-wrap items-center justify-center gap-3">
+          <JudgeButtons
+            name={name}
+            disabled={busy || marked}
+            onJudge={(correct) => {
+              setMarked(true);
+              judge(winningBuzzer, correct);
+            }}
+          />
+          <HostSkipButton roomId={roomId} />
+        </div>
       )}
       <ConnectedAnswerTimer timer={timer} />
     </div>
@@ -414,6 +476,9 @@ function HostPromptContent({ roomId, userId }: RoomProps) {
         <>
           {statusLine}
           <TimesUpNotice />
+          <div className="flex justify-center p-2">
+            <HostSkipButton roomId={roomId} />
+          </div>
         </>
       )}
       <Buzzes />
