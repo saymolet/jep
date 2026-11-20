@@ -36,7 +36,7 @@ import { Buzzes } from "./buzz";
 import { BuzzButton, getBuzzButtonState, isBuzzBarShown } from "./buzz-button";
 import { ConnectedCheckForm as CheckForm } from "./check-form";
 import { ConnectedChoiceList, ConnectedChoicePicker } from "./choices";
-import { ClueImage, PlayableMedia } from "./clue-media";
+import { ClueImage, type MediaSize, PlayableMedia } from "./clue-media";
 import { Countdown } from "./countdown";
 import { Fade } from "./fade";
 import { Kbd } from "./kbd";
@@ -56,6 +56,10 @@ import { ConnectedWagerForm as WagerForm } from "./wager-form";
 /** ANSWER_HINT_MS: without the answer timer, the buzz winner hears the
  * "time's up" sound after this long as a hint (nothing is enforced). */
 const ANSWER_HINT_MS = 5000;
+
+/** TV_SHORT_CLUE_CHARS: on the TV, a question with at most this much text
+ * (often none, in SIGame picture rounds) gives its media more room. */
+const TV_SHORT_CLUE_CHARS = 60;
 
 /** LOCKOUT_MS applies a 250ms lockout if a contestant buzzes before the clue is
  * done being read.
@@ -144,6 +148,7 @@ export function ClueText({
   media = [],
   autoPlayMedia = false,
   variant = "screen",
+  mediaSize,
   touchBuzz = true,
 }: {
   answer: string;
@@ -159,6 +164,9 @@ export function ClueText({
   /** "screen" fills the full-screen prompt; "tv" fills its container (the
    * presenter screen) and lets the text grow on big screens. */
   variant?: "screen" | "tv";
+  /** How big pictures and videos are; by default it follows the variant
+   * (the TV gives media more room when the question has little text). */
+  mediaSize?: MediaSize;
   /** false: taps with a finger or pen don't buzz while the big BUZZ button
    * is on screen (no accidental buzzes while scrolling or reading). Mouse
    * clicks and the keyboard still buzz. */
@@ -172,6 +180,13 @@ export function ClueText({
   const { mediaReplayCount } = useEngineContext();
   const images = media.filter((b) => b.type === "image");
   const hasMedia = media.length > 0;
+  const size: MediaSize =
+    mediaSize ??
+    (variant === "tv"
+      ? clue.trim().length <= TV_SHORT_CLUE_CHARS
+        ? "tvLarge"
+        : "tv"
+      : "screen");
 
   return (
     <div
@@ -213,9 +228,11 @@ export function ClueText({
             variant === "tv" ? "max-w-none" : "max-w-screen-lg",
             // Leave room for the media below the text.
             hasMedia
-              ? variant === "tv"
-                ? "max-h-[25dvh]"
-                : "max-h-[20dvh]"
+              ? size === "tvLarge"
+                ? "max-h-[18dvh]"
+                : variant === "tv"
+                  ? "max-h-[25dvh]"
+                  : "max-h-[20dvh]"
               : variant === "tv"
                 ? "max-h-[55dvh]"
                 : "max-h-96",
@@ -234,7 +251,7 @@ export function ClueText({
           </span>
         </p>
         {images.map((block, i) => (
-          <ClueImage key={`${i}-${block.src}`} block={block} />
+          <ClueImage key={`${i}-${block.src}`} block={block} size={size} />
         ))}
       </button>
       {/* Audio/video controls live outside the buzz button: tapping them must
@@ -243,6 +260,7 @@ export function ClueText({
         blocks={media}
         autoPlay={autoPlayMedia}
         replayNonce={mediaReplayCount}
+        size={size}
       />
     </div>
   );

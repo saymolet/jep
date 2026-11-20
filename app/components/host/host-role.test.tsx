@@ -166,6 +166,25 @@ describe("host screen", () => {
     ]);
   });
 
+  it("names who answers, with their avatar, above the question and answer", () => {
+    render(ANN_ANSWERING, HOST);
+    const answering = query("host-answering")!;
+    expect(queryAll("host-answering")).toHaveLength(1);
+    expect(
+      answering.parentElement
+        ?.querySelector('[data-testid="player-icon"]')
+        ?.getAttribute("title"),
+    ).toBe("Ann");
+    const below = (a: HTMLElement, b: HTMLElement | null) =>
+      Boolean(
+        b && a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING,
+      );
+    expect(below(answering, query("clue-buzz-area"))).toBe(true);
+    expect(below(answering, query("host-answer"))).toBe(true);
+    // The buzz order is at the top too.
+    expect(below(query("host-buzzes")!, query("clue-buzz-area"))).toBe(true);
+  });
+
   it("marks a wrong answer for the player", async () => {
     render(ANN_ANSWERING, HOST);
     await click(button(/^Wrong: Ann$/));
