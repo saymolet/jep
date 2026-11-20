@@ -47,6 +47,7 @@ import { getMockGame, MOCK_GAME } from "~/models/mock.server";
 
 import { action as adminAction } from "./room.$roomId.admin";
 import { action as checkAction } from "./room.$roomId.check";
+import { action as buzzersAction } from "./room.$roomId.buzzers";
 import { action as hostAction } from "./room.$roomId.host";
 import { action as nextAction } from "./room.$roomId.next-clue";
 import { action as playerAction } from "./room.$roomId.player";
@@ -616,6 +617,85 @@ describe("a host alone; switching to hosting", () => {
         )
       ).status,
     ).toBe(409);
+  });
+});
+
+describe("opening and closing the buzzers (feature 27)", () => {
+  /** Ann opened question (0, 0) in a hosted room. */
+  const HOSTED_READING: Payloads = [
+    ...HOSTED_BOARD,
+    [ActionType.ChooseClue, { userId: HOST, i: 0, j: 0 }],
+  ];
+  const control = (intent: string, userId: string, extra = {}) =>
+    call(buzzersAction, "buzzers", {
+      intent,
+      userId,
+      round: "0",
+      i: "0",
+      j: "0",
+      ...extra,
+    });
+
+  it("the host's device opens the buzzers (tagged host)", async () => {
+    mocks.session.userId = HOST;
+    mocks.getRoomEvents.mockResolvedValue(toEvents(HOSTED_READING));
+    expect(
+      await outcome(control("open", HOST, { host: "true" })),
+    ).toMatchObject({ status: 200 });
+    expect(inserted()).toEqual([
+      [
+        ActionType.OpenBuzzers,
+        { userId: HOST, round: 0, i: 0, j: 0, host: true },
+      ],
+    ]);
+  });
+
+  it("403 for a player in host mode", async () => {
+    mocks.session.userId = ANN;
+    mocks.getRoomEvents.mockResolvedValue(toEvents(HOSTED_READING));
+    expect((await outcome(control("open", ANN))).status).toBe(403);
+    expect(inserted()).toEqual([]);
+  });
+
+  it("a player's device opens them without a host; late requests do nothing", async () => {
+    mocks.session.userId = ANN;
+    const reading: Payloads = [
+      ...LOBBY,
+      [ActionType.StartRound, { round: 0, userId: ANN }],
+      [ActionType.ChooseClue, { userId: ANN, i: 0, j: 0 }],
+    ];
+    mocks.getRoomEvents.mockResolvedValue(toEvents(reading));
+    await control("open", ANN);
+    expect(inserted()).toEqual([
+      [ActionType.OpenBuzzers, { userId: ANN, round: 0, i: 0, j: 0 }],
+    ]);
+    // Already open (another device was first): nothing more.
+    vi.clearAllMocks();
+    mocks.getAdmin.mockResolvedValue(null);
+    mocks.getRoom.mockResolvedValue(ROOM);
+    mocks.getGame.mockResolvedValue(MOCK_GAME);
+    mocks.getRoomEvents.mockResolvedValue(
+      toEvents([
+        ...reading,
+        [ActionType.OpenBuzzers, { userId: ANN, round: 0, i: 0, j: 0 }],
+      ]),
+    );
+    mocks.session.userId = BOB;
+    expect(await outcome(control("open", BOB))).toMatchObject({
+      status: 200,
+    });
+    // A player's close half a second after opening is too early.
+    mocks.session.userId = ANN;
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(Date.parse("2026-11-01T10:00:05") + 500);
+    try {
+      expect(await outcome(control("close", ANN))).toMatchObject({
+        status: 200,
+      });
+    } finally {
+      vi.useRealTimers();
+    }
+    expect(inserted()).toEqual([]);
   });
 });
 
