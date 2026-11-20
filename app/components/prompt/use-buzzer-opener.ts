@@ -6,11 +6,7 @@ import { CANT_BUZZ_FLAG, GameState, useEngineContext } from "~/engine";
 import { getBuzzWindowMs } from "~/engine/room-timers";
 import { AFTER_FIRST_BUZZ_MS } from "~/models/buzzers";
 import type { MediaBlock } from "~/utils/media";
-import {
-  getClueMedia,
-  getRoomReadMs,
-  parseYouTubeUrl,
-} from "~/utils/media";
+import { getClueMedia, getRoomReadMs, parseYouTubeUrl } from "~/utils/media";
 import useSoloAction from "~/utils/use-solo-action";
 
 /* The buzzer "opener" (feature 27): one device per room decides when the
@@ -183,9 +179,22 @@ export function useBuzzerOpener({
       Math.max(current.startedAt + readMs, mediaEnd) +
       current.randomMs +
       graceMs;
-    const timeout = setTimeout(() => send("open"), Math.max(0, at - Date.now()));
+    const timeout = setTimeout(
+      () => send("open"),
+      Math.max(0, at - Date.now()),
+    );
     return () => clearTimeout(timeout);
-  }, [key, buzzersOpen, clue, readTimeSec, isReRead, mediaMs, replayAt, graceMs, send]);
+  }, [
+    key,
+    buzzersOpen,
+    clue,
+    readTimeSec,
+    isReRead,
+    mediaMs,
+    replayAt,
+    graceMs,
+    send,
+  ]);
 
   // Close: shortly after the first buzz, or when the buzz time is over.
   React.useEffect(() => {

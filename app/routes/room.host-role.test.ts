@@ -46,8 +46,8 @@ vi.mock("~/session.server", () => ({
 import { getMockGame, MOCK_GAME } from "~/models/mock.server";
 
 import { action as adminAction } from "./room.$roomId.admin";
-import { action as checkAction } from "./room.$roomId.check";
 import { action as buzzersAction } from "./room.$roomId.buzzers";
+import { action as checkAction } from "./room.$roomId.check";
 import { action as hostAction } from "./room.$roomId.host";
 import { action as nextAction } from "./room.$roomId.next-clue";
 import { action as playerAction } from "./room.$roomId.player";

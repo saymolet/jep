@@ -41,7 +41,6 @@ import { Countdown } from "./countdown";
 import { Fade } from "./fade";
 import { Kbd } from "./kbd";
 import { Lockout } from "./lockout";
-import { useBuzzerOpener } from "./use-buzzer-opener";
 import { ConnectedNextClueForm as NextClueForm } from "./next-clue-form";
 import { ConnectedPassCluePrompt } from "./pass-clue";
 import { ReadClueTimer } from "./read-clue-timer";
@@ -52,6 +51,7 @@ import {
   useWagerTimer,
   WagerTimer,
 } from "./step-timers";
+import { useBuzzerOpener } from "./use-buzzer-opener";
 import { ConnectedWagerForm as WagerForm } from "./wager-form";
 
 /** ANSWER_HINT_MS: without the answer timer, the buzz winner hears the
@@ -178,7 +178,7 @@ export function ClueText({
   });
   const pointerType = React.useRef("");
   // The host's replays of the question's audio/video (feature 23).
-  const { mediaReplayCount } = useEngineContext();
+  const { mediaReplayCount, clue: activeClue } = useEngineContext();
   const images = media.filter((b) => b.type === "image");
   const hasMedia = media.length > 0;
   const size: MediaSize =
@@ -187,7 +187,9 @@ export function ClueText({
       ? clue.trim().length <= TV_SHORT_CLUE_CHARS
         ? "tvLarge"
         : "tv"
-      : "screen");
+      : activeClue && hasChoices(activeClue)
+        ? "choices"
+        : "screen");
 
   return (
     <div

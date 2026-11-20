@@ -9,20 +9,30 @@ import { useSoundSettings } from "~/utils/user-settings";
 
 /** MediaSize is how much of the screen a picture or video gets:
  * - "screen": the player's prompt. 40dvh keeps the clue text and the
- *   buzzer/answer controls below on screen, on phones and desktops.
+ *   buzzer/answer controls below on screen on desktops; phones (with the
+ *   big BUZZ bar) get 32dvh, so multiple choice options still fit.
+ * - "choices": the player's prompt of a multiple choice question: on
+ *   phones the options need the room, so pictures are smaller there.
  * - "host": the host's question, which shares the screen with the answer
  *   and the judge buttons.
  * - "answer": the pictures in the host's answer box.
  * - "tv" / "tvLarge": the TV (presenter) screen, which has no controls;
  *   "tvLarge" when the question has little text. */
-export type MediaSize = "screen" | "host" | "answer" | "tv" | "tvLarge";
+export type MediaSize =
+  | "screen"
+  | "choices"
+  | "host"
+  | "answer"
+  | "tv"
+  | "tvLarge";
 
 /** MEDIA_HEIGHT gives pictures and videos a definite height, not just a
  * maximum: small files (SIGame packs often have 300 px pictures and 240p
  * videos) scale up to fill it and big ones shrink to fit. `max-w-full` with
  * `object-contain` keeps the aspect ratio on narrow screens. */
 const MEDIA_HEIGHT: Record<MediaSize, string> = {
-  screen: "h-[40dvh]",
+  screen: "h-[40dvh] buzzbar:h-[32dvh]",
+  choices: "h-[40dvh] buzzbar:h-[20dvh]",
   host: "h-[30dvh]",
   answer: "h-[22dvh]",
   tv: "h-[50dvh]",
@@ -32,7 +42,10 @@ const MEDIA_HEIGHT: Record<MediaSize, string> = {
 /** YOUTUBE_WIDTH sizes YouTube embeds (which size by width) to the same
  * height as other videos. */
 const YOUTUBE_WIDTH: Record<MediaSize, string> = {
-  screen: "w-[min(100%,calc(40dvh*16/9))]",
+  screen:
+    "w-[min(100%,calc(40dvh*16/9))] buzzbar:w-[min(100%,calc(32dvh*16/9))]",
+  choices:
+    "w-[min(100%,calc(40dvh*16/9))] buzzbar:w-[min(100%,calc(20dvh*16/9))]",
   host: "w-[min(100%,calc(30dvh*16/9))]",
   answer: "w-[min(100%,calc(22dvh*16/9))]",
   tv: "w-[min(100%,calc(50dvh*16/9))]",
