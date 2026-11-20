@@ -51,8 +51,11 @@ async function buzzIn(page: Page) {
   await expect(page.getByText(/buzz in/i).first()).toBeVisible({
     timeout: 10_000,
   });
+  // Tap the question (not Enter): once this player has buzzed it's disabled,
+  // so a retry can't reveal or mark the answer by accident.
+  const buzzArea = page.getByTestId("clue-buzz-area").first();
   await expect(async () => {
-    await page.keyboard.press("Enter");
+    await buzzArea.click({ timeout: 500 }).catch(() => undefined);
     await expect(
       page.getByRole("button", { name: /reveal answer/i }),
     ).toBeVisible({ timeout: 1_000 });

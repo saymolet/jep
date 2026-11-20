@@ -191,10 +191,9 @@ test.describe("spectators and the TV screen", () => {
     const page = await context.newPage();
 
     await goto(page, `${roomPath}/present`);
-    await expect(page.getByText("Скануй, щоб приєднатися")).toBeVisible();
-    await expect(
-      page.getByRole("img", { name: "QR-код для приєднання до гри" }),
-    ).toBeVisible();
+    // No QR code on the TV (feature 26), just the link.
+    await expect(page.getByText(/Щоб приєднатися, відкрий/)).toBeVisible();
+    await expect(page.getByRole("img", { name: /QR/ })).toHaveCount(0);
     await expect(page.getByTestId("viewer-status")).toHaveText(
       "Чекаємо на гравців...",
     );
