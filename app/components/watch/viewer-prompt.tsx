@@ -28,7 +28,6 @@ import {
 import { CANT_BUZZ_FLAG, GameState, useEngineContext } from "~/engine";
 import { getSecretTopic, isSecretClue } from "~/engine/state";
 import { useTranslation } from "~/i18n";
-import { getRoomReadMs } from "~/utils/media";
 
 import { getViewerStatus, type ViewerStatus } from "./status";
 
@@ -38,25 +37,9 @@ export type ViewerVariant = "screen" | "tv";
  * enough for the buzzers to open. Players' devices time this locally, so the
  * viewer does the same (it is only used for the status line). */
 function useBuzzersOpen() {
-  const { type, activeClue, clue, buzzes, readTimeSec } = useEngineContext();
-  const reading = type === GameState.ReadClue && clue !== undefined;
-  const isReRead =
-    reading &&
-    !clue.wagerable &&
-    Array.from(buzzes.values()).some((b) => b === CANT_BUZZ_FLAG);
-  const key = reading ? `${activeClue?.join(",")}:${isReRead}` : null;
-  // The same reading time as the players' devices (room setting).
-  const delayMs = !clue
-    ? 0
-    : getRoomReadMs(clue, readTimeSec, { reRead: isReRead });
-
-  const [openKey, setOpenKey] = React.useState<string | null>(null);
-  React.useEffect(() => {
-    if (key === null) return;
-    const timeout = setTimeout(() => setOpenKey(key), delayMs);
-    return () => clearTimeout(timeout);
-  }, [key, delayMs]);
-  return key !== null && openKey === key;
+  // The server opens the buzzers (feature 27).
+  const { type, buzzersOpen } = useEngineContext();
+  return type === GameState.ReadClue && buzzersOpen;
 }
 
 /** useViewerStatus is what is happening in the game, for viewers. */

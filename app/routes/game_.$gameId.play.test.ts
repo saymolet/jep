@@ -185,6 +185,7 @@ describe("new room action", () => {
         buzzWindowSec: 3,
         finalAnswerTimeSec: 30,
         wagerTimeSec: 15,
+        soundboard: true,
       },
     );
   });

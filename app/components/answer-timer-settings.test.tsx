@@ -99,6 +99,7 @@ const DEFAULTS = {
   buzzWindowSec: "5",
   finalAnswerTimeSec: "30",
   wagerTimeSec: "0",
+  soundboard: "true",
 };
 
 function checkbox() {

@@ -17,6 +17,7 @@ export const host: Dictionary<typeof en> = {
   "host.secretAnswering": "Кіт у мішку: відповідає {name}",
   "host.right": "Правильно",
   "host.wrong": "Неправильно",
+  "host.rightTimesFor": "Правильно ×{times}: {name}",
   "host.skip": "Пропустити",
   "host.waitingToStart":
     "Чекаємо на гравців: поділіться посиланням на кімнату (або покажіть QR-код з екрана для телевізора). Почати можна, щойно хтось приєднається.",

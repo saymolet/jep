@@ -92,11 +92,12 @@ test.describe("room timers", () => {
     ).toBeDisabled();
 
     // Nobody buzzes: with no reading time and a 3 s window the answer is
-    // shown well before the default (reading + 5 s) would allow.
+    // shown well before the default (reading + 5 s) would allow (plus the
+    // random 0.5–2.5 s before the buzzers open, feature 27).
     await clickStartRound(host);
     await openClue(host, host.getByRole("button", { name: "$ 200" }).first());
     for (const page of [host, guest]) {
-      await expect(page.getByText("Sundial")).toBeVisible({ timeout: 5_500 });
+      await expect(page.getByText("Sundial")).toBeVisible({ timeout: 8_000 });
     }
     await host.getByRole("button", { name: /back to board/i }).click();
 

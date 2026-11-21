@@ -237,3 +237,66 @@ describe("sound on the TV (feature 24)", () => {
     expect(play).not.toHaveBeenCalled();
   });
 });
+
+describe("media size (feature 26)", () => {
+  /** The classes of the rendered picture, video and YouTube embed. */
+  function classes() {
+    return {
+      img: container.querySelector("img")?.getAttribute("class") ?? "",
+      video: container.querySelector("video")?.getAttribute("class") ?? "",
+      iframe: container.querySelector("iframe")?.getAttribute("class") ?? "",
+    };
+  }
+
+  function renderClue(props: {
+    clue: string;
+    variant?: "screen" | "tv";
+    mediaSize?: "host";
+  }) {
+    render(
+      <ClueText
+        answer=""
+        canBuzz={false}
+        focusOnBuzz={false}
+        onBuzz={() => null}
+        showAnswer={false}
+        media={[IMAGE, VIDEO, YOUTUBE]}
+        {...props}
+      />,
+    );
+  }
+
+  it("gives pictures and videos a definite height so small files scale up", () => {
+    renderClue({ clue: "Some clue" });
+    const { img, video, iframe } = classes();
+    // A height, not a max-height: a 300 px picture grows to fill it.
+    expect(img).toContain("h-[40dvh]");
+    expect(img).not.toContain("max-h-");
+    expect(img).toContain("w-auto");
+    expect(img).toContain("max-w-full");
+    expect(img).toContain("object-contain");
+    expect(video).toContain("h-[40dvh]");
+    expect(video).toContain("object-contain");
+    expect(iframe).toContain("calc(40dvh*16/9)");
+  });
+
+  it("gives media more room on the TV, most with little text", () => {
+    renderClue({
+      clue: "A long question that goes on and on, with a lot of words to read out loud",
+      variant: "tv",
+    });
+    expect(classes().img).toContain("h-[50dvh]");
+    expect(classes().video).toContain("h-[50dvh]");
+
+    renderClue({ clue: "Who is this?", variant: "tv" });
+    expect(classes().img).toContain("h-[60dvh]");
+    expect(classes().video).toContain("h-[60dvh]");
+    expect(classes().iframe).toContain("calc(60dvh*16/9)");
+  });
+
+  it("takes an explicit size (the host's view)", () => {
+    renderClue({ clue: "Who is this?", mediaSize: "host" });
+    expect(classes().img).toContain("h-[30dvh]");
+    expect(classes().video).toContain("h-[30dvh]");
+  });
+});

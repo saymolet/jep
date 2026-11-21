@@ -1,7 +1,7 @@
 import * as React from "react";
 
 import { PROMPT_STATES } from "~/components/prompt/prompt";
-import { useEngineContext } from "~/engine";
+import { GameState, useEngineContext } from "~/engine";
 import {
   installSoundboardAudioUnlock,
   playSoundboardSound,
@@ -24,6 +24,19 @@ export const MAX_TOASTS = 3;
 /** Soundboard volume while a question's audio or video may be playing, so
  * reactions don't drown out the clip. */
 export const MEDIA_DUCK = 0.35;
+/** Soundboard sounds play at this share of the game volume (feature 27):
+ * reactions, not the main show. */
+export const SOUNDBOARD_VOLUME = 0.5;
+
+/** SOUNDBOARD_STATES: the soundboard only works between questions — the
+ * board, the round preview, the answer shown to everyone, game over —
+ * never while a question is read or answered (feature 27). */
+const SOUNDBOARD_STATES = new Set<GameState>([
+  GameState.PreviewRound,
+  GameState.ShowBoard,
+  GameState.RevealAnswerToAll,
+  GameState.GameOver,
+]);
 
 export interface SoundboardToast {
   id: number;
@@ -47,7 +60,11 @@ export function useSoundboard({
   userId: string | null;
   playSound?: PlaySound;
 }) {
-  const { soundboard, players, type, clue } = useEngineContext();
+  const { soundboard, soundboardEnabled, players, type, clue } =
+    useEngineContext();
+  // The host can turn the soundboard off for the room; it never plays
+  // during a question.
+  const allowedNow = soundboardEnabled && SOUNDBOARD_STATES.has(type);
   const { volume, mute } = useSoundSettings();
   const [soundboardMuted] = useSoundboardMute();
   const [limiter] = React.useState(() => new SoundboardLimiter());
@@ -68,6 +85,7 @@ export function useSoundboard({
     duck,
     players,
     playSound,
+    allowedNow,
   });
   React.useEffect(() => {
     latest.current = {
@@ -77,6 +95,7 @@ export function useSoundboard({
       duck,
       players,
       playSound,
+      allowedNow,
     };
   });
 
@@ -112,7 +131,7 @@ export function useSoundboard({
       if (!limiter.tryStartPlayback(Date.now(), durationMs)) return false;
       return settings.playSound(
         sound,
-        settings.volume * (settings.duck ? MEDIA_DUCK : 1),
+        settings.volume * SOUNDBOARD_VOLUME * (settings.duck ? MEDIA_DUCK : 1),
       );
     },
     [limiter],
@@ -124,6 +143,9 @@ export function useSoundboard({
     return soundboard.subscribe((payload) => {
       const message = parseSoundboardMessage(payload);
       if (!message || message.userId === userId) return;
+      // Sounds that arrive during a question (or with the soundboard off)
+      // are dropped.
+      if (!latest.current.allowedNow) return;
       // Only players can send sounds (spectators and TVs only listen).
       const player = latest.current.players.get(message.userId);
       if (!player) return;
@@ -141,7 +163,7 @@ export function useSoundboard({
   }, [soundboard.available]);
 
   const me = userId ? players.get(userId) : undefined;
-  const canSend = soundboard.available && me !== undefined;
+  const canSend = soundboard.available && me !== undefined && allowedNow;
 
   // When this device may send again (cooldown), for the UI.
   const [readyAt, setReadyAt] = React.useState(0);

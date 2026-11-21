@@ -70,7 +70,12 @@ function status() {
 }
 
 function qr() {
-  return container.querySelector('svg[data-testid="join-qr"]');
+  return container.querySelector('[data-testid="join-qr"]');
+}
+
+function joinUrl() {
+  return container.querySelector('[data-testid="presenter-join-url"]')
+    ?.textContent;
 }
 
 /** Controls a player would use. The presenter must have none of them. */
@@ -89,12 +94,10 @@ function expectNoPlayerControls() {
 }
 
 describe("Presenter", () => {
-  it("shows a big QR code to join in the lobby", () => {
+  it("shows the link to join in the lobby, without a QR code", () => {
     render(play());
-    expect(qr()?.getAttribute("data-value")).toBe(JOIN_URL);
-    expect(qr()?.getAttribute("aria-label")).toBe("QR code to join the game");
-    expect(text()).toContain("Scan to join");
-    expect(text()).toContain(`or open ${JOIN_URL}`);
+    expect(qr()).toBeNull();
+    expect(joinUrl()).toBe(`To join, open ${JOIN_URL}`);
     expect(status()).toBe("Waiting for players to join...");
     expect(text()).toContain("No players yet");
     expectNoPlayerControls();
@@ -104,7 +107,8 @@ describe("Presenter", () => {
     render(playUntil("join"));
     expect(status()).toBe("Round 1 is about to start · Ann chooses first");
     expect(text()).toContain("Round 1 of 2");
-    expect(qr()).not.toBeNull();
+    expect(joinUrl()).toContain(JOIN_URL);
+    expect(qr()).toBeNull();
     expectNoPlayerControls();
   });
 
@@ -115,14 +119,18 @@ describe("Presenter", () => {
     const tiles = container.querySelector('[data-testid="presenter-players"]');
     // Bob ($500) above Ann ($350).
     expect(tiles?.textContent).toMatch(/Bob.*\$500.*Ann.*\$350/);
-    // The QR code stays, small, in the corner.
-    expect(qr()).not.toBeNull();
+    // No QR code (or join link) during play.
+    expect(qr()).toBeNull();
+    expect(joinUrl()).toBeUndefined();
     expectNoPlayerControls();
   });
 
   it("shows the question being read, without the answer", () => {
     render(playUntil("chooseFirst"));
     expect(text()).toContain("This pet says meow");
+    // The buzzers open when the server says so (feature 27).
+    expect(status()).toBe("Get ready to buzz...");
+    render(playUntil("openFirst"));
     expect(status()).toBe("Buzzers open!");
     const answer = Array.from(container.querySelectorAll("span")).find(
       (s) => s.textContent === "Cat",
@@ -213,7 +221,7 @@ describe("Presenter", () => {
 
   it("is translated into Ukrainian", () => {
     render(play(), "uk");
-    expect(text()).toContain("Скануй, щоб приєднатися");
+    expect(joinUrl()).toBe(`Щоб приєднатися, відкрий ${JOIN_URL}`);
     expect(status()).toBe("Чекаємо на гравців...");
 
     render(playUntil("chooseSecret"), "uk");

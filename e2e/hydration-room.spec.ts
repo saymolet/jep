@@ -73,9 +73,9 @@ test.describe("hydration of game and room pages", () => {
         guest.getByRole("button", { name: /join game/i }),
       ).toBeVisible();
       await goto(guest, `/game/${gameId}`);
-      // The TV (presenter) view of the room, with its QR code.
+      // The TV (presenter) view of the room, with its join link.
       await goto(guest, `${roomPath}/present`);
-      await expect(guest.getByTestId("join-qr")).toBeVisible();
+      await expect(guest.getByTestId("presenter-join-url")).toBeVisible();
 
       expect(errors).toEqual([]);
       expect(guestErrors).toEqual([]);

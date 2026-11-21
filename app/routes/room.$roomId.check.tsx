@@ -32,12 +32,14 @@ const formSchema = z.object({
     .literal("true")
     .transform(() => true)
     .optional(),
+  /** ×0.5 / ×2 on a right answer judged by the host (feature 27). */
+  multiplier: z.enum(["0.5", "2"]).optional(),
 });
 
 export async function action({ request, params }: Route.ActionArgs) {
   const t = createT(getRequestLocale(request));
   const formData = await request.formData();
-  const { i, j, userId, result, choice, timedOut } = parseFormData(
+  const { i, j, userId, result, choice, timedOut, multiplier } = parseFormData(
     formData,
     formSchema,
   );
@@ -116,12 +118,18 @@ export async function action({ request, params }: Route.ActionArgs) {
     correct = isCorrectChoice(clue, choice);
   }
 
+  // Only the host (or the admin) gives ×0.5 / ×2, on a right answer.
+  const scaled =
+    multiplier && correct && (actor.host || actor.admin)
+      ? { multiplier: Number(multiplier) }
+      : {};
   await createRoomEventAsServer(room.id, ActionType.Check, {
     i,
     j,
     userId,
     correct,
     ...extra,
+    ...scaled,
     ...actor,
   });
   await revealResolvedAnswer(room, authSession);

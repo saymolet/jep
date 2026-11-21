@@ -122,6 +122,8 @@ export const room: Dictionary<typeof en> = {
     "Коли час вийде, надішлеться те, що встиг написати кожен гравець. Без обмеження: фінал чекає на відповіді всіх.",
   "room.timers.wagerTime": "Час на ставку",
   "room.timers.noLimit": "Без обмеження",
+  "room.timers.soundboard":
+    "Саундборд: звуки-реакції гравців (лише між питаннями)",
   "room.timers.wagerTimeHelp":
     "Коли час вийде, гравець ставить найменшу дозволену суму: $5 на подвійну ставку, $0 у фіналі.",
   "room.answerTime": "Час на відповідь",
@@ -201,6 +203,8 @@ export const room: Dictionary<typeof en> = {
   "room.admin.skipConfirm": "Пропустити це питання?",
   "room.admin.skipYes": "Так, пропустити",
   "room.admin.cancel": "Скасувати",
+  "room.admin.openBuzzers": "Відкрити кнопки зараз",
+  "room.admin.closeBuzzers": "Закрити кнопки зараз",
   "room.admin.kickConfirm": "Вигнати {name}?",
   "room.admin.kickYes": "Так, вигнати",
   "room.admin.kickOnBoard": "Гравців можна вигнати між питаннями.",

@@ -1,4 +1,3 @@
-import { qrSvg } from "../app/utils/qr";
 import { expect, test } from "./fixtures";
 import {
   clickStartRound,
@@ -104,15 +103,11 @@ test.describe("spectators and the TV screen", () => {
     await goto(tv, `${roomPath}/present`);
     await waitForConnected(tv);
 
-    // The QR code encodes the room's join URL.
-    const qr = tv.getByRole("img", { name: "QR code to join the game" });
-    await expect(qr).toBeVisible();
-    const joinUrl = await qr.getAttribute("data-value");
-    expect(joinUrl).toMatch(new RegExp(`^https?://[^/]+${roomPath}$`));
-    expect(await qr.locator("path").getAttribute("d")).toBe(
-      qrSvg(joinUrl!).path,
+    // No QR code on the TV: the lobby shows the room's join URL as text.
+    await expect(tv.getByTestId("join-qr")).toHaveCount(0);
+    await expect(tv.getByTestId("presenter-join-url")).toHaveText(
+      new RegExp(`^To join, open https?://[^/]+${roomPath}$`),
     );
-    await expect(tv.getByText("Scan to join")).toBeVisible();
     await expect(tv.getByTestId("viewer-status")).toHaveText(
       "Waiting for players to join...",
     );
@@ -133,8 +128,9 @@ test.describe("spectators and the TV screen", () => {
       /is choosing a question/,
       { timeout: 10_000 },
     );
-    // During play the QR code stays, small.
-    await expect(qr).toBeVisible();
+    // During play there is no QR code or join link.
+    await expect(tv.getByTestId("join-qr")).toHaveCount(0);
+    await expect(tv.getByTestId("presenter-join-url")).toHaveCount(0);
 
     // "Show on TV" in the game menu links to the presenter view (the menu is
     // reachable once the round has started).
@@ -195,10 +191,9 @@ test.describe("spectators and the TV screen", () => {
     const page = await context.newPage();
 
     await goto(page, `${roomPath}/present`);
-    await expect(page.getByText("Скануй, щоб приєднатися")).toBeVisible();
-    await expect(
-      page.getByRole("img", { name: "QR-код для приєднання до гри" }),
-    ).toBeVisible();
+    // No QR code on the TV (feature 26), just the link.
+    await expect(page.getByText(/Щоб приєднатися, відкрий/)).toBeVisible();
+    await expect(page.getByRole("img", { name: /QR/ })).toHaveCount(0);
     await expect(page.getByTestId("viewer-status")).toHaveText(
       "Чекаємо на гравців...",
     );

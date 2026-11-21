@@ -26,3 +26,5 @@ See the backlog in [../README.md](../README.md#feature-backlog).
 - [23 — Host replays audio/video](./23-host-media-replay.md)
 - [24 — The game on a projector](./24-projector.md)
 - [25 — Host and admin polish](./25-host-admin-polish.md)
+- [26 — Bigger media, no QR on the TV, who answers for the host](./26-media-visuals.md)
+- [27 — Buzzers like SIGame, host multipliers, calmer soundboard](./27-buzzer-flow.md)

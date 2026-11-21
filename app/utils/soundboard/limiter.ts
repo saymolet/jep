@@ -1,13 +1,13 @@
 /** A player can send one soundboard sound every SEND_COOLDOWN_MS. */
-export const SEND_COOLDOWN_MS = 2_000;
+export const SEND_COOLDOWN_MS = 3_000;
 
 /** Receivers ignore a sender's sounds that arrive faster than this. A bit
  * shorter than the sender's cooldown, so network jitter does not drop
  * honest sounds, but a client that skips its cooldown is still throttled. */
-export const RECEIVE_COOLDOWN_MS = 1_700;
+export const RECEIVE_COOLDOWN_MS = 2_700;
 
 /** At most this many soundboard sounds play at the same time on a device. */
-export const MAX_OVERLAPPING_SOUNDS = 3;
+export const MAX_OVERLAPPING_SOUNDS = 2;
 
 /** SoundboardLimiter keeps the soundboard fun rather than annoying: a
  * cooldown for this device's own sounds, a per-sender cooldown for sounds

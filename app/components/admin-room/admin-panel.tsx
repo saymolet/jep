@@ -310,6 +310,35 @@ function PassForPlayer({
   );
 }
 
+/** BuzzerControls: open the buzzers now, or close them (whoever hasn't
+ * buzzed passes) — if the device that runs them is stuck (feature 27). */
+function BuzzerControls({ roomId }: { roomId: number }) {
+  const { t } = useTranslation();
+  const { activeClue, buzzersOpen, host, round, type } = useEngineContext();
+  const { send, busy } = usePlayerStep(roomId, "buzzers");
+  if (!activeClue || type !== GameState.ReadClue) return null;
+  const control = (intent: "open" | "close") =>
+    send({
+      intent,
+      // The engine checks the host's own id in host mode.
+      userId: host?.userId ?? "admin",
+      round: String(round),
+      i: String(activeClue[0]),
+      j: String(activeClue[1]),
+    });
+  return (
+    <button
+      type="button"
+      className={clsx(SECONDARY, "self-start")}
+      disabled={busy}
+      onClick={() => control(buzzersOpen ? "close" : "open")}
+      data-testid="admin-buzzers"
+    >
+      {buzzersOpen ? t("room.admin.closeBuzzers") : t("room.admin.openBuzzers")}
+    </button>
+  );
+}
+
 function BuzzForPlayer({ roomId, userId }: { roomId: number; userId: string }) {
   const { t } = useTranslation();
   const { activeClue, players, buzzWindowSec } = useEngineContext();
@@ -554,6 +583,7 @@ function StepActions({ roomId, step }: { roomId: number; step: AdminStep }) {
     case "buzz":
       return (
         <>
+          <BuzzerControls roomId={roomId} />
           {step.userIds.map((userId) => (
             <BuzzForPlayer key={userId} roomId={roomId} userId={userId} />
           ))}

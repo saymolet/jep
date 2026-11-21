@@ -3,6 +3,7 @@ import * as React from "react";
 import { useFetcher } from "react-router";
 
 import type { RoomProps } from "~/components/game";
+import { PlayerIcon } from "~/components/player";
 import {
   ConnectedAnswerTimer,
   TimesUpNotice,
@@ -28,6 +29,7 @@ import {
   useWagerTimer,
   WagerTimer,
 } from "~/components/prompt/step-timers";
+import { useBuzzerOpener } from "~/components/prompt/use-buzzer-opener";
 import {
   useViewerStatus,
   ViewerStatusLine,
@@ -62,11 +64,9 @@ function HostAnswer({ clue }: { clue: Clue }) {
       {media
         .filter((b) => b.type === "image")
         .map((block, i) => (
-          <div key={`${i}-${block.src}`} className="max-h-40 overflow-hidden">
-            <ClueImage block={block} />
-          </div>
+          <ClueImage key={`${i}-${block.src}`} block={block} size="answer" />
         ))}
-      <PlayableMedia blocks={media} autoPlay={false} />
+      <PlayableMedia blocks={media} autoPlay={false} size="answer" />
     </section>
   );
 }
@@ -112,7 +112,7 @@ function ReplayMediaButton({
 function useJudge(roomId: number) {
   const { activeClue } = useEngineContext();
   const fetcher = useFetcher();
-  const judge = (userId: string, correct: boolean) => {
+  const judge = (userId: string, correct: boolean, multiplier?: 0.5 | 2) => {
     if (!activeClue) return;
     const [i, j] = activeClue;
     fetcher.submit(
@@ -122,6 +122,7 @@ function useJudge(roomId: number) {
         userId,
         result: correct ? "correct" : "incorrect",
         host: "true",
+        ...(multiplier ? { multiplier: String(multiplier) } : {}),
       },
       { method: "post", action: `/room/${roomId}/check` },
     );
@@ -134,11 +135,14 @@ function JudgeButtons({
   onJudge,
   disabled,
   size = "lg",
+  multipliers = false,
 }: {
   name: string;
-  onJudge: (correct: boolean) => void;
+  onJudge: (correct: boolean, multiplier?: 0.5 | 2) => void;
   disabled: boolean;
   size?: "lg" | "sm";
+  /** Also offer "Right ×0.5" and "Right ×2" (feature 27). */
+  multipliers?: boolean;
 }) {
   const { t } = useTranslation();
   const sm = size === "sm";
@@ -170,6 +174,27 @@ function JudgeButtons({
       >
         ✓ {t("host.right")}
       </button>
+      {multipliers
+        ? ([0.5, 2] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              className={clsx(
+                JUDGE_BUTTON,
+                "min-w-20 bg-emerald-800 hover:bg-emerald-900",
+              )}
+              disabled={disabled}
+              onClick={() => onJudge(true, m)}
+              aria-label={t("host.rightTimesFor", {
+                name,
+                times: m === 0.5 ? "0.5" : "2",
+              })}
+              data-testid={`host-right-x${m === 0.5 ? "half" : "2"}`}
+            >
+              ✓ ×{m === 0.5 ? "½" : "2"}
+            </button>
+          ))
+        : null}
     </div>
   );
 }
@@ -233,10 +258,37 @@ function HostSkipButton({ roomId }: { roomId: number }) {
   );
 }
 
-/** HostAnswering: the buzz winner (or the cat's receiver) answers out loud;
- * the host taps Right / Wrong. A multiple choice pick is judged by the
- * server. The answer timer's timeout is sent from here (the host's device is
- * the authority in host mode). */
+/** HostAnsweringBanner says who answers (the buzz winner, or the cat's
+ * receiver) in big type at the top of the host's screen, so the host sees it
+ * without scrolling past the question and the answer. */
+function HostAnsweringBanner() {
+  const { clue, players, winningBuzzer } = useEngineContext();
+  const { t } = useTranslation();
+  if (!clue || !winningBuzzer) return null;
+  const player = players.get(winningBuzzer);
+  const name = player?.name ?? t("play.winningBuzzer");
+  return (
+    <div
+      className="mx-auto flex w-[calc(100%-2rem)] max-w-screen-md shrink-0 items-center justify-center gap-3 rounded-xl bg-blue-1000/60 px-4 py-2 ring-2 ring-yellow-300/80"
+      role="status"
+    >
+      {player ? <PlayerIcon player={player} size="lg" /> : null}
+      <p
+        className="min-w-0 font-handwriting text-3xl font-bold break-words text-yellow-300 sm:text-4xl"
+        data-testid="host-answering"
+      >
+        {isSecretClue(clue)
+          ? t("host.secretAnswering", { name })
+          : t("host.isAnswering", { name })}
+      </p>
+    </div>
+  );
+}
+
+/** HostAnswering: the buzz winner (or the cat's receiver) answers out loud
+ * (named by HostAnsweringBanner); the host taps Right / Wrong. A multiple
+ * choice pick is judged by the server. The answer timer's timeout is sent
+ * from here (the host's device is the authority in host mode). */
 function HostAnswering({ roomId, userId }: RoomProps) {
   const { clue, players, winningBuzzer } = useEngineContext();
   const { t } = useTranslation();
@@ -255,14 +307,6 @@ function HostAnswering({ roomId, userId }: RoomProps) {
   const multipleChoice = hasChoices(clue);
   return (
     <div className="flex flex-col items-center gap-3 p-2">
-      <p
-        className="text-center text-2xl font-bold text-white"
-        data-testid="host-answering"
-      >
-        {isSecretClue(clue)
-          ? t("host.secretAnswering", { name })
-          : t("host.isAnswering", { name })}
-      </p>
       {timedOut ? (
         <p className="font-bold text-red-300">{t("host.timeUp")}</p>
       ) : multipleChoice ? (
@@ -272,9 +316,10 @@ function HostAnswering({ roomId, userId }: RoomProps) {
           <JudgeButtons
             name={name}
             disabled={busy || marked}
-            onJudge={(correct) => {
+            multipliers
+            onJudge={(correct, multiplier) => {
               setMarked(true);
-              judge(winningBuzzer, correct);
+              judge(winningBuzzer, correct, multiplier);
             }}
           />
           <HostSkipButton roomId={roomId} />
@@ -373,6 +418,14 @@ function HostPromptContent({ roomId, userId }: RoomProps) {
   const status = useViewerStatus();
   const wagerTimer = useWagerTimer();
   const finalTimer = useFinalAnswerTimer();
+  // The host's device opens and closes the buzzers (feature 27).
+  useBuzzerOpener({
+    roomId,
+    userId,
+    enabled: true,
+    designated: true,
+    asHost: true,
+  });
 
   if (!PROMPT_STATES.has(type) || !clue || !activeClue || !board) {
     return null;
@@ -433,6 +486,16 @@ function HostPromptContent({ roomId, userId }: RoomProps) {
   return (
     <>
       {header}
+      {/* Who buzzed (in order) and who answers go at the top: the question
+          and the answer below can push the bottom off a phone's screen. */}
+      <div className="flex shrink-0 flex-col items-center gap-1">
+        {type === GameState.RevealAnswerToBuzzer ? (
+          <HostAnsweringBanner />
+        ) : null}
+        <div className="w-full px-2" data-testid="host-buzzes">
+          <Buzzes />
+        </div>
+      </div>
       <ClueText
         key={type}
         clue={clue.clue}
@@ -442,6 +505,7 @@ function HostPromptContent({ roomId, userId }: RoomProps) {
         onBuzz={() => null}
         showAnswer={false}
         media={clueMedia(clue)}
+        mediaSize="host"
         autoPlayMedia={
           type === GameState.ReadClue ||
           type === GameState.ReadWagerableClue ||
@@ -481,7 +545,6 @@ function HostPromptContent({ roomId, userId }: RoomProps) {
           </div>
         </>
       )}
-      <Buzzes />
     </>
   );
 }

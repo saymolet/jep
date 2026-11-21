@@ -254,6 +254,10 @@ export function stateToGameEngine(
     /** How many times the host replayed the open question's audio/video
      * (feature 23); media restarts on every device when it goes up. */
     mediaReplayCount: getMediaReplayCount(state),
+    /** The buzzers of the open question are open (feature 27). */
+    buzzersOpen: state.buzzersOpen ?? false,
+    /** The room's soundboard is on (feature 27). */
+    soundboardEnabled: !state.soundboardOff,
     /** What the game waits for from a player (the admin panel). */
     adminStep: getAdminStep(state),
     /** The open question may be skipped by the admin. */

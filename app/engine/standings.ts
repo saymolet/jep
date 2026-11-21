@@ -87,9 +87,12 @@ export function getScoreChanges(state: ScoreChangesInput): ScoreChanges {
       } catch {
         continue;
       }
+      // The host's ×0.5 / ×2 on a right answer (feature 27).
+      const multiplier = cell.multipliers?.get(userId) ?? 1;
       changes.set(
         userId,
-        (changes.get(userId) ?? 0) + (correct ? value : -value),
+        (changes.get(userId) ?? 0) +
+          (correct ? Math.round(value * multiplier) : -value),
       );
     }
   }

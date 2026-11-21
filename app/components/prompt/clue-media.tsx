@@ -1,3 +1,4 @@
+import clsx from "clsx";
 import * as React from "react";
 
 import { Pause, Play, SadFile } from "~/components/icons";
@@ -6,9 +7,54 @@ import type { MediaBlock } from "~/utils/media";
 import { parseYouTubeUrl, youTubeEmbedUrl } from "~/utils/media";
 import { useSoundSettings } from "~/utils/user-settings";
 
-/** MEDIA_MAX_HEIGHT keeps media small enough that the clue text and the
- * buzzer/answer controls below stay on screen, on phones and desktops. */
-const MEDIA_MAX_HEIGHT = "max-h-[40dvh]";
+/** MediaSize is how much of the screen a picture or video gets:
+ * - "screen": the player's prompt. 40dvh keeps the clue text and the
+ *   buzzer/answer controls below on screen on desktops; phones (with the
+ *   big BUZZ bar) get 32dvh, so multiple choice options still fit.
+ * - "choices": the player's prompt of a multiple choice question: on
+ *   phones the options need the room, so pictures are smaller there.
+ * - "host": the host's question, which shares the screen with the answer
+ *   and the judge buttons.
+ * - "answer": the pictures in the host's answer box.
+ * - "tv" / "tvLarge": the TV (presenter) screen, which has no controls;
+ *   "tvLarge" when the question has little text. */
+export type MediaSize =
+  | "screen"
+  | "choices"
+  | "host"
+  | "answer"
+  | "tv"
+  | "tvLarge";
+
+/** MEDIA_HEIGHT gives pictures and videos a definite height, not just a
+ * maximum: small files (SIGame packs often have 300 px pictures and 240p
+ * videos) scale up to fill it and big ones shrink to fit. `max-w-full` with
+ * `object-contain` keeps the aspect ratio on narrow screens. */
+const MEDIA_HEIGHT: Record<MediaSize, string> = {
+  screen: "h-[40dvh] buzzbar:h-[32dvh]",
+  choices: "h-[40dvh] buzzbar:h-[20dvh]",
+  host: "h-[30dvh]",
+  answer: "h-[22dvh]",
+  tv: "h-[50dvh]",
+  tvLarge: "h-[60dvh]",
+};
+
+/** YOUTUBE_WIDTH sizes YouTube embeds (which size by width) to the same
+ * height as other videos. */
+const YOUTUBE_WIDTH: Record<MediaSize, string> = {
+  screen:
+    "w-[min(100%,calc(40dvh*16/9))] buzzbar:w-[min(100%,calc(32dvh*16/9))]",
+  choices:
+    "w-[min(100%,calc(40dvh*16/9))] buzzbar:w-[min(100%,calc(20dvh*16/9))]",
+  host: "w-[min(100%,calc(30dvh*16/9))]",
+  answer: "w-[min(100%,calc(22dvh*16/9))]",
+  tv: "w-[min(100%,calc(50dvh*16/9))]",
+  tvLarge: "w-[min(100%,calc(60dvh*16/9))]",
+};
+
+function isTvSize(size: MediaSize) {
+  return size === "tv" || size === "tvLarge";
+}
 
 function MediaError({ block }: { block: MediaBlock }) {
   return (
@@ -103,7 +149,13 @@ function useMediaVolume(ref: React.RefObject<HTMLMediaElement | null>) {
   }, [ref, volume]);
 }
 
-export function ClueImage({ block }: { block: MediaBlock }) {
+export function ClueImage({
+  block,
+  size = "screen",
+}: {
+  block: MediaBlock;
+  size?: MediaSize;
+}) {
   const { t } = useTranslation();
   const [error, setError] = React.useState(false);
   const ref = React.useRef<HTMLImageElement>(null);
@@ -126,7 +178,7 @@ export function ClueImage({ block }: { block: MediaBlock }) {
           ref={ref}
           src={block.src}
           alt={block.alt ?? t("play.media.clueImage")}
-          className={`${MEDIA_MAX_HEIGHT} max-w-full object-contain`}
+          className={`${MEDIA_HEIGHT[size]} w-auto max-w-full object-contain`}
           onError={() => setError(true)}
         />
       )}
@@ -257,11 +309,13 @@ export function VideoPlayer({
   block,
   autoPlay,
   replayNonce = 0,
+  size = "screen",
 }: {
   block: MediaBlock;
   autoPlay: boolean;
   /** Goes up when the host replays the clip (feature 23). */
   replayNonce?: number;
+  size?: MediaSize;
 }) {
   const { t } = useTranslation();
   const ref = React.useRef<HTMLVideoElement>(null);
@@ -289,7 +343,7 @@ export function VideoPlayer({
           aria-label={block.alt ?? t("play.media.clueVideo")}
           onPlay={() => setBlocked(false)}
           onError={() => setError(true)}
-          className={`${MEDIA_MAX_HEIGHT} max-w-full bg-black`}
+          className={`${MEDIA_HEIGHT[size]} w-auto max-w-full bg-black object-contain`}
         />
       )}
       {blocked && !error ? (
@@ -304,9 +358,11 @@ export function VideoPlayer({
 export function YouTubePlayer({
   block,
   autoPlay,
+  size = "screen",
 }: {
   block: MediaBlock;
   autoPlay: boolean;
+  size?: MediaSize;
 }) {
   const { t } = useTranslation();
   const { mute } = useSoundSettings();
@@ -324,7 +380,7 @@ export function YouTubePlayer({
           title={block.alt ?? t("play.media.youTubeVideo")}
           allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
           allowFullScreen
-          className="aspect-video w-[min(100%,calc(40dvh*16/9))] border-0"
+          className={`aspect-video ${YOUTUBE_WIDTH[size]} border-0`}
         />
       ) : (
         <MediaError block={block} />
@@ -339,12 +395,15 @@ export function PlayableMedia({
   blocks,
   autoPlay,
   replayNonce = 0,
+  size = "screen",
 }: {
   blocks: MediaBlock[];
   autoPlay: boolean;
   /** Goes up when the host replays the question's clip (feature 23): the
    * first clip restarts, like the one that started by itself. */
   replayNonce?: number;
+  /** How big videos are (audio players don't change). */
+  size?: MediaSize;
 }) {
   // The replay count when this list mounted: a YouTube player is remounted
   // (its iframe can't be told to restart) only for later replays.
@@ -352,11 +411,17 @@ export function PlayableMedia({
   const playable = blocks.filter((b) => b.type !== "image");
   if (playable.length === 0) return null;
   return (
-    <div className="flex w-full max-w-screen-lg flex-col items-center gap-3 px-4">
+    <div
+      className={clsx(
+        "flex w-full flex-col items-center gap-3 px-4",
+        // The TV lets videos use the whole width of a big screen.
+        isTvSize(size) ? "max-w-none" : "max-w-screen-lg",
+      )}
+    >
       {playable.map((block, i) => {
         const key = `${i}-${block.type}-${block.src}`;
         // Only the first clip starts by itself; overlapping sound is useless.
-        const props = { block, autoPlay: autoPlay && i === 0 };
+        const props = { block, autoPlay: autoPlay && i === 0, size };
         const replay = i === 0 ? replayNonce : 0;
         if (block.type === "audio") {
           return <AudioPlayer key={key} {...props} replayNonce={replay} />;

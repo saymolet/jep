@@ -37,6 +37,11 @@ export const roomSettingsFormSchema = z.object({
   buzzWindowSec: seconds(isBuzzWindowSec).optional(),
   finalAnswerTimeSec: seconds(isFinalAnswerTimeSec).optional(),
   wagerTimeSec: seconds(isWagerTimeSec).optional(),
+  /** "true" / "false": the room's soundboard is on (feature 27). */
+  soundboard: z
+    .enum(["true", "false"])
+    .transform((v) => v === "true")
+    .optional(),
 });
 
 export type RoomSettingsForm = z.output<typeof roomSettingsFormSchema>;
@@ -51,6 +56,7 @@ export function toSettingsPayload(form: RoomSettingsForm) {
     buzzWindowSec?: number;
     finalAnswerTimeSec?: number;
     wagerTimeSec?: number;
+    soundboard?: boolean;
   } = {
     answerTimeSec: form.answerTimeSec,
     autoWrongOnTimeout: form.autoWrongOnTimeout,
@@ -63,6 +69,7 @@ export function toSettingsPayload(form: RoomSettingsForm) {
     payload.finalAnswerTimeSec = form.finalAnswerTimeSec;
   }
   if (form.wagerTimeSec !== undefined) payload.wagerTimeSec = form.wagerTimeSec;
+  if (form.soundboard !== undefined) payload.soundboard = form.soundboard;
   return payload;
 }
 
@@ -74,6 +81,8 @@ export interface RoomSettingsValues {
   buzzWindowSec: number;
   finalAnswerTimeSec: number;
   wagerTimeSec: number;
+  /** The soundboard is on in this room (feature 27). */
+  soundboard: boolean;
 }
 
 /** toSettingsFormData is what the panel sends (every field). */
@@ -90,6 +99,7 @@ export function toSettingsFormData(
     buzzWindowSec: values.buzzWindowSec.toString(),
     finalAnswerTimeSec: values.finalAnswerTimeSec.toString(),
     wagerTimeSec: values.wagerTimeSec.toString(),
+    soundboard: values.soundboard.toString(),
   };
 }
 
@@ -98,6 +108,7 @@ export const DEFAULT_ROOM_SETTINGS: RoomSettingsValues = {
   answerTimeSec: 0,
   autoWrongOnTimeout: DEFAULT_AUTO_WRONG_ON_TIMEOUT,
   ...DEFAULT_ROOM_TIMERS,
+  soundboard: true,
 };
 
 /** validRoomSettings keeps the valid values of stored settings (e.g. the
@@ -128,5 +139,7 @@ export function validRoomSettings(
     wagerTimeSec: isWagerTimeSec(stored.wagerTimeSec)
       ? stored.wagerTimeSec
       : d.wagerTimeSec,
+    soundboard:
+      typeof stored.soundboard === "boolean" ? stored.soundboard : d.soundboard,
   };
 }

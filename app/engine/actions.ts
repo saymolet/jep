@@ -64,6 +64,9 @@ const CheckPayload = CluePayload.extend({
   /** Set by the server when the room's host judged the answer (host mode,
    * feature 22). Only the server inserts room events. */
   host: z.literal(true).optional(),
+  /** Points multiplier of a right answer judged by the host (feature 27).
+   * Older events have none (×1). */
+  multiplier: z.union([z.literal(0.5), z.literal(2)]).optional(),
 });
 const CorrectCheckPayload = CluePayload.extend({
   correct: z.boolean(),
@@ -97,6 +100,8 @@ const SetSettingsPayload = z.object({
   buzzWindowSec: z.number().optional(),
   finalAnswerTimeSec: z.number().optional(),
   wagerTimeSec: z.number().optional(),
+  /** The room's soundboard is on (feature 27); left out keeps it. */
+  soundboard: z.boolean().optional(),
   /** Set by the server when the site admin made the change (only the server
    * can insert set_settings events into a room, see the settings route). */
   admin: z.literal(true).optional(),
@@ -173,6 +178,14 @@ const ReplayMediaPayload = z
     host: z.literal(true).optional(),
   })
   .refine(byAdminOrHost);
+const BuzzerControlPayload = z.object({
+  userId: z.string().min(1),
+  round: z.number().int(),
+  i: z.number().int(),
+  j: z.number().int(),
+  admin: z.literal(true).optional(),
+  host: z.literal(true).optional(),
+});
 const TransferPlayerPayload = z.object({
   oldUserId: z.string(),
   newUserId: z.string(),
@@ -278,6 +291,7 @@ export function isCheckAction(action: Action): action is {
     choice?: number;
     timedOut?: boolean;
     host?: true;
+    multiplier?: 0.5 | 2;
   };
   ts: number;
 } {
@@ -347,6 +361,7 @@ export function isSetSettingsAction(action: Action): action is {
     buzzWindowSec?: number;
     finalAnswerTimeSec?: number;
     wagerTimeSec?: number;
+    soundboard?: boolean;
     admin?: true;
     host?: true;
   };
@@ -471,6 +486,17 @@ export function parseReplayMedia(
   action: Action,
 ): { userId: string; round: number; i: number; j: number } | null {
   const parsed = ReplayMediaPayload.safeParse(action.payload);
+  if (!parsed.success) return null;
+  const { userId, round, i, j } = parsed.data;
+  return { userId, round, i, j };
+}
+
+/** parseBuzzerControl reads an open_buzzers / close_buzzers payload (null
+ * when malformed). */
+export function parseBuzzerControl(
+  action: Action,
+): { userId: string; round: number; i: number; j: number } | null {
+  const parsed = BuzzerControlPayload.safeParse(action.payload);
   if (!parsed.success) return null;
   const { userId, round, i, j } = parsed.data;
   return { userId, round, i, j };

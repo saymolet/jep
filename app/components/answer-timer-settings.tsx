@@ -65,6 +65,10 @@ function settingsFromFormData(
     buzzWindowSec: num("buzzWindowSec", current.buzzWindowSec),
     finalAnswerTimeSec: num("finalAnswerTimeSec", current.finalAnswerTimeSec),
     wagerTimeSec: num("wagerTimeSec", current.wagerTimeSec),
+    soundboard:
+      formData.get("soundboard") === null
+        ? current.soundboard
+        : formData.get("soundboard") === "true",
   };
 }
 
@@ -86,6 +90,7 @@ function useRoomSettings({
     buzzWindowSec,
     finalAnswerTimeSec,
     wagerTimeSec,
+    soundboardEnabled,
     players,
     soloDispatch,
     type,
@@ -100,6 +105,7 @@ function useRoomSettings({
     buzzWindowSec,
     finalAnswerTimeSec,
     wagerTimeSec,
+    soundboard: soundboardEnabled,
   };
   const pending = fetcher.formData;
   const values = pending ? settingsFromFormData(pending, current) : current;
@@ -271,6 +277,17 @@ export function RoomTimersFields({
         testId="wager-time-settings"
         help={t("room.timers.wagerTimeHelp")}
       />
+      <label className="flex items-center gap-2 text-sm text-slate-300">
+        <input
+          type="checkbox"
+          className="h-4 w-4 accent-blue-600"
+          checked={values.soundboard}
+          disabled={disabled}
+          onChange={(e) => set({ soundboard: e.target.checked })}
+          data-testid="soundboard-setting"
+        />
+        {t("room.timers.soundboard")}
+      </label>
     </div>
   );
 }
