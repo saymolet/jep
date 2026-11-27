@@ -58,10 +58,6 @@ import { ConnectedWagerForm as WagerForm } from "./wager-form";
  * "time's up" sound after this long as a hint (nothing is enforced). */
 const ANSWER_HINT_MS = 5000;
 
-/** TV_SHORT_CLUE_CHARS: on the TV, a question with at most this much text
- * (often none, in SIGame picture rounds) gives its media more room. */
-const TV_SHORT_CLUE_CHARS = 60;
-
 /** LOCKOUT_MS locks a contestant out for a second when they buzz before the
  * buzzers open (like SIGame): there is no countdown to time it (feature 27).
  */
@@ -181,15 +177,21 @@ export function ClueText({
   const { mediaReplayCount, clue: activeClue } = useEngineContext();
   const images = media.filter((b) => b.type === "image");
   const hasMedia = media.length > 0;
+  // Pictures and videos take all the room left (feature 28): the whole TV,
+  // the player's screen on desktops. Multiple choice options need room on
+  // phones, so their pictures stay smaller there.
   const size: MediaSize =
     mediaSize ??
     (variant === "tv"
-      ? clue.trim().length <= TV_SHORT_CLUE_CHARS
-        ? "tvLarge"
-        : "tv"
+      ? "fill"
       : activeClue && hasChoices(activeClue)
         ? "choices"
-        : "screen");
+        : "fillScreen");
+  const fill = size === "fill" || size === "fillScreen";
+  // SIGame picture/video rounds often have no question text: don't keep an
+  // empty text block above the media.
+  const hasText =
+    clue.trim().length > 0 || (showAnswer && answer.trim().length > 0);
 
   return (
     <div
@@ -220,8 +222,10 @@ export function ClueText({
           onBuzz(Date.now());
         }}
         className={clsx(
-          "flex w-full grow flex-col items-center justify-center gap-2 p-4",
-          { "min-h-24": hasMedia },
+          "flex w-full flex-col items-center justify-center gap-2 p-4",
+          // In the fill sizes a video (outside this button) gets the room.
+          fill && images.length === 0 ? "shrink-0" : "min-h-0 grow",
+          { "min-h-24": hasMedia && !fill },
         )}
         autoFocus={focusOnBuzz}
       >
@@ -231,14 +235,14 @@ export function ClueText({
             variant === "tv" ? "max-w-none" : "max-w-screen-lg",
             // Leave room for the media below the text.
             hasMedia
-              ? size === "tvLarge"
-                ? "max-h-[18dvh]"
-                : variant === "tv"
-                  ? "max-h-[25dvh]"
-                  : "max-h-[20dvh]"
+              ? fill
+                ? // A strip above the media, never over it.
+                  "max-h-[14dvh] shrink-0 buzzbar:max-h-[20dvh]"
+                : "max-h-[20dvh]"
               : variant === "tv"
                 ? "max-h-[55dvh]"
                 : "max-h-96",
+            hasMedia && !hasText && "hidden",
           )}
           ref={ref}
           style={{ fontSize, opacity: fontSize ? 1 : 0 }}

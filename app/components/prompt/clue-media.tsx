@@ -17,8 +17,14 @@ import { useSoundSettings } from "~/utils/user-settings";
  *   and the judge buttons.
  * - "answer": the pictures in the host's answer box.
  * - "tv" / "tvLarge": the TV (presenter) screen, which has no controls;
- *   "tvLarge" when the question has little text. */
+ *   "tvLarge" when the question has little text.
+ * - "fill": the picture or video takes all the room the prompt has left (the
+ *   TV): no text is drawn over it and small files scale up to the screen.
+ * - "fillScreen": "fill" on desktops; phones (with the big BUZZ bar) keep
+ *   "screen"'s fixed height, which leaves room for the buzzer. */
 export type MediaSize =
+  | "fill"
+  | "fillScreen"
   | "screen"
   | "choices"
   | "host"
@@ -31,6 +37,8 @@ export type MediaSize =
  * videos) scale up to fill it and big ones shrink to fit. `max-w-full` with
  * `object-contain` keeps the aspect ratio on narrow screens. */
 const MEDIA_HEIGHT: Record<MediaSize, string> = {
+  fill: "h-full",
+  fillScreen: "h-full buzzbar:h-[32dvh]",
   screen: "h-[40dvh] buzzbar:h-[32dvh]",
   choices: "h-[40dvh] buzzbar:h-[20dvh]",
   host: "h-[30dvh]",
@@ -42,6 +50,9 @@ const MEDIA_HEIGHT: Record<MediaSize, string> = {
 /** YOUTUBE_WIDTH sizes YouTube embeds (which size by width) to the same
  * height as other videos. */
 const YOUTUBE_WIDTH: Record<MediaSize, string> = {
+  fill: "h-full max-w-full",
+  fillScreen:
+    "h-full max-w-full buzzbar:h-auto buzzbar:w-[min(100%,calc(32dvh*16/9))]",
   screen:
     "w-[min(100%,calc(40dvh*16/9))] buzzbar:w-[min(100%,calc(32dvh*16/9))]",
   choices:
@@ -53,7 +64,25 @@ const YOUTUBE_WIDTH: Record<MediaSize, string> = {
 };
 
 function isTvSize(size: MediaSize) {
-  return size === "tv" || size === "tvLarge";
+  return size === "tv" || size === "tvLarge" || size === "fill";
+}
+
+/** mediaClass sizes a picture or video element (object-contain keeps its
+ * aspect ratio; small files scale up). */
+function mediaClass(size: MediaSize) {
+  if (size === "fill") return "h-full w-full object-contain";
+  if (size === "fillScreen") {
+    return "h-full w-full object-contain buzzbar:h-[32dvh] buzzbar:w-auto buzzbar:max-w-full";
+  }
+  return `${MEDIA_HEIGHT[size]} w-auto max-w-full object-contain`;
+}
+
+/** mediaBoxClass: in the fill sizes a picture's or video's box takes the
+ * prompt's remaining height. */
+function mediaBoxClass(size: MediaSize) {
+  if (size === "fill") return "min-h-0 w-full flex-1";
+  if (size === "fillScreen") return "min-h-0 w-full flex-1 buzzbar:flex-none";
+  return "min-h-0";
 }
 
 function MediaError({ block }: { block: MediaBlock }) {
@@ -170,7 +199,10 @@ export function ClueImage({
   }, [block.src]);
 
   return (
-    <span {...mediaDataAttrs(block)} className="flex min-h-0 justify-center">
+    <span
+      {...mediaDataAttrs(block)}
+      className={clsx("flex justify-center", mediaBoxClass(size))}
+    >
       {error ? (
         <MediaError block={block} />
       ) : (
@@ -178,7 +210,7 @@ export function ClueImage({
           ref={ref}
           src={block.src}
           alt={block.alt ?? t("play.media.clueImage")}
-          className={`${MEDIA_HEIGHT[size]} w-auto max-w-full object-contain`}
+          className={mediaClass(size)}
           onError={() => setError(true)}
         />
       )}
@@ -329,7 +361,10 @@ export function VideoPlayer({
   return (
     <div
       {...mediaDataAttrs(block)}
-      className="flex min-h-0 w-full flex-col items-center gap-1"
+      className={clsx(
+        "flex w-full flex-col items-center gap-1",
+        mediaBoxClass(size),
+      )}
     >
       {error ? (
         <MediaError block={block} />
@@ -343,7 +378,7 @@ export function VideoPlayer({
           aria-label={block.alt ?? t("play.media.clueVideo")}
           onPlay={() => setBlocked(false)}
           onError={() => setError(true)}
-          className={`${MEDIA_HEIGHT[size]} w-auto max-w-full bg-black object-contain`}
+          className={clsx(mediaClass(size), "bg-black")}
         />
       )}
       {blocked && !error ? (
@@ -373,7 +408,10 @@ export function YouTubePlayer({
   );
 
   return (
-    <div {...mediaDataAttrs(block)} className="flex w-full justify-center">
+    <div
+      {...mediaDataAttrs(block)}
+      className={clsx("flex w-full justify-center", mediaBoxClass(size))}
+    >
       {src ? (
         <iframe
           src={src}
@@ -410,10 +448,13 @@ export function PlayableMedia({
   const [mountNonce] = React.useState(replayNonce);
   const playable = blocks.filter((b) => b.type !== "image");
   if (playable.length === 0) return null;
+  const hasVideo = playable.some((b) => b.type === "video");
   return (
     <div
       className={clsx(
         "flex w-full flex-col items-center gap-3 px-4",
+        // Videos fill the room left; an audio player keeps its size.
+        hasVideo && mediaBoxClass(size),
         // The TV lets videos use the whole width of a big screen.
         isTvSize(size) ? "max-w-none" : "max-w-screen-lg",
       )}
