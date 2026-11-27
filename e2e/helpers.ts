@@ -107,12 +107,12 @@ export async function playOneClueKeyboard(page: Page) {
     await expect(page.getByText(/buzz in/i)).toBeVisible({ timeout: 1_000 });
   }).toPass({ timeout: 10_000 });
 
-  // Press Enter to buzz in, retrying until the read timer finishes.
+  // Press Enter to buzz in, retrying until the buzzers open — but not once
+  // the answer is up (Enter would reveal it).
+  const reveal = page.getByRole("button", { name: /reveal answer/i });
   await expect(async () => {
-    await page.keyboard.press("Enter");
-    await expect(
-      page.getByRole("button", { name: /reveal answer/i }),
-    ).toBeVisible({ timeout: 1_000 });
+    if (!(await reveal.isVisible())) await page.keyboard.press("Enter");
+    await expect(reveal).toBeVisible({ timeout: 1_000 });
   }).toPass({ timeout: 15_000 });
 
   // "Reveal answer" is focused automatically after the 500ms debounce via
@@ -182,9 +182,12 @@ export async function playOneClue(page: Page) {
     await expect(page.getByText(/buzz in/i)).toBeVisible({ timeout: 1_000 });
   }).toPass({ timeout: 10_000 });
 
-  // Press Enter to buzz in, retrying until the read timer finishes.
+  // Tap the question to buzz in, retrying until the buzzers open. (Not
+  // Enter: once this player has buzzed the area is disabled, so a retry
+  // can't reveal or mark the answer by accident.)
+  const buzzArea = page.getByTestId("clue-buzz-area").first();
   await expect(async () => {
-    await page.keyboard.press("Enter");
+    await buzzArea.click({ timeout: 500 }).catch(() => undefined);
     await expect(
       page.getByRole("button", { name: /reveal answer/i }),
     ).toBeVisible({ timeout: 1_000 });
