@@ -95,6 +95,7 @@ export function ConnectedNextClueForm({ roomId, userId }: RoomProps) {
     activeClueSkipped,
     activeClueSkippedByHost,
     answeredBy,
+    answerMultiplier,
     host,
     clue,
     getCheckCorrection,
@@ -132,7 +133,14 @@ export function ConnectedNextClueForm({ roomId, userId }: RoomProps) {
       name: player.name,
       correct: answeredBy(i, j, player.userId),
       score: player.score,
-      value: getClueValue(activeClue, player.userId),
+      // A right answer the host gave ×0.5 / ×2 shows what it really got.
+      value:
+        answeredBy(i, j, player.userId) === true
+          ? Math.round(
+              getClueValue(activeClue, player.userId) *
+                answerMultiplier(i, j, player.userId),
+            )
+          : getClueValue(activeClue, player.userId),
     }))
     .filter((p): p is PlayerScore => p.correct !== undefined);
 

@@ -33,6 +33,7 @@ import { WatcherCount } from "./spectator-bar";
 import { getWinners, sortByScore } from "./status";
 import {
   useViewerStatus,
+  ViewerClueTitle,
   ViewerPromptContent,
   ViewerStatusLine,
 } from "./viewer-prompt";
@@ -391,7 +392,7 @@ export function Presenter({ game, joinUrl }: { game: Game; joinUrl: string }) {
   } else if (promptOpen) {
     main = (
       <div
-        className="flex min-h-0 grow flex-col justify-between overflow-y-auto rounded-xl bg-blue-bright"
+        className="flex min-h-0 grow flex-col justify-between overflow-hidden rounded-xl bg-blue-bright"
         data-testid="presenter-prompt"
       >
         <ViewerPromptContent variant="tv" status={status} />
@@ -421,6 +422,11 @@ export function Presenter({ game, joinUrl }: { game: Game; joinUrl: string }) {
             : null}
         </p>
         <HostBadge />
+        {/* The open question's category and value (feature 29): in the bar,
+            so the question below gets the whole screen. */}
+        {promptOpen ? (
+          <ViewerClueTitle className="min-w-0 truncate text-xl lg:text-2xl" />
+        ) : null}
         <div className="ml-auto flex items-center gap-2">
           <WatcherCount count={watchers} className="text-sm text-slate-300" />
           <GameClock />

@@ -1,6 +1,6 @@
 import { PlayerIcon } from "~/components/player";
 import type { Player } from "~/engine";
-import { CANT_BUZZ_FLAG, useEngineContext } from "~/engine";
+import { CANT_BUZZ_FLAG, GameState, useEngineContext } from "~/engine";
 import { getBuzzWindowMs } from "~/engine/room-timers";
 
 function showBuzz(buzzWindowMs: number, durationMs?: number) {
@@ -24,6 +24,7 @@ export function Buzzes({
     buzzes: serverBuzzes,
     players,
     buzzWindowSec,
+    type,
   } = useEngineContext();
   const buzzWindowMs = getBuzzWindowMs({ buzzWindowSec });
 
@@ -46,13 +47,23 @@ export function Buzzes({
       }
       return aDurationMs - bDurationMs;
     });
-  const sortedPlayers = sortedBuzzes
-    .map(([userId]) => players.get(userId))
-    .filter((p): p is Player => p !== undefined);
+  // The order is a secret until the game has decided who answers: a buzz
+  // that shows up first may still lose to a faster one that arrives later
+  // (feature 29).
+  const deciding =
+    type === GameState.ReadClue || type === GameState.ReadWagerableClue;
+  const sortedPlayers = deciding
+    ? []
+    : sortedBuzzes
+        .map(([userId]) => players.get(userId))
+        .filter((p): p is Player => p !== undefined);
 
   return (
     <div className="relative">
-      <div className="m-2 flex h-8 w-full gap-4 overflow-x-scroll">
+      <div
+        className="m-2 flex h-8 w-full gap-4 overflow-x-auto [scrollbar-width:none]"
+        data-testid="buzz-order"
+      >
         {sortedPlayers.map((player, i) => (
           <PlayerIcon key={i} player={player} />
         ))}

@@ -208,7 +208,11 @@ export function ViewerPromptContent({
   // Wagers are per player: show the one of the player answering.
   const value = getClueValue(activeClue, winningBuzzer ?? boardControl ?? "");
 
-  const statusLine = (
+  // The TV leaves out "Get ready to buzz…" / "Buzzers open!": players see
+  // that on their own screens, and the media gets the room (feature 29).
+  const quietOnTv =
+    tv && (status.kind === "reading" || status.kind === "buzzersOpen");
+  const statusLine = quietOnTv ? null : (
     <ViewerStatusLine
       status={status}
       className={clsx(
@@ -217,7 +221,9 @@ export function ViewerPromptContent({
       )}
     />
   );
-  const header = (
+  // On the TV the category and value are in the screen's top bar
+  // (ViewerClueTitle) instead.
+  const header = tv ? null : (
     <div
       className={clsx(
         "flex justify-between gap-2 p-4",
@@ -315,6 +321,40 @@ export function ViewerPromptContent({
       <FinalAnswerTimer timer={finalTimer} variant={variant} />
       <Buzzes />
     </>
+  );
+}
+
+/** ViewerClueTitle is "<category> for $<value>" of the open question, for
+ * the TV's top bar (feature 29). Nothing when no question is open. */
+export function ViewerClueTitle({ className }: { className?: string }) {
+  const {
+    type,
+    activeClue,
+    board,
+    boardControl,
+    category,
+    clue,
+    getClueValue,
+    winningBuzzer,
+  } = useEngineContext();
+  if (!PROMPT_STATES.has(type) || !clue || !activeClue || !board) {
+    return null;
+  }
+  const topic = isSecretClue(clue)
+    ? getSecretTopic(board, activeClue)
+    : category;
+  const value = getClueValue(activeClue, winningBuzzer ?? boardControl ?? "");
+  return (
+    <div className={className} data-testid="tv-clue-title">
+      {clue.longForm ? (
+        <p className="font-bold text-white">{topic}</p>
+      ) : (
+        <CategoryFor
+          category={topic}
+          value={clue.wagerable && value === 0 ? clue.value : value}
+        />
+      )}
+    </div>
   );
 }
 
