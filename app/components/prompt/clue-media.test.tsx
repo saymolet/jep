@@ -266,32 +266,35 @@ describe("media size (feature 26)", () => {
     );
   }
 
-  it("gives pictures and videos a definite height so small files scale up", () => {
+  it("fills the room left on desktops; a fixed height on phones (feature 28)", () => {
     renderClue({ clue: "Some clue" });
     const { img, video, iframe } = classes();
     // A height, not a max-height: a 300 px picture grows to fill it.
-    expect(img).toContain("h-[40dvh]");
-    expect(img).not.toContain("max-h-");
-    expect(img).toContain("w-auto");
-    expect(img).toContain("max-w-full");
+    expect(img).toContain("h-full");
+    expect(img).toContain("w-full");
     expect(img).toContain("object-contain");
-    expect(video).toContain("h-[40dvh]");
+    expect(img).not.toContain("max-h-");
+    expect(img).toContain("buzzbar:h-[32dvh]");
+    expect(video).toContain("h-full");
     expect(video).toContain("object-contain");
-    expect(iframe).toContain("calc(40dvh*16/9)");
+    expect(iframe).toContain("h-full");
   });
 
-  it("gives media more room on the TV, most with little text", () => {
+  it("fills the whole TV, whatever the text (feature 28)", () => {
     renderClue({
       clue: "A long question that goes on and on, with a lot of words to read out loud",
       variant: "tv",
     });
-    expect(classes().img).toContain("h-[50dvh]");
-    expect(classes().video).toContain("h-[50dvh]");
+    expect(classes().img).toContain("h-full");
+    expect(classes().video).toContain("h-full");
+    expect(classes().img).not.toContain("buzzbar:");
+  });
 
-    renderClue({ clue: "Who is this?", variant: "tv" });
-    expect(classes().img).toContain("h-[60dvh]");
-    expect(classes().video).toContain("h-[60dvh]");
-    expect(classes().iframe).toContain("calc(60dvh*16/9)");
+  it("draws no empty text block above media-only questions", () => {
+    renderClue({ clue: "", variant: "tv" });
+    expect(
+      container.querySelector("[data-testid=clue-buzz-area] p")?.className,
+    ).toContain("hidden");
   });
 
   it("takes an explicit size (the host's view)", () => {
