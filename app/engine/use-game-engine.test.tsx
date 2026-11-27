@@ -80,11 +80,12 @@ const mocks = vi.hoisted(() => {
       state.fetchLowerBounds.push(value);
       return query;
     },
-    order: () =>
+    order: () => query,
+    range: (from: number, to: number) =>
       Promise.resolve({
-        data: state.fetchRows.filter(
-          (r) => r.id > (state.fetchLowerBounds.at(-1) ?? 0),
-        ),
+        data: state.fetchRows
+          .filter((r) => r.id > (state.fetchLowerBounds.at(-1) ?? 0))
+          .slice(from, to + 1),
         error: null,
       }),
   };
