@@ -165,11 +165,11 @@ test.describe("host role", () => {
     // their own answers.
     // (Cat A's $200 was played: Cat B's is the second.)
     await openClue(bob, bob.getByRole("button", { name: "$ 200" }).nth(1));
+    // (Not Enter once the answer is up: it would reveal it.)
+    const reveal = bob.getByRole("button", { name: /reveal answer/i });
     await expect(async () => {
-      await bob.keyboard.press("Enter");
-      await expect(
-        bob.getByRole("button", { name: /reveal answer/i }),
-      ).toBeVisible({ timeout: 1_000 });
+      if (!(await reveal.isVisible())) await bob.keyboard.press("Enter");
+      await expect(reveal).toBeVisible({ timeout: 1_000 });
     }).toPass({ timeout: 20_000 });
     await expect(bob.getByText("b1-answer").first()).toBeAttached();
   });

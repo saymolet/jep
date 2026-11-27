@@ -128,10 +128,14 @@ describe("Presenter", () => {
   it("shows the question being read, without the answer", () => {
     render(playUntil("chooseFirst"));
     expect(text()).toContain("This pet says meow");
-    // The buzzers open when the server says so (feature 27).
-    expect(status()).toBe("Get ready to buzz...");
+    // No "Get ready" / "Buzzers open!" on the TV (feature 29); the category
+    // and value are in the top bar.
+    expect(status()).toBeUndefined();
+    expect(
+      container.querySelector('[data-testid="tv-clue-title"]')?.textContent,
+    ).toMatch(/for \$\d+/);
     render(playUntil("openFirst"));
-    expect(status()).toBe("Buzzers open!");
+    expect(status()).toBeUndefined();
     const answer = Array.from(container.querySelectorAll("span")).find(
       (s) => s.textContent === "Cat",
     );

@@ -186,3 +186,36 @@ describe("the host's ×0.5 / ×2", () => {
     expect(state.players.get(P1.userId)?.score).toBe(value);
   });
 });
+
+describe("answerMultiplier in the engine context (feature 29)", () => {
+  it("is what the summary after the question uses", async () => {
+    const { stateToGameEngine, ConnectionState } =
+      await import("./use-game-engine");
+    const state = run([
+      join(P1),
+      join(P2),
+      { type: ActionType.ClaimHost, payload: HOST },
+      start(HOST.userId),
+      choose(0, 0, HOST.userId),
+      open(HOST.userId, { host: true }),
+      buzz(P1.userId, 100),
+      buzz(P2.userId, 5001),
+      {
+        type: ActionType.Check,
+        payload: {
+          userId: P1.userId,
+          i: 0,
+          j: 0,
+          correct: true,
+          host: true,
+          multiplier: 2,
+        },
+      },
+    ]);
+    const engine = stateToGameEngine(MOCK_GAME, state, () => undefined, {
+      connectionState: ConnectionState.CONNECTED,
+    });
+    expect(engine.answerMultiplier(0, 0, P1.userId)).toBe(2);
+    expect(engine.answerMultiplier(0, 0, P2.userId)).toBe(1);
+  });
+});

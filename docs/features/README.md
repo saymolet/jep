@@ -29,3 +29,4 @@ See the backlog in [../README.md](../README.md#feature-backlog).
 - [26 — Bigger media, no QR on the TV, who answers for the host](./26-media-visuals.md)
 - [27 — Buzzers like SIGame, host multipliers, calmer soundboard](./27-buzzer-flow.md)
 - [28 — Pictures and videos fill the screen](./28-fullscreen-media.md)
+- [29 — TV and buzz-order polish](./29-tv-polish.md)

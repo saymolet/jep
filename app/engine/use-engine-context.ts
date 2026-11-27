@@ -14,6 +14,7 @@ export const GameEngineContext = React.createContext<
   choicePicks: new Map(),
   numAnswered: 0,
   answeredBy: () => false,
+  answerMultiplier: () => 1,
   board: { categories: [], categoryNames: [] },
   boardControl: null,
   buzzes: new Map(),

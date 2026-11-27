@@ -135,6 +135,11 @@ export function stateToGameEngine(
       ?.answeredBy.get(userId);
   };
 
+  /** The host's ×0.5 / ×2 on a player's right answer (1 when none). */
+  const answerMultiplier = (i: number, j: number, userId: string) =>
+    state.isAnswered.at(state.round)?.at(i)?.at(j)?.multipliers?.get(userId) ??
+    1;
+
   const winningBuzz = getWinningBuzzer(
     state.buzzes,
     getStateTiebreakerSeed(state),
@@ -176,6 +181,7 @@ export function stateToGameEngine(
      * they were correct.
      */
     answeredBy,
+    answerMultiplier,
     answers: state.answers.get(clueKey) ?? new Map<string, string>(),
     /** Options picked on the active multiple choice clue (userId -> index). */
     choicePicks: state.choicePicks.get(clueKey) ?? new Map<string, number>(),
