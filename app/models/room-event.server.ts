@@ -9,22 +9,33 @@ export type DbRoomEvent = RoomEventTable["Row"];
 
 /* Reads */
 
+/** ROOM_EVENTS_PAGE is how many events one request reads. Supabase returns
+ * at most 1000 rows per request (PostgREST max-rows): a long game passes
+ * that, so events are read page by page. */
+export const ROOM_EVENTS_PAGE = 1000;
+
+/** getRoomEvents reads every event of a room, oldest first, page by page. */
 export async function getRoomEvents(
   roomId: number,
   accessToken?: AuthSession["accessToken"],
 ): Promise<DbRoomEvent[]> {
   const client = getSupabase(accessToken);
-  const { data, error } = await client
-    .from<"room_events", RoomEventTable>("room_events")
-    .select("*")
-    .order("ts", { ascending: true })
-    .eq("room_id", roomId);
+  const events: DbRoomEvent[] = [];
+  for (let from = 0; ; from += ROOM_EVENTS_PAGE) {
+    const { data, error } = await client
+      .from<"room_events", RoomEventTable>("room_events")
+      .select("*")
+      .eq("room_id", roomId)
+      .order("ts", { ascending: true })
+      .order("id", { ascending: true })
+      .range(from, from + ROOM_EVENTS_PAGE - 1);
 
-  if (error !== null) {
-    throw new Error(error.message);
+    if (error !== null) {
+      throw new Error(error.message);
+    }
+    events.push(...data);
+    if (data.length < ROOM_EVENTS_PAGE) return events;
   }
-
-  return data;
 }
 
 /* Writes */

@@ -284,6 +284,10 @@ function getMediaReplayCount(state: State) {
     : 0;
 }
 
+/** MISSED_EVENTS_PAGE: Supabase returns at most this many rows per request,
+ * so a catch-up after a long disconnect reads page by page. */
+const MISSED_EVENTS_PAGE = 1000;
+
 /** useGameEngine provides all the state variables associated with a game.  The
  * game state is stored on the server as a series of "room events", or deltas,
  * which are applied in order to derive the state.
@@ -468,17 +472,24 @@ export function useGameEngine(
     });
     channelRef.current = channel;
 
-    /** Fetch events from the DB that we haven't seen yet. */
+    /** Fetch events from the DB that we haven't seen yet, page by page
+     * (Supabase returns at most 1000 rows per request). */
     async function fetchMissedEvents() {
       try {
-        const { data, error } = await client
-          .from("room_events")
-          .select("*")
-          .eq("room_id", roomId)
-          .gt("id", fetchedUpToId.current)
-          .order("ts", { ascending: true });
-
-        if (error || !data || disposed) return;
+        const data: DbRoomEvent[] = [];
+        for (let from = 0; ; from += MISSED_EVENTS_PAGE) {
+          const page = await client
+            .from("room_events")
+            .select("*")
+            .eq("room_id", roomId)
+            .gt("id", fetchedUpToId.current)
+            .order("ts", { ascending: true })
+            .order("id", { ascending: true })
+            .range(from, from + MISSED_EVENTS_PAGE - 1);
+          if (page.error || !page.data || disposed) return;
+          data.push(...page.data);
+          if (page.data.length < MISSED_EVENTS_PAGE) break;
+        }
 
         if (ingestEvents(data, { complete: true })) {
           setLastMessageAt(Date.now());
